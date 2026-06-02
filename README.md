@@ -1,77 +1,157 @@
-[![Build Status](https://github.com/openmrs/openmrs-module-webservices.rest/actions/workflows/maven.yml/badge.svg)](https://github.com/openmrs/openmrs-module-webservices.rest/actions/workflows/maven.yml) [![Coverage Status](https://coveralls.io/repos/github/openmrs/openmrs-module-webservices.rest/badge.svg?branch=master)](https://coveralls.io/github/openmrs/openmrs-module-webservices.rest?branch=master)
+# OpenMRS REST Web Services Module – Security Audit
 
-<img src="https://talk.openmrs.org/uploads/default/original/2X/f/f1ec579b0398cb04c80a54c56da219b2440fe249.jpg" alt="OpenMRS"/>
+## Software Security & Compliance
 
-# OpenMRS REST Web Services Module
+This repository is used as part of the **Software Security & Compliance** course. The objective of this project is to perform a security and compliance audit on the OpenMRS REST Web Services Module.
 
-> REST API for [OpenMRS](http://openmrs.org)
+Software security and compliance focus on protecting software against misuse, vulnerabilities, and data breaches while ensuring compliance with applicable laws, regulations, and industry standards. Since healthcare systems often process sensitive personal and medical information, security plays a critical role in maintaining confidentiality, integrity, and availability.
 
-<a href="https://ci.openmrs.org/browse/RESTWS-RESTWS"><img src="https://omrs-shields.psbrandt.io/build/RESTWS/RESTWS" alt="Build"/></a>
-<a href="https://modules.openmrs.org/#/show/153/webservices-rest"><img src="https://omrs-shields.psbrandt.io/version/153" alt="Version"/></a>
-<a href="https://modules.openmrs.org/#/show/153/webservices-rest"><img src="https://omrs-shields.psbrandt.io/omrsversion/153" alt="OpenMRS Version"/></a>
+During this project, we analyze the OpenMRS REST API, identify potential security risks, perform security testing, and evaluate compliance with relevant legislation such as the General Data Protection Regulation (GDPR).
 
-The module exposes the OpenMRS API as REST web services. If an OpenMRS instance is running the `webservice.rest` module, other applications can retrieve and post certain information to an OpenMRS database.
+---
 
-## Download
+## Project Objectives
 
-If you are not a developer, or just want to install the REST Web Services module into your
-system, visit [the module download page](https://modules.openmrs.org/#/show/153/webservices-rest) instead.
+The main objectives of this audit are to:
 
-> The required OpenMRS version to run the REST Web Services Module is `1.8.4+` or `1.9.0+`
+- Analyze the architecture of the application
+- Identify potential security vulnerabilities
+- Perform security testing on the application
+- Evaluate legal and compliance requirements
+- Assess privacy and data protection measures
+- Review the software development and deployment process
+- Propose security and compliance improvements
 
-## Build
+---
 
-To build the module from source, clone this repo:
+## About OpenMRS
 
+OpenMRS is an open-source Electronic Medical Record (EMR) platform used worldwide to support healthcare delivery, particularly in resource-constrained environments.
+
+- Official Website: https://openmrs.org
+- Original Repository: https://github.com/openmrs/openmrs-module-webservices.rest
+
+The REST Web Services Module exposes OpenMRS functionality through RESTful APIs, allowing external applications to interact with OpenMRS resources.
+
+---
+
+## Audit Scope
+
+The security assessment focuses on the following areas:
+
+### Authentication & Authorization
+
+- User authentication mechanisms
+- Access control implementation
+- Privilege management
+
+### API Security
+
+- REST endpoint security
+- Input validation
+- Output encoding
+- Error handling
+
+### Dependency Security
+
+- Vulnerable third-party libraries
+- Dependency management practices
+- Supply chain risks
+
+### Application Security
+
+- OWASP Top 10 vulnerabilities
+- Secure coding practices
+- Security misconfigurations
+
+### Privacy & Compliance
+
+- GDPR considerations
+- Personal data handling
+- Data minimization principles
+- Audit logging requirements
+
+### DevSecOps & CI/CD
+
+- Build pipeline security
+- Dependency scanning
+- Static Application Security Testing (SAST)
+- Security automation opportunities
+
+---
+
+## Audit Methodology
+
+The audit consists of multiple phases:
+
+1. Repository and architecture review
+2. Threat modeling
+3. Static code analysis
+4. Dependency vulnerability assessment
+5. Security testing
+6. Compliance assessment
+7. Reporting and recommendations
+
+---
+
+## Technologies
+
+The project is primarily built using:
+
+- Java
+- Maven
+- REST APIs
+- JUnit
+- OpenMRS Framework
+
+---
+
+## Deliverables
+
+The final audit includes:
+
+- Security findings
+- Risk assessment
+- Compliance analysis
+- Vulnerability overview
+- Recommendations for remediation
+- Final audit report
+
+---
+
+## Running the Application
+
+Clone the repository:
+
+```bash
+git clone https://github.com/GrannyGuard/webservices-rest-audit.git
 ```
-git clone https://github.com/openmrs/openmrs-module-webservices.rest
+
+Build the project using Maven:
+
+```bash
+mvn clean install
 ```
 
-Then navigate into the `openmrs-module-webservices.rest` directory and compile the module using Maven:
+Requirements:
 
-```
-cd openmrs-module-webservices.rest && mvn clean install
-```
+- Java 8+
+- Maven
 
-:pushpin: You will need Maven and Java 8 installed to successfully build and run
-the tests.
+---
 
-## Developer Documentation
+## Disclaimer
 
-### Integration Tests
+This repository is a fork of the original OpenMRS REST Web Services Module and is used solely for educational purposes within the Software Security & Compliance course.
 
-Integration tests can be found in the integration-tests directory. They are written with JUnit and Rest-Assured.
-Before you can run integration tests you need to start up a server and install the module.
-You can run integration tests with:
-```
-mvn clean verify -Pintegration-tests -DtestUrl=http://admin:Admin123@localhost:8080/openmrs
-```
-You can skip the testUrl parameter, if it is the same for your server.
+The original software, trademarks, and intellectual property belong to the OpenMRS community and contributors.
 
-### Wiki Pages
+---
 
-| Page | Description |
-| ---- | ----------- |
-| [REST Module](https://wiki.openmrs.org/display/docs/REST+Module) | The main module page with a description of the configuration options. |
-| [Technical Documentation](https://wiki.openmrs.org/display/docs/REST+Web+Services+Technical+Documentation) | Technical information about the Web Services implementation. |
-| [Core Developer Guide](https://wiki.openmrs.org/display/docs/Adding+a+Web+Service+Step+by+Step+Guide+for+Core+Developers) | Description of how to add REST resources to OpenMRS core. |
-| [Module Developer Guide](https://wiki.openmrs.org/display/docs/Adding+a+Web+Service+Step+by+Step+Guide+for+Module+Developers) | Description of how to add REST resources to OpenMRS modules. |
+## Team
 
-### API Documentation
+Security Audit Team
 
-The API documentation is available inside the OpenMRS application and is linked
-to the advanced administration screen. The URL should be something like:
-> [http://localhost:8080/openmrs/module/webservices/rest/apiDocs.htm](http://localhost:8080/openmrs/module/webservices/rest/apiDocs.htm)
-
-### Example Client code
-  * Quick java swing client that displays patients and encounters: http://svn.openmrs.org/openmrs-contrib/examples/webservices/hackyswingexample/
-  * You can download a client java application that allows add/edit a person (any resource) by making a query to the webservices.rest module - https://project-development-software-victor-aravena.googlecode.com/svn/trunk/ClientOpenMRSRest/
-
-### Contributing to the API Documentation
-
-The OpenMRS API documentation is built automatically using [Swagger UI](http://swagger.io/swagger-ui/). For details on how to customize the documentation see the [`swagger-ui` branch](https://github.com/psbrandt/openmrs-contrib-apidocs/tree/swagger-ui) in the [`openmrs-contrib-apidocs` repo](https://github.com/psbrandt/openmrs-contrib-apidocs).
-
-## License
-
-[MPL-2.0 w/ HD](http://openmrs.org/license/)
-# webservices-rest-audit
+- Wouter Baas
+- Daniël van Ginneken
+- Wassim Balouda
