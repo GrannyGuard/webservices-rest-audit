@@ -12,9 +12,9 @@
 	<url>http://wiki.openmrs.org/display/docs/WebServices</url>
 
 	<scm>
-		<connection>scm:git:git@github.com:openmrs/openmrs-module-webservices.rest.git</connection>
-		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-webservices.rest.git</developerConnection>
-		<url>https://github.com/openmrs/openmrs-module-webservices.rest/</url>
+		<connection>scm:git:git@github.com:GrannyGuard/webservices-rest-audit.git</connection>
+		<developerConnection>scm:git:git@github.com:GrannyGuard/webservices-rest-audit.git</developerConnection>
+		<url>https://github.com/GrannyGuard/webservices-rest-audit/</url>
 		<tag>3.2.0</tag>
 	</scm>
 
