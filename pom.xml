@@ -49,7 +49,7 @@
 		<MODULE_PACKAGE>${project.parent.groupId}.${project.parent.artifactId}</MODULE_PACKAGE>
 		<apacheTomcatVersion>6.0.53</apacheTomcatVersion>
 		<javaxVersion>4.0.1</javaxVersion>
-		<jacksonVersion>2.22</jacksonVersion>
+		<jacksonVersion>2.19.1</jacksonVersion>
 	</properties>
 
 	<!-- TODO: combine/simplify the "dependencyManagement" and "dependency" sections into a single "dependency" section and test/remove any unneeded dependencies -->
@@ -305,7 +305,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.15.0</version>
+					<version>3.13.0</version>
 					<configuration>
 						<target>8</target>
 						<source>8</source>
@@ -332,6 +332,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.4.2</version>
 					<executions>
 						<execution>
 							<goals>
@@ -481,7 +482,7 @@
 				<plugin>
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
-					<version>5.0.0</version>
+					<version>4.6</version>
 					<configuration>
 						<header>${project.basedir}/license-header.txt</header>
 						<includes>
