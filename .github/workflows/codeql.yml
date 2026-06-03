@@ -1,0 +1,58 @@
+name: "CodeQL (SAST)"
+
+# NEN-7510 A.8.x — Static Application Security Testing of the OpenMRS REST module.
+# Implements the SAST acceptance criteria defined in the non-functionals issue (#7).
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    # Weekly scan so newly-disclosed query packs catch existing code.
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze Java
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # upload results to the Security tab
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ "java" ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # The module targets Java 8 (maven.compiler.target=1.8); build with a JDK 8 toolchain.
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "8"
+          cache: "maven"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      # Manual build so CodeQL traces the full multi-module compilation
+      # (omod-common, omod, integration-tests). Tests are skipped for scan speed.
+      - name: Build with Maven
+        run: mvn -B -ntp clean install -DskipTests
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
