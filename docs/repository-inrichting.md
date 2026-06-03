@@ -18,50 +18,55 @@ Dit document beschrijft de vier maatregelen van taak 5.2 en het bijbehorende bew
 
 ## 1. Branch protection — `main` (#2)
 
-Ondersteunt **NEN-7510 A.8.3 (toegangsbeveiliging)**: niemand kan rechtstreeks
-naar `main` pushen, elke wijziging gaat via een reviewde pull request.
+`main` wordt beschermd via een **Ruleset** ("main protection", *Settings → Rules →
+Rulesets*) — de moderne opvolger van classic branch protection, met betere
+audit-zichtbaarheid. Ondersteunt **NEN-7510 A.8.3 (toegangsbeveiliging)**: niemand
+kan rechtstreeks naar `main` pushen, elke wijziging gaat via een reviewde pull request.
 
-| Regel | Waarde | Reden |
-|-------|--------|-------|
-| Require a pull request before merging | ✅ | Geen directe pushes; elke change is reviewbaar. |
-| Required approving reviews | **1** | Tweede persoon moet goedkeuren. |
-| Dismiss stale approvals on new commits | ✅ | Nieuwe push laat oude approval vervallen. |
-| Require conversation resolution | ✅ | Alle review-threads moeten opgelost zijn. |
-| Require code owner review | ❌ | Nog geen `CODEOWNERS`. |
-| Require signed commits | ❌ | Niet vereist voor dit project. |
-| Require linear history | ❌ | Merge-commits toegestaan. |
-| Allow force pushes | ❌ | History op `main` kan niet herschreven worden. |
-| Allow deletions | ❌ | `main` kan niet verwijderd worden. |
-| Include administrators (`enforce_admins`) | ❌ | Admins mogen in noodgevallen bypassen — zie noot. |
+| Regel (ruleset) | Waarde | Reden |
+|-----------------|--------|-------|
+| `pull_request` — required approving reviews | **1** | Geen directe pushes; tweede persoon moet goedkeuren. |
+| `pull_request` — dismiss stale reviews on push | ✅ | Nieuwe push laat oude approval vervallen. |
+| `pull_request` — required review thread resolution | ✅ | Alle review-threads moeten opgelost zijn. |
+| `pull_request` — require code owner review | ❌ | Nog geen `CODEOWNERS`. |
+| `non_fast_forward` | ✅ | Force pushes geblokkeerd; history op `main` onveranderbaar. |
+| `deletion` | ✅ | `main` kan niet verwijderd worden. |
+| Required status checks | ❌ (nog niet) | Toevoegen zodra CodeQL/SonarCloud één keer gedraaid hebben — zie §"Toekomstige hardening". |
 
-**Noot over administrators:** `enforce_admins` staat **uit** zodat het 2-persoons
-team niet buitengesloten raakt als een reviewer afwezig is. Zet op `true` voor een
-striktere, productie-achtige policy.
+**Noot over bypass:** de repository-rol **Admin** staat als *bypass actor*
+(`bypass_mode: always`), zodat het 2-persoons team niet buitengesloten raakt als
+een reviewer afwezig is. Verwijder de bypass-actor voor een striktere policy.
 
 ### Reproduceren
 
 ```bash
-gh api -X PUT repos/GrannyGuard/webservices-rest-audit/branches/main/protection \
-  --input - <<'JSON'
+gh api -X POST repos/GrannyGuard/webservices-rest-audit/rulesets --input - <<'JSON'
 {
-  "required_status_checks": null,
-  "enforce_admins": false,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false
-  },
-  "restrictions": null,
-  "required_linear_history": false,
-  "allow_force_pushes": false,
-  "allow_deletions": false,
-  "required_conversation_resolution": true
+  "name": "main protection",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "bypass_actors": [
+    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }
+  ],
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "pull_request", "parameters": {
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true,
+        "allowed_merge_methods": ["merge", "squash", "rebase"]
+    } }
+  ]
 }
 JSON
 ```
 
-Huidige instellingen bekijken: `gh api repos/GrannyGuard/webservices-rest-audit/branches/main/protection`
-of via **Settings → Branches → Branch protection rules → `main`**.
+Effectieve regels op `main` bekijken: `gh api repos/GrannyGuard/webservices-rest-audit/rules/branches/main`
+of via **Settings → Rules → Rulesets → "main protection"**.
 
 ---
 
