@@ -1,0 +1,48 @@
+# Base OTAP stack for the OpenMRS REST Web Services module.
+# Shared service definitions; always combine with one environment override:
+#
+#   dev :  docker compose -f docker-compose.yml -f docker/dev/docker-compose.yml  up -d
+#   test:  docker compose -f docker-compose.yml -f docker/test/docker-compose.yml up -d
+#   prod:  docker compose -f docker-compose.yml -f docker/prod/docker-compose.yml up -d
+#
+# Configuration comes from an .env file (copy .env.example -> .env). Never commit a real .env.
+name: webservices-rest
+
+services:
+  db:
+    image: mariadb:10.11
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-openmrs}
+      MYSQL_USER: ${DB_USER:-openmrs}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-openmrs}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change_me_root}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [openmrs]
+
+  openmrs:
+    image: openmrs/openmrs-core:${OPENMRS_TAG:-nightly}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      OMRS_CONFIG_CONNECTION_SERVER: db
+      OMRS_CONFIG_CONNECTION_DATABASE: ${DB_NAME:-openmrs}
+      OMRS_CONFIG_CONNECTION_USERNAME: ${DB_USER:-openmrs}
+      OMRS_CONFIG_CONNECTION_PASSWORD: ${DB_PASSWORD:-openmrs}
+    volumes:
+      - openmrs-data:/openmrs/data
+    networks: [openmrs]
+
+volumes:
+  db-data:
+  openmrs-data:
+
+networks:
+  openmrs:

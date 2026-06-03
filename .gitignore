@@ -77,3 +77,6 @@ nb-configuration.xml
 
 ### Lucene Indices from Tests ###
 /omod-*/org.openmrs.*/*
+
+# Local environment files (never commit real credentials)
+.env
