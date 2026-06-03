@@ -1,0 +1,17 @@
+# DEV override — local development.
+# Ports exposed for convenience, locally built .omod hot-deployed, no auto-restart.
+services:
+  db:
+    ports:
+      - "3306:3306"          # exposed so you can inspect the DB with local tooling
+    restart: "no"
+
+  openmrs:
+    ports:
+      - "8080:8080"
+    environment:
+      OMRS_DEV_DEBUG: "true"
+    volumes:
+      # Drop the freshly built module from `mvn install` into the hot-deploy folder.
+      - ./omod/target:/openmrs/data/modules:ro
+    restart: "no"
