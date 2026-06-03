@@ -33,7 +33,7 @@ jobs:
 
       # ── Upload as CI artifact ──
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-cyclonedx
           path: docs/sbom.cdx.json
