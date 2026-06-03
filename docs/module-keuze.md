@@ -1,18 +1,18 @@
 # Module keuze
 
 ## Gekozen module
-FHIR REST Module
+REST Web Services Module (`org.openmrs.module:webservices.rest`)
 
 ## Versie
-2.5.0
+3.2.0
 
 ## Repository
-https://github.com/openmrs/openmrs-module-fhir2
+https://github.com/openmrs/openmrs-module-webservices.rest
 
 ## Motivatie
 
-- Kritische zorgfunctionaliteit
-- Werkt met medische gegevens
-- Bevat authenticatie en autorisatie
-- Voldoende omvang voor analyse
-- Relevante security risico's
+- Kritische zorgfunctionaliteit: exposeert OpenMRS-functionaliteit via REST API's
+- Werkt met medische gegevens (patiënten, observaties, encounters)
+- Bevat authenticatie en autorisatie (beveiliging van REST endpoints)
+- Voldoende omvang voor analyse (multi-module: omod-common, omod, integration-tests)
+- Relevante security risico's (OWASP API Top 10, input-validatie, toegangscontrole)
