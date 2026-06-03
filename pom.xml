@@ -305,7 +305,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.13.0</version>
+					<version>3.14.0</version>
 					<configuration>
 						<target>8</target>
 						<source>8</source>
@@ -482,7 +482,7 @@
 				<plugin>
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
-					<version>4.6</version>
+					<version>3.0</version>
 					<configuration>
 						<header>${project.basedir}/license-header.txt</header>
 						<includes>
