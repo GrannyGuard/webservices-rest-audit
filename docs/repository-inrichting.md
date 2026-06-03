@@ -31,7 +31,8 @@ kan rechtstreeks naar `main` pushen, elke wijziging gaat via een reviewde pull r
 | `pull_request` — require code owner review | ❌ | Nog geen `CODEOWNERS`. |
 | `non_fast_forward` | ✅ | Force pushes geblokkeerd; history op `main` onveranderbaar. |
 | `deletion` | ✅ | `main` kan niet verwijderd worden. |
-| Required status checks | ❌ (nog niet) | Toevoegen zodra CodeQL/SonarCloud één keer gedraaid hebben — zie §"Toekomstige hardening". |
+| `required_status_checks` — `Analyze Java (java)` (CodeQL) | ✅ | Falende CodeQL-scan blokkeert de merge. |
+| `required_status_checks` — SonarCloud | ❌ (nog niet) | Quality gate faalt op `main` (3 hotspots + D reliability) — eerst oplossen/aanpassen, daarna verplichten. |
 
 **Noot over bypass:** de repository-rol **Admin** staat als *bypass actor*
 (`bypass_mode: always`), zodat het 2-persoons team niet buitengesloten raakt als
@@ -59,6 +60,13 @@ gh api -X POST repos/GrannyGuard/webservices-rest-audit/rulesets --input - <<'JS
         "require_last_push_approval": false,
         "required_review_thread_resolution": true,
         "allowed_merge_methods": ["merge", "squash", "rebase"]
+    } },
+    { "type": "required_status_checks", "parameters": {
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          { "context": "Analyze Java (java)", "integration_id": 15368 }
+        ]
     } }
   ]
 }
