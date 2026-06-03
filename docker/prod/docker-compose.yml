@@ -1,0 +1,17 @@
+# PROD override — production-like.
+# Resilient restart, DB NOT published to the host, resource limits, pinned image tag.
+# Secrets/credentials must come from the environment (.env), never hard-coded.
+services:
+  db:
+    restart: always
+    # No `ports:` on purpose — the database is only reachable on the internal network.
+
+  openmrs:
+    image: openmrs/openmrs-core:${OPENMRS_TAG:?set a pinned tag in prod, do not use 'nightly'}
+    ports:
+      - "8080:8080"          # front with a TLS-terminating reverse proxy in a real deployment
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2g

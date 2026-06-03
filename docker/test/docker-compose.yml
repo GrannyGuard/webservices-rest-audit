@@ -1,0 +1,13 @@
+# TEST override — CI / acceptance, disposable.
+# Separate ports so it can run alongside dev. Tear down with `docker compose ... down -v`
+# to discard the database between runs.
+services:
+  db:
+    restart: "no"
+
+  openmrs:
+    ports:
+      - "8081:8080"          # distinct host port to avoid clashing with dev
+    environment:
+      OMRS_DEV_DEBUG: "false"
+    restart: "no"
