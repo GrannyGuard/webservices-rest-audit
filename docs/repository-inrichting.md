@@ -12,7 +12,7 @@ Dit document beschrijft de vier maatregelen van taak 5.2 en het bijbehorende bew
 | 1 | Branch protection (`main` is protected) | #2  | ✅ Actief |
 | 2 | MFA voor alle leden                     | #8  | ⬜ TODO (Wouter) |
 | 3 | Dependabot alerts aan                   | #9  | ⬜ TODO (Wouter) |
-| 4 | CodeQL workflow actief                  | #10 | ✅ Workflow aanwezig |
+| 4 | Statische code-analyse (SAST): CodeQL **+** SonarCloud | #10 | ✅ 2 workflows |
 
 ---
 
@@ -83,16 +83,29 @@ of via **Settings → Branches → Branch protection rules → `main`**.
 
 ---
 
-## 4. CodeQL workflow (SAST) (#10)
+## 4. Statische code-analyse (SAST) (#10)
 
-CodeQL draait voor Java/Maven en publiceert resultaten in de **Security-tab**
-(Code scanning alerts). Ondersteunt de SAST-acceptatiecriteria uit #7.
+We zetten **twee** SAST-tools in die elkaar aanvullen — samen dekken ze de
+security- én maintainability-acceptatiecriteria uit #7.
+
+### 4a. CodeQL — security-SAST
+
+Diepe security-analyse (dataflow/taint) voor Java/Maven; resultaten in de
+**Security-tab** (Code scanning alerts).
 
 - Workflow: [`.github/workflows/codeql.yml`](../.github/workflows/codeql.yml)
 - Triggers: push/PR op `main` + wekelijkse schedule.
-- Aanvullend draait SonarCloud ([`sonarcloud.yml`](../.github/workflows/sonarcloud.yml))
-  voor maintainability/quality gate.
 - **Bewijs:** Code scanning resultaten in de Security-tab.
+
+### 4b. SonarCloud — SAST + maintainability/quality gate
+
+Analyseert zowel security-issues als maintainability (code smells, duplicatie,
+coverage) en levert een **quality gate** op elke PR.
+
+- Workflow: [`.github/workflows/sonarcloud.yml`](../.github/workflows/sonarcloud.yml)
+- Org / project: `grannyguard` / `GrannyGuard_webservices-rest-audit`.
+- Vereist secret `SONAR_TOKEN` en **Automatic Analysis uit** in SonarCloud.
+- **Bewijs:** quality gate-status op de PR + SonarCloud-dashboard.
 
 ---
 
