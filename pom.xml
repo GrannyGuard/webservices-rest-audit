@@ -462,6 +462,15 @@
 								<goal>prepare-agent</goal>
 							</goals>
 						</execution>
+						<!-- Generate target/site/jacoco/jacoco.xml after tests so SonarCloud
+						     can pick up coverage (auto-detected from that path). -->
+						<execution>
+							<id>report</id>
+							<phase>test</phase>
+							<goals>
+								<goal>report</goal>
+							</goals>
+						</execution>
 					</executions>
 				</plugin>
 				<plugin>
