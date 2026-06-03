@@ -481,7 +481,7 @@
 				<plugin>
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
-					<version>3.0</version>
+					<version>5.0.0</version>
 					<configuration>
 						<header>${project.basedir}/license-header.txt</header>
 						<includes>
