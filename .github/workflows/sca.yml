@@ -10,6 +10,8 @@ jobs:
   sca:
     name: Scan SBOM for Vulnerabilities
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
@@ -22,10 +24,13 @@ jobs:
 
       # ── Download the SBOM produced by the SBOM workflow ──
       - name: Download SBOM artifact
+        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/download-artifact@v4
         with:
           name: sbom-cyclonedx
           path: sbom/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         # Falls back gracefully when triggered manually without a prior run
         continue-on-error: true
 
@@ -65,7 +70,7 @@ jobs:
 
       # ── Upload SARIF so findings appear in the Security tab ──
       - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: osv-results.sarif
