@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ── Download/regenerate the SBOM and run OSV-Scanner manually ──
   sca:
     name: Scan SBOM for Vulnerabilities
     runs-on: ubuntu-latest
@@ -15,6 +16,7 @@ jobs:
     permissions:
       security-events: write   # upload SARIF to GitHub Security tab
       contents: read
+      actions: read            # needed to download artifacts from workflow_run
 
     steps:
       - name: Checkout repository
@@ -26,7 +28,6 @@ jobs:
         with:
           name: sbom-cyclonedx
           path: sbom/
-        # Falls back gracefully when triggered manually without a prior run
         continue-on-error: true
 
       # ── Fallback: regenerate SBOM if artifact is unavailable (manual trigger) ──
@@ -44,22 +45,25 @@ jobs:
           mkdir -p sbom
           cp target/bom.json sbom/sbom.cdx.json
 
-      # ── OSV-Scanner: scans the CycloneDX SBOM against the OSV database ──
-      - name: Run OSV-Scanner
-        uses: google/osv-scanner-action@98b584ee2ed2da3935ccce10e06739d54cdcd20b  # v2.0.0
-        with:
-          scan-args: |-
-            --sbom=sbom/sbom.cdx.json
-            --format=sarif
-            --output=osv-results.sarif
-        continue-on-error: true   # don't fail CI before we upload results
+      # ── Install OSV-Scanner CLI directly ──
+      - name: Install OSV-Scanner
+        run: |
+          curl -L https://github.com/google/osv-scanner/releases/download/v2.0.0/osv-scanner_linux_amd64 \
+            -o /usr/local/bin/osv-scanner
+          chmod +x /usr/local/bin/osv-scanner
 
-      # ── Also produce a human-readable summary in the logs ──
+      # ── Scan the SBOM and produce SARIF output ──
+      - name: Run OSV-Scanner (SARIF)
+        run: |
+          osv-scanner scan --sbom=sbom/sbom.cdx.json \
+            --format=sarif \
+            --output=osv-results.sarif
+        continue-on-error: true
+
+      # ── Human-readable summary in the logs ──
       - name: OSV-Scanner summary (table)
-        uses: google/osv-scanner-action@98b584ee2ed2da3935ccce10e06739d54cdcd20b  # v2.0.0
-        with:
-          scan-args: |-
-            --sbom=sbom/sbom.cdx.json
+        run: |
+          osv-scanner scan --sbom=sbom/sbom.cdx.json \
             --format=table
         continue-on-error: true
 
