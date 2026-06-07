@@ -1,4 +1,11 @@
-name: Generate SBOM
+name: SBOM & SCA - Software Composition Analysis
+
+# Generates a CycloneDX SBOM and immediately scans it with OSV-Scanner.
+# Combined into a single job (was two workflows linked via workflow_run +
+# artifact upload/download) so the scanner always sees the SBOM that was
+# just built for *this* commit/branch — no stale-artifact or cross-workflow
+# trigger gotchas (workflow_run resolves the workflow file from the default
+# branch, which made PR-branch runs use a possibly-outdated sca.yml).
 
 on:
   push:
@@ -7,28 +14,43 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: sbom-sca-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write   # upload SARIF to GitHub Security tab
+
 jobs:
-  sbom:
-    name: Generate CycloneDX SBOM
+  sbom-sca:
+    name: Generate SBOM & Scan for Vulnerabilities
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
 
+      # Pinned plugin version so the SBOM generator itself is reproducible
+      # and not silently upgraded to an untrusted/newer release on every run.
       - name: Generate SBOM with CycloneDX Maven plugin
-        run: mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DoutputFormat=json
+        run: mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom -DoutputFormat=json
 
       - name: Move SBOM to docs/
         run: |
-          mkdir -p docs
+          mkdir -p docs sbom
           cp target/bom.json docs/sbom.cdx.json
+          cp target/bom.json sbom/sbom.cdx.json
 
       # ── Upload as CI artifact ──
       - name: Upload SBOM as artifact
@@ -36,4 +58,40 @@ jobs:
         with:
           name: sbom-cyclonedx
           path: docs/sbom.cdx.json
+          retention-days: 90
+
+      # ── OSV-Scanner: scans the CycloneDX SBOM against the OSV database ──
+      - name: Run OSV-Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@daa2c68f50d845057895a9c300e42478481c1d26  # v1.9.1
+        with:
+          scan-args: |-
+            --sbom=sbom/sbom.cdx.json
+            --format=sarif
+            --output=osv-results.sarif
+        continue-on-error: true   # don't fail CI before we upload results
+
+      # ── Also produce a human-readable summary in the logs ──
+      - name: OSV-Scanner summary (table)
+        uses: google/osv-scanner-action/osv-scanner-action@daa2c68f50d845057895a9c300e42478481c1d26  # v1.9.1
+        with:
+          scan-args: |-
+            --sbom=sbom/sbom.cdx.json
+            --format=table
+        continue-on-error: true
+
+      # ── Upload SARIF so findings appear in the Security tab ──
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: osv-results.sarif
+          category: osv-scanner
+
+      # ── Keep raw results as a downloadable artifact ──
+      - name: Upload SARIF as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sca-osv-results
+          path: osv-results.sarif
           retention-days: 90

@@ -119,6 +119,33 @@ The final audit includes:
 
 ---
 
+## Environments (OTAP) & CI/CD Gates
+
+This repository uses [GitHub Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) to separate configuration and to gate any deployment-style automation behind approvals, in line with NEN-7510 requirements on segregating development, test and production.
+
+| Environment | Purpose | Protection rules |
+|---|---|---|
+| `dev` | Ontwikkeling — day-to-day integration | none (open) |
+| `test` | Testing — pre-acceptance verification | Required reviewers (`DanielvG-IT`, `BaasW`) + deployments only allowed from protected branches |
+| `prod` | Productie — live module | Required reviewers (`DanielvG-IT`, `BaasW`) + deployments only allowed from protected branches |
+| `copilot` | Sandbox for the GitHub Copilot coding agent | none |
+
+`test` and `prod` both require sign-off from at least one of two designated reviewers before a deployment to that environment can proceed, and both restrict deployments to protected branches — this is the approval-gate mechanism requested by the assignment. Secrets are scoped per environment (rather than shared at repository level) so that, e.g., a production database credential is never available to a job running against `dev` or `test`.
+
+### Preventing test data from reaching production
+
+OpenMRS ships with a [standard demo dataset](https://wiki.openmrs.org/display/docs/Demo+Data) consisting entirely of synthetic patients and encounters. Development and test environments are seeded exclusively from this synthetic data — no real patient records are ever exported, copied, or seeded from `prod` into `dev`/`test`. Because the data flow is one-directional (synthetic → dev/test, never prod → dev/test) and `prod` is the only environment containing potentially sensitive data, there is no pipeline step that could leak real records downward.
+
+### Working with the environments as a new developer
+
+No access to the `dev`/`test`/`prod` GitHub Environments (or their secrets) is needed to work on this module day to day — they exist purely to gate CI/CD automation, not local development. To get started:
+
+1. Clone the repository and build it locally with Maven (see [Running the Application](#running-the-application) below) — this uses only the synthetic OpenMRS demo data and requires no environment secrets.
+2. Open a pull request against `main` as usual; the CodeQL, SBOM/SCA and SonarCloud workflows run automatically and report results without needing environment access.
+3. Only repository maintainers can grant access to the protected environments (and their secrets), and only when a workflow actually needs to deploy to or act on `test`/`prod` — request this from a maintainer if your change requires it.
+
+---
+
 ## Running the Application
 
 Clone the repository:
