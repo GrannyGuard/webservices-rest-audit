@@ -22,7 +22,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # ── Option A: CycloneDX Maven plugin (recommended for Maven projects) ──
       - name: Generate SBOM with CycloneDX Maven plugin
         run: mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DoutputFormat=json
 
