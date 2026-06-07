@@ -46,7 +46,7 @@ jobs:
 
       # ── OSV-Scanner: scans the CycloneDX SBOM against the OSV database ──
       - name: Run OSV-Scanner
-        uses: google/osv-scanner-action@98b584ee2ed2da3935ccce10e06739d54cdcd20b  # v2.0.0
+        uses: google/osv-scanner-action@9a498708959aeaef5ef730655706c5a1df1edbc2  # v2.3.8
         with:
           scan-args: |-
             --sbom=sbom/sbom.cdx.json
@@ -56,7 +56,7 @@ jobs:
 
       # ── Also produce a human-readable summary in the logs ──
       - name: OSV-Scanner summary (table)
-        uses: google/osv-scanner-action@98b584ee2ed2da3935ccce10e06739d54cdcd20b  # v2.0.0
+        uses: google/osv-scanner-action@9a498708959aeaef5ef730655706c5a1df1edbc2  # v2.3.8
         with:
           scan-args: |-
             --sbom=sbom/sbom.cdx.json
