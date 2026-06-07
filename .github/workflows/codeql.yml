@@ -15,10 +15,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze Java
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       security-events: write   # upload results to the Security tab
       actions: read
@@ -32,6 +37,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       # The module targets Java 8 (maven.compiler.target=1.8); build with a JDK 8 toolchain.
       - name: Set up JDK 8

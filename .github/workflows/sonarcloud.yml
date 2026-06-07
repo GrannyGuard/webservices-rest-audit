@@ -19,14 +19,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: sonarcloud-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sonarcloud:
     name: Analyze
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          persist-credentials: false
           # Full history lets SonarCloud assign issues to the right commit/author
           # and compute "new code" accurately.
           fetch-depth: 0
