@@ -1,0 +1,255 @@
+\documentclass[11pt, a4paper]{report}
+
+% ─── Encoding & language ────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[dutch]{babel}
+
+% ─── Layout & styling ───────────────────────────────────────────────────────
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{parskip}
+\usepackage{emptypage}
+
+% ─── Tables & lists ─────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{array}
+
+% ─── Hyperlinks ─────────────────────────────────────────────────────────────
+\usepackage{hyperref}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  COLOUR PALETTE  (Avans Hogeschool rood)
+% ═══════════════════════════════════════════════════════════════════════════
+\definecolor{avansred}{RGB}{193, 0, 0}
+\definecolor{avansdark}{RGB}{130, 0, 0}
+\definecolor{avanslight}{RGB}{245, 215, 215}
+\definecolor{textgray}{RGB}{80, 80, 80}
+\definecolor{rulegray}{RGB}{200, 200, 200}
+
+% ─── Hyperref setup ─────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks  = true,
+    linkcolor   = black,
+    urlcolor    = avansdark,
+    citecolor   = avansdark,
+    pdftitle    = {Security Rapport},
+    pdfauthor   = {Avans Hogeschool},
+}
+
+% ─── Page geometry ──────────────────────────────────────────────────────────
+\geometry{
+    a4paper,
+    top    = 2.5cm,
+    bottom = 2.5cm,
+    left   = 2.5cm,
+    right  = 2.5cm,
+}
+\setlength{\headheight}{14.5pt}
+
+% ─── Header / footer ────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textbf{Avans Hogeschool}}
+\fancyhead[R]{\small\color{textgray}\nouppercase{\leftmark}}
+\fancyfoot[C]{\small\color{textgray}\thepage}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\headrule}{%
+    \hbox to\headwidth{\color{avansred}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0pt}
+
+% ─── Chapter titles ─────────────────────────────────────────────────────────
+\titleformat{\chapter}[hang]
+    {\normalfont\LARGE\bfseries}
+    {\thechapter}
+    {0.8em}
+    {}
+    [\vspace{6pt}\color{avansred}\rule{\linewidth}{1.2pt}]
+
+\titlespacing*{\chapter}{0pt}{20pt}{12pt}
+
+% ─── Section / subsection titles ────────────────────────────────────────────
+\titleformat{\section}
+    {\large\bfseries}
+    {\thesection}{1em}{}
+
+\titleformat{\subsection}
+    {\normalsize\bfseries}
+    {\thesubsection}{1em}{}
+
+% ─── Table of contents styling ───────────────────────────────────────────────
+\renewcommand{\cftchapfont}{\bfseries}
+\renewcommand{\cftchappagefont}{\bfseries}
+\renewcommand{\cftsecfont}{\color{textgray}}
+\renewcommand{\cftsecpagefont}{\color{textgray}}
+\setlength{\cftbeforechapskip}{6pt}
+
+% ════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ─── Title page ─────────────────────────────────────────────────────────────
+\begin{titlepage}
+    \centering
+    \vspace*{0.8cm}
+
+    % Top rule
+    {\color{avansred}\rule{\linewidth}{3pt}}\\[0.4cm]
+    {\color{avansred}\rule{\linewidth}{0.8pt}}\\[1.4cm]
+
+    % Document type label
+    {\large\color{textgray}\textsc{Eindrapport --- Webservices REST Audit}}\\[0.8cm]
+
+    % Main title
+    {\fontsize{34}{40}\selectfont\bfseries\color{avansred} Security}\\[0.4cm]
+    {\Large\color{avansdark} Analyse, bevindingen \& aanbevelingen}\\[1.8cm]
+
+    % Meta table
+    \begin{tabular}{@{}ll@{}}
+        \color{textgray}\textbf{Auteurs}      & [Naam 1]                  \\[2pt]
+                                               & [Naam 2]                  \\[2pt]
+                                               & [Naam 3]                  \\[10pt]
+        \color{textgray}\textbf{Datum}         & \today                    \\[2pt]
+        \color{textgray}\textbf{Versie}        & 1.0                       \\[2pt]
+        \color{textgray}\textbf{Opleiding}     & HBO-ICT                   \\[2pt]
+        \color{textgray}\textbf{Instelling}    & Avans Hogeschool          \\[2pt]
+        \color{textgray}\textbf{Leerjaar}      & Jaar 2 --- Periode 4      \\
+    \end{tabular}
+
+    \vfill
+
+    % Bottom rule
+    {\color{avansred}\rule{\linewidth}{0.8pt}}\\[0.3cm]
+    {\color{avansred}\rule{\linewidth}{3pt}}\\[0.6cm]
+
+    {\small\color{textgray}Avans Hogeschool, Breda}
+\end{titlepage}
+
+% ─── Table of contents ──────────────────────────────────────────────────────
+\tableofcontents
+\clearpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  CHAPTERS
+% ════════════════════════════════════════════════════════════════════════════
+
+% ─── 1 ──────────────────────────────────────────────────────────────────────
+\chapter{Security audit (wetgeving \& normen)}
+
+\section{Inleiding}
+% TODO: Beschrijf de scope van de security audit en welke wetgeving en normen
+%       van toepassing zijn (bijv. AVG/GDPR, ISO 27001, OWASP).
+
+\section{Toepasselijke wet- en regelgeving}
+% TODO: Geef een overzicht van relevante wetgeving en normen.
+
+\section{Bevindingen}
+% TODO: Beschrijf de bevindingen ten opzichte van de normen.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af met een korte conclusie.
+
+
+% ─── 2 ──────────────────────────────────────────────────────────────────────
+\chapter{Secure pipelines}
+
+\section{Inleiding}
+% TODO: Beschrijf wat er onder een secure pipeline wordt verstaan en welke
+%       CI/CD-omgeving gebruikt is.
+
+\section{Analyse huidige pipeline}
+% TODO: Beschrijf de huidige inrichting van de pipeline.
+
+\section{Bevindingen \& risico's}
+% TODO: Beschrijf de gevonden kwetsbaarheden in de pipeline.
+
+\section{Aanbevelingen}
+% TODO: Geef concrete aanbevelingen voor het beveiligen van de pipeline.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af.
+
+
+% ─── 3 ──────────────────────────────────────────────────────────────────────
+\chapter{Advies updates (SBOM, CVE en CVSS)}
+
+\section{Inleiding}
+% TODO: Leg uit wat een SBOM is en hoe CVE/CVSS-scores gehanteerd worden.
+
+\section{Software Bill of Materials (SBOM)}
+% TODO: Beschrijf de inhoud en opzet van de gegenereerde SBOM.
+
+\section{CVE-analyse}
+% TODO: Overzicht van gevonden CVE's en bijbehorende CVSS-scores.
+
+\section{Prioritering van updates}
+% TODO: Geef een prioritering op basis van CVSS-score en impact.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af.
+
+
+% ─── 4 ──────────────────────────────────────────────────────────────────────
+\chapter{Security code review \& kwetsbaarheden}
+
+\section{Inleiding}
+% TODO: Beschrijf het doel en de aanpak van de code review.
+
+\section{Gehanteerde methodiek}
+% TODO: Beschrijf de gebruikte methodiek (bijv. OWASP Top 10, statische analyse).
+
+\section{Gevonden kwetsbaarheden}
+% TODO: Geef een overzicht van de gevonden kwetsbaarheden per categorie.
+
+\section{Risicoklassificatie}
+% TODO: Classificeer de kwetsbaarheden op basis van ernst en kans.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af.
+
+
+% ─── 5 ──────────────────────────────────────────────────────────────────────
+\chapter{Penetration tests (aantonen kwetsbaarheden)}
+
+\section{Inleiding}
+% TODO: Beschrijf de scope en doelstelling van de penetratietest.
+
+\section{Testopzet}
+% TODO: Beschrijf de gehanteerde aanpak, tooling en testomgeving.
+
+\section{Uitgevoerde tests}
+% TODO: Geef een overzicht van de uitgevoerde tests en resultaten.
+
+\section{Aangetoonde kwetsbaarheden}
+% TODO: Beschrijf per kwetsbaarheid hoe deze aangetoond is.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af met een beoordeling van het aanvalsoppervlak.
+
+
+% ─── 6 ──────────────────────────────────────────────────────────────────────
+\chapter{Mitigatie \& validatie verbeteringen}
+
+\section{Inleiding}
+% TODO: Beschrijf de aanpak voor het mitigeren van de gevonden kwetsbaarheden.
+
+\section{Mitigatiemaatregelen}
+% TODO: Geef per kwetsbaarheid de genomen maatregel.
+
+\section{Validatie}
+% TODO: Beschrijf hoe de mitigaties gevalideerd zijn (hertest, regressie).
+
+\section{Resterende risico's}
+% TODO: Beschrijf eventuele risico's die niet (volledig) gemitigeerd zijn.
+
+\section{Conclusie}
+% TODO: Sluit het rapport af met een eindconclusie over de security-status.
+
+
+% ════════════════════════════════════════════════════════════════════════════
+\end{document}

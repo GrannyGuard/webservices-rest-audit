@@ -80,3 +80,13 @@ nb-configuration.xml
 
 # Local environment files (never commit real credentials)
 .env
+
+# LaTeX build artifacts
+docs/Overleaf/**/.build/
+docs/Overleaf/*.aux
+docs/Overleaf/*.log
+docs/Overleaf/*.toc
+docs/Overleaf/*.out
+docs/Overleaf/*.fls
+docs/Overleaf/*.fdb_latexmk
+docs/Overleaf/*.synctex.gz

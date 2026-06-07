@@ -1,0 +1,258 @@
+\documentclass[11pt, a4paper]{report}
+
+% ─── Encoding & language ────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[dutch]{babel}
+
+% ─── Layout & styling ───────────────────────────────────────────────────────
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{parskip}
+\usepackage{emptypage}
+
+% ─── Tables & lists ─────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{array}
+
+% ─── Hyperlinks ─────────────────────────────────────────────────────────────
+\usepackage{hyperref}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  COLOUR PALETTE  (Avans Hogeschool rood)
+% ═══════════════════════════════════════════════════════════════════════════
+\definecolor{avansred}{RGB}{193, 0, 0}
+\definecolor{avansdark}{RGB}{130, 0, 0}
+\definecolor{avanslight}{RGB}{245, 215, 215}
+\definecolor{textgray}{RGB}{80, 80, 80}
+\definecolor{rulegray}{RGB}{200, 200, 200}
+
+% ─── Hyperref setup ─────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks  = true,
+    linkcolor   = black,
+    urlcolor    = avansdark,
+    citecolor   = avansdark,
+    pdftitle    = {Onderhoudbaarheid Rapport},
+    pdfauthor   = {Avans Hogeschool},
+}
+
+% ─── Page geometry ──────────────────────────────────────────────────────────
+\geometry{
+    a4paper,
+    top    = 2.5cm,
+    bottom = 2.5cm,
+    left   = 2.5cm,
+    right  = 2.5cm,
+}
+\setlength{\headheight}{14.5pt}
+
+% ─── Header / footer ────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textbf{Avans Hogeschool}}
+\fancyhead[R]{\small\color{textgray}\nouppercase{\leftmark}}
+\fancyfoot[C]{\small\color{textgray}\thepage}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\headrule}{%
+    \hbox to\headwidth{\color{avansred}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0pt}
+
+% ─── Chapter titles ─────────────────────────────────────────────────────────
+\titleformat{\chapter}[hang]
+    {\normalfont\LARGE\bfseries}
+    {\thechapter}
+    {0.8em}
+    {}
+    [\vspace{6pt}\color{avansred}\rule{\linewidth}{1.2pt}]
+
+\titlespacing*{\chapter}{0pt}{20pt}{12pt}
+
+% ─── Section / subsection titles ────────────────────────────────────────────
+\titleformat{\section}
+    {\large\bfseries}
+    {\thesection}{1em}{}
+
+\titleformat{\subsection}
+    {\normalsize\bfseries}
+    {\thesubsection}{1em}{}
+
+% ─── Table of contents styling ───────────────────────────────────────────────
+\renewcommand{\cftchapfont}{\bfseries}
+\renewcommand{\cftchappagefont}{\bfseries}
+\renewcommand{\cftsecfont}{\color{textgray}}
+\renewcommand{\cftsecpagefont}{\color{textgray}}
+\setlength{\cftbeforechapskip}{6pt}
+
+% ════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ─── Title page ─────────────────────────────────────────────────────────────
+\begin{titlepage}
+    \centering
+    \vspace*{0.8cm}
+
+    % Top rule
+    {\color{avansred}\rule{\linewidth}{3pt}}\\[0.4cm]
+    {\color{avansred}\rule{\linewidth}{0.8pt}}\\[1.4cm]
+
+    % Document type label
+    {\large\color{textgray}\textsc{Eindrapport --- Webservices REST Audit}}\\[0.8cm]
+
+    % Main title
+    {\fontsize{34}{40}\selectfont\bfseries\color{avansred} Onderhoudbaarheid}\\[0.4cm]
+    {\Large\color{avansdark} Analyse, verbeteringen \& validatie}\\[1.8cm]
+
+    % Meta table
+    \begin{tabular}{@{}ll@{}}
+        \color{textgray}\textbf{Auteurs}      & [Naam 1]                  \\[2pt]
+                                               & [Naam 2]                  \\[2pt]
+                                               & [Naam 3]                  \\[10pt]
+        \color{textgray}\textbf{Datum}         & \today                    \\[2pt]
+        \color{textgray}\textbf{Versie}        & 1.0                       \\[2pt]
+        \color{textgray}\textbf{Opleiding}     & HBO-ICT                   \\[2pt]
+        \color{textgray}\textbf{Instelling}    & Avans Hogeschool          \\[2pt]
+        \color{textgray}\textbf{Leerjaar}      & Jaar 2 --- Periode 4      \\
+    \end{tabular}
+
+    \vfill
+
+    % Bottom rule
+    {\color{avansred}\rule{\linewidth}{0.8pt}}\\[0.3cm]
+    {\color{avansred}\rule{\linewidth}{3pt}}\\[0.6cm]
+
+    {\small\color{textgray}Avans Hogeschool, Breda}
+\end{titlepage}
+
+% ─── Table of contents ──────────────────────────────────────────────────────
+\tableofcontents
+\clearpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  CHAPTERS
+% ════════════════════════════════════════════════════════════════════════════
+
+% ─── 1 ──────────────────────────────────────────────────────────────────────
+\chapter{Analyse onderhoudbaarheid}
+
+\section{Inleiding}
+% TODO: Beschrijf het doel van de analyse en wat verstaan wordt onder
+%       onderhoudbaarheid (bijv. ISO 25010).
+
+\section{Meetmethode}
+% TODO: Beschrijf welke tools en methoden gebruikt zijn voor de analyse
+%       (bijv. SonarQube, CodeClimate, handmatige beoordeling).
+
+\section{Resultaten}
+% TODO: Presenteer de resultaten van de analyse, inclusief metrieken.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af met een oordeel over de huidige staat.
+
+
+% ─── 2 ──────────────────────────────────────────────────────────────────────
+\chapter{Testopzet en testresultaten}
+
+\section{Inleiding}
+% TODO: Beschrijf de doelstelling van de testfase.
+
+\section{Testopzet}
+% TODO: Beschrijf welke soorten tests zijn opgezet (unit, integratie,
+%       end-to-end) en welke tooling gebruikt is.
+
+\section{Testresultaten}
+% TODO: Presenteer de resultaten per testsoort, inclusief coverage.
+
+\section{Analyse van de resultaten}
+% TODO: Interpreteer de resultaten en leg verbanden met de onderhoudbaarheidsscore.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af.
+
+
+% ─── 3 ──────────────────────────────────────────────────────────────────────
+\chapter{Verbeteringen (prioritering en onderbouwing)}
+
+\section{Inleiding}
+% TODO: Beschrijf de aanpak voor het bepalen en prioriteren van verbeteringen.
+
+\section{Overzicht van verbeteringen}
+% TODO: Geef een overzicht van alle voorgestelde verbeteringen.
+
+\section{Prioritering}
+% TODO: Leg uit op welke basis de prioritering is bepaald
+%       (bijv. impact vs. inspanning, MoSCoW).
+
+\section{Onderbouwing}
+% TODO: Onderbouw de keuzes per verbetering met data of argumentatie.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af.
+
+
+% ─── 4 ──────────────────────────────────────────────────────────────────────
+\chapter{Aangepast ontwerp}
+
+\section{Inleiding}
+% TODO: Beschrijf waarom het ontwerp aangepast is en wat de uitgangspunten zijn.
+
+\section{Huidig ontwerp}
+% TODO: Beschrijf het huidige ontwerp (architectuur, structuur, patronen).
+
+\section{Nieuw ontwerp}
+% TODO: Beschrijf het aangepaste ontwerp en motiveer de keuzes.
+
+\section{Vergelijking}
+% TODO: Vergelijk het oud en nieuw ontwerp op meetbare punten.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af.
+
+
+% ─── 5 ──────────────────────────────────────────────────────────────────────
+\chapter{Realisatie (PoC) \& verantwoording}
+
+\section{Inleiding}
+% TODO: Beschrijf het doel van de Proof of Concept.
+
+\section{Scope van de PoC}
+% TODO: Beschrijf welke verbeteringen in de PoC zijn meegenomen en welke niet.
+
+\section{Implementatie}
+% TODO: Beschrijf de gemaakte wijzigingen en hoe deze zijn doorgevoerd.
+
+\section{Verantwoording van keuzes}
+% TODO: Onderbouw de technische keuzes die tijdens de realisatie zijn gemaakt.
+
+\section{Conclusie}
+% TODO: Sluit het hoofdstuk af met een beoordeling van de PoC.
+
+
+% ─── 6 ──────────────────────────────────────────────────────────────────────
+\chapter{Validatie verbeteringen (testen \& regressie)}
+
+\section{Inleiding}
+% TODO: Beschrijf het doel van de validatiefase.
+
+\section{Validatieaanpak}
+% TODO: Beschrijf hoe de verbeteringen gevalideerd zijn.
+
+\section{Testresultaten na verbetering}
+% TODO: Presenteer de hertest-resultaten en vergelijk met de beginsituatie.
+
+\section{Regressietests}
+% TODO: Beschrijf welke regressietests uitgevoerd zijn en wat de uitkomst is.
+
+\section{Eindconclusie}
+% TODO: Sluit het rapport af met een eindoordeel over de verbetering van
+%       de onderhoudbaarheid.
+
+
+% ════════════════════════════════════════════════════════════════════════════
+\end{document}
