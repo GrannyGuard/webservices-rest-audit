@@ -11,7 +11,7 @@ services:
       - "8080:8080"
     environment:
       OMRS_DEV_DEBUG: "true"
-    volumes:
-      # Drop the freshly built module from `mvn install` into the hot-deploy folder.
-      - ./omod/target:/openmrs/data/modules:ro
+    # volumes:
+    #   Uncomment after running `mvn clean install -DskipTests` to hot-deploy the built module.
+    #   - ./omod/target:/openmrs/data/modules
     restart: "no"
