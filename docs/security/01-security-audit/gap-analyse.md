@@ -25,7 +25,7 @@ tot de informatie die ze nodig hebben voor hun taak.
 | Privilege-gebaseerde resource-toegang | ⚠️ Gedeeltelijk | `omod-common/.../resource/impl/BaseDelegatingResource.java:875` — `Context.hasPrivilege(RestConstants.PRIV_SET_AUDIT_DATA)` controleert één specifiek recht; alle overige resource-methoden delegeren impliciet naar de OpenMRS service-laag |
 | Declaratieve access control op REST-laag | ❌ Afwezig | `AuthorizationFilter.java:33–36` (Javadoc): *"It will not fail on invalid or missing credentials. We count on the API to throw exceptions …"* — geen `@Secured`, Spring Security-annotaties of pre-/post-autorisatie op endpoints |
 | Onbeveiligd diagnostics-endpoint | ❌ Afwezig | `omod/.../controller/openmrs1_9/SessionController1_9.java:169–182` — `/session/diag` is expliciet gedocumenteerd als *"No authorization check — accessible to any caller"*, maar toont bij een actieve sessie ook `userRoles` en `userPrivileges` |
-| Repository-toegangsbeveiliging (SDLC) | ✅ Aanwezig | GitHub Ruleset "main protection" actief: force pushes geblokkeerd, 1 verplichte review, CodeQL als required status check — zie `docs/repository-inrichting.md` |
+| Repository-toegangsbeveiliging (SDLC) | ✅ Aanwezig | GitHub Ruleset "main protection" actief: force pushes geblokkeerd, 1 verplichte review, CodeQL als required status check — zie `docs/security/02-secure-pipelines/repository-inrichting.md` |
 
 **Eindoordeel A.8.3:** ⚠️ **Gedeeltelijk** — IP-filtering en OpenMRS-privileges zijn
 aanwezig, maar de REST-laag heeft geen declaratieve toegangscontrole en het

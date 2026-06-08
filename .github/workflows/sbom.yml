@@ -49,7 +49,7 @@ jobs:
       - name: Move SBOM to docs/
         run: |
           mkdir -p docs sbom
-          cp target/bom.json docs/sbom.cdx.json
+          cp target/bom.json docs/security/03-sbom-en-cve-advies/sbom.cdx.json
           cp target/bom.json sbom/sbom.cdx.json
 
       # ── Upload as CI artifact ──
@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sbom-cyclonedx
-          path: docs/sbom.cdx.json
+          path: docs/security/03-sbom-en-cve-advies/sbom.cdx.json
           retention-days: 90
 
       # ── OSV-Scanner: scans the CycloneDX SBOM against the OSV database ──
