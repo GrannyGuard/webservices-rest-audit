@@ -70,14 +70,70 @@ jobs:
             --output=osv-results.sarif
         continue-on-error: true   # don't fail CI before we upload results
 
-      # ── Also produce a human-readable summary in the logs ──
-      - name: OSV-Scanner summary (table)
+      # ── Table output written to file so the severity step can parse it ──
+      - name: Run OSV-Scanner (table to file)
         uses: google/osv-scanner-action/osv-scanner-action@daa2c68f50d845057895a9c300e42478481c1d26  # v1.9.1
         with:
           scan-args: |-
             --sbom=sbom/sbom.cdx.json
             --format=table
+            --output=osv-table.txt
         continue-on-error: true
+
+      # ── Severity-labeled table + hard fail on CRITICAL (CVSS >= 9.0) ──
+      - name: OSV severity table + fail on CRITICAL (CVSS >= 9.0)
+        if: always()
+        run: |
+          python3 << 'EOF'
+          import re, sys
+
+          THRESHOLDS = [(9.0, "CRITICAL"), (7.0, "HIGH"), (4.0, "MEDIUM"), (0.0, "LOW")]
+
+          def label(score):
+              for t, l in THRESHOLDS:
+                  if score >= t:
+                      return l
+              return "UNKNOWN"
+
+          try:
+              content = open("osv-table.txt").read()
+          except FileNotFoundError:
+              print("osv-table.txt not found — skipping.")
+              sys.exit(0)
+
+          rows = []
+          for line in content.splitlines():
+              if not line.startswith("| https://osv.dev/"):
+                  continue
+              parts = [p.strip() for p in line.strip("|").split("|")]
+              if len(parts) < 5:
+                  continue
+              url, score_str, _, package, version = parts[0], parts[1], parts[2], parts[3], parts[4]
+              score = float(score_str) if score_str else 0.0
+              rows.append((url, score, package, version))
+
+          if not rows:
+              print("No vulnerabilities found.")
+              sys.exit(0)
+
+          rows.sort(key=lambda x: x[1], reverse=True)
+
+          w = (45, 6, 10, 52, 18)
+          print(f"{'OSV URL':<{w[0]}} {'CVSS':>{w[1]}} {'SEVERITY':<{w[2]}} {'PACKAGE':<{w[3]}} {'VERSION'}")
+          print("-" * sum(w + (4,)))
+          for url, score, package, version in rows:
+              print(f"{url:<{w[0]}} {f'{score:.1f}' if score else 'N/A':>{w[1]}} {label(score):<{w[2]}} {package:<{w[3]}} {version}")
+
+          critical = [(url, score, pkg, ver) for url, score, pkg, ver in rows if score >= 9.0]
+          print()
+          if critical:
+              print(f"::error::Found {len(critical)} CRITICAL vulnerability(ies) (CVSS >= 9.0) — build failed:")
+              for url, score, pkg, ver in critical:
+                  print(f"  ::error::{pkg} {ver} — {url} (CVSS {score:.1f})")
+              sys.exit(1)
+          else:
+              print(f"No CRITICAL vulnerabilities (CVSS >= 9.0). {len(rows)} total finding(s) logged above.")
+          EOF
 
       # ── Upload SARIF so findings appear in the Security tab ──
       - name: Upload SARIF to GitHub Security tab
