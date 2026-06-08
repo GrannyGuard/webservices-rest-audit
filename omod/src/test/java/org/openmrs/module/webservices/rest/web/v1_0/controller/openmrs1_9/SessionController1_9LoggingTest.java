@@ -118,14 +118,14 @@ public class SessionController1_9LoggingTest extends BaseModuleWebContextSensiti
 
 	@Test
 	public void getDiagnostics_logsAtWarnLevel() {
-		controller.getDiagnostics(request, null);
+		controller.getDiagnostics(request);
 
 		Assert.assertTrue("Expected WARN log entry with DIAG_ACCESS", hasLog(Level.WARN, "DIAG_ACCESS"));
 	}
 
 	@Test
 	public void getDiagnostics_logsRemoteIp() {
-		controller.getDiagnostics(request, null);
+		controller.getDiagnostics(request);
 
 		Assert.assertTrue("Remote IP must appear in DIAG_ACCESS log entry", hasLog(Level.WARN, TEST_IP));
 	}
@@ -133,7 +133,7 @@ public class SessionController1_9LoggingTest extends BaseModuleWebContextSensiti
 	@Test
 	public void getDiagnostics_doesNotLogRolesOrPrivileges() {
 		Assert.assertTrue(Context.isAuthenticated());
-		controller.getDiagnostics(request, null);
+		controller.getDiagnostics(request);
 
 		boolean sensitiveDataInLog = appender.events.stream().anyMatch(e -> {
 			String msg = e.getMessage().getFormattedMessage();
