@@ -28,9 +28,9 @@
 
 | # | Eis | Maatregel | Bewijs |
 |---|-----|-----------|--------|
-| S-7 | `main` is beschermd — geen directe pushes | GitHub Ruleset "main protection" | `docs/repository-inrichting.md` §1 |
+| S-7 | `main` is beschermd — geen directe pushes | GitHub Ruleset "main protection" | `docs/security/02-secure-pipelines/repository-inrichting.md` §1 |
 | S-8 | Elke code-wijziging vereist ≥ 1 goedgekeurde review | `pull_request.required_approving_review_count: 1` | Ruleset in GitHub Settings |
-| S-9 | MFA verplicht voor alle organisatieleden | GitHub org MFA-policy | `docs/repository-inrichting.md` §2 |
+| S-9 | MFA verplicht voor alle organisatieleden | GitHub org MFA-policy | `docs/security/02-secure-pipelines/repository-inrichting.md` §2 |
 
 ---
 
@@ -51,7 +51,7 @@ drempelwaarden gelden als acceptatiecriterium:
 
 > **Let op:** de huidige `main`-branch scoort nog **D op reliability** en heeft
 > 3 security hotspots. Deze moeten opgelost worden voordat SonarCloud als
-> required status check wordt toegevoegd (zie `docs/repository-inrichting.md` §4).
+> required status check wordt toegevoegd (zie `docs/security/02-secure-pipelines/repository-inrichting.md` §4).
 
 ### 2.2 Cyclomatische complexiteit
 
