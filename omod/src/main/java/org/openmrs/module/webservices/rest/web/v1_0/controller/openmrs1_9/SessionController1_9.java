@@ -173,8 +173,7 @@ public class SessionController1_9 extends BaseRestController {
 	 */
 	@RequestMapping(value = "/diag", method = RequestMethod.GET)
 	@ResponseBody
-	public Object getDiagnostics(HttpServletRequest request,
-	        @org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {
+	public Object getDiagnostics(HttpServletRequest request) {
 		// GrannyGuard patch
 		log.warn("DIAG_ACCESS ip=[{}] authenticated=[{}]", request.getRemoteAddr(), Context.isAuthenticated());
 		SimpleObject diag = new SimpleObject();
