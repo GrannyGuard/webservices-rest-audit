@@ -1,11 +1,14 @@
 name: SBOM & SCA - Software Composition Analysis
 
-# Generates a CycloneDX SBOM and immediately scans it with OSV-Scanner.
-# Combined into a single job (was two workflows linked via workflow_run +
-# artifact upload/download) so the scanner always sees the SBOM that was
-# just built for *this* commit/branch — no stale-artifact or cross-workflow
-# trigger gotchas (workflow_run resolves the workflow file from the default
-# branch, which made PR-branch runs use a possibly-outdated sca.yml).
+# Generates a CycloneDX SBOM with the CycloneDX Maven plugin, then scans the
+# Maven dependency tree with Snyk Open Source (SCA). Snyk gives us CVE/CVSS-
+# scored findings plus a hosted report (the "Snyk-rapport" audit appendix) and
+# `snyk monitor` keeps that report in sync with every push to a tracked branch.
+#
+# SETUP (one-time, by the maintainer):
+#   1. Sign in at https://snyk.io with GitHub and import the GrannyGuard org/repo.
+#   2. Copy the API token from https://app.snyk.io/account.
+#   3. Add it as repository secret SNYK_TOKEN (Settings > Secrets > Actions).
 
 on:
   push:
@@ -48,7 +51,7 @@ jobs:
 
       - name: Move SBOM to docs/
         run: |
-          mkdir -p docs sbom
+          mkdir -p docs/security/03-sbom-en-cve-advies sbom
           cp target/bom.json docs/security/03-sbom-en-cve-advies/sbom.cdx.json
           cp target/bom.json sbom/sbom.cdx.json
 
@@ -60,79 +63,80 @@ jobs:
           path: docs/security/03-sbom-en-cve-advies/sbom.cdx.json
           retention-days: 90
 
-      # ── OSV-Scanner: scans the CycloneDX SBOM against the OSV database ──
-      - name: Run OSV-Scanner
-        uses: google/osv-scanner-action/osv-scanner-action@daa2c68f50d845057895a9c300e42478481c1d26  # v1.9.1
-        with:
-          scan-args: |-
-            --sbom=sbom/sbom.cdx.json
-            --format=sarif
-            --output=osv-results.sarif
+      # ── Snyk Open Source: SCA scan of the Maven dependency tree ──
+      - name: Set up Snyk CLI
+        uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04  # v1.0.0
+
+      - name: Snyk test (SARIF + JSON for the steps below)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk test --file=pom.xml \
+            --sarif-file-output=snyk-results.sarif \
+            --json-file-output=snyk-results.json
         continue-on-error: true   # don't fail CI before we upload results
 
-      # ── Table output written to file so the severity step can parse it ──
-      - name: Run OSV-Scanner (table to file)
-        uses: google/osv-scanner-action/osv-scanner-action@daa2c68f50d845057895a9c300e42478481c1d26  # v1.9.1
-        with:
-          scan-args: |-
-            --sbom=sbom/sbom.cdx.json
-            --format=table
-            --output=osv-table.txt
+      # ── Snyk monitor: snapshots the dependency tree to app.snyk.io so the
+      # hosted report (audit appendix) reflects the latest tracked-branch state ──
+      - name: Snyk monitor (continuous dependency tracking)
+        if: github.event_name == 'push'
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk monitor --file=pom.xml --project-name=webservices-rest-audit
         continue-on-error: true
 
-      # ── Severity-labeled table + hard fail on CRITICAL (CVSS >= 9.0) ──
-      - name: OSV severity table + fail on CRITICAL (CVSS >= 9.0)
+      # ── Severity-labeled table + hard fail on CRITICAL ──
+      - name: Snyk severity table + fail on CRITICAL
         if: always()
         run: |
           python3 << 'EOF'
-          import re, sys
-
-          THRESHOLDS = [(9.0, "CRITICAL"), (7.0, "HIGH"), (4.0, "MEDIUM"), (0.0, "LOW")]
-
-          def label(score):
-              for t, l in THRESHOLDS:
-                  if score >= t:
-                      return l
-              return "UNKNOWN"
+          import json, sys
 
           try:
-              content = open("osv-table.txt").read()
+              with open("snyk-results.json") as f:
+                  data = json.load(f)
           except FileNotFoundError:
-              print("osv-table.txt not found — skipping.")
+              print("snyk-results.json not found — skipping.")
               sys.exit(0)
 
+          # `--json-file-output` writes a single result object for a plain
+          # `--file=pom.xml` test, or a list of result objects under --all-projects.
+          results = data if isinstance(data, list) else [data]
           rows = []
-          for line in content.splitlines():
-              if not line.startswith("| https://osv.dev/"):
-                  continue
-              parts = [p.strip() for p in line.strip("|").split("|")]
-              if len(parts) < 5:
-                  continue
-              url, score_str, _, package, version = parts[0], parts[1], parts[2], parts[3], parts[4]
-              score = float(score_str) if score_str else 0.0
-              rows.append((url, score, package, version))
+          for result in results:
+              for vuln in result.get("vulnerabilities", []):
+                  rows.append((
+                      vuln.get("severity", "unknown").upper(),
+                      vuln.get("cvssScore"),
+                      vuln.get("id", ""),
+                      vuln.get("packageName", ""),
+                      vuln.get("version", ""),
+                      vuln.get("title", ""),
+                  ))
 
           if not rows:
               print("No vulnerabilities found.")
               sys.exit(0)
 
-          rows.sort(key=lambda x: x[1], reverse=True)
+          order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+          rows.sort(key=lambda r: (order.get(r[0], 4), -(r[1] or 0)))
 
-          w = (45, 6, 10, 52, 18)
-          print(f"{'OSV URL':<{w[0]}} {'CVSS':>{w[1]}} {'SEVERITY':<{w[2]}} {'PACKAGE':<{w[3]}} {'VERSION'}")
-          print("-" * sum(w + (4,)))
-          for url, score, package, version in rows:
-              print(f"{url:<{w[0]}} {f'{score:.1f}' if score else 'N/A':>{w[1]}} {label(score):<{w[2]}} {package:<{w[3]}} {version}")
+          w = (10, 6, 22, 40, 14, 50)
+          print(f"{'SEVERITY':<{w[0]}} {'CVSS':>{w[1]}} {'SNYK ID':<{w[2]}} {'PACKAGE':<{w[3]}} {'VERSION':<{w[4]}} {'TITLE'}")
+          print("-" * sum(w + (6,)))
+          for sev, cvss, sid, pkg, ver, title in rows:
+              cvss_str = f"{cvss:.1f}" if cvss else "N/A"
+              print(f"{sev:<{w[0]}} {cvss_str:>{w[1]}} {sid:<{w[2]}} {pkg:<{w[3]}} {ver:<{w[4]}} {title[:w[5]]}")
 
-          critical = [(url, score, pkg, ver) for url, score, pkg, ver in rows if score >= 9.0]
+          critical = [r for r in rows if r[0] == "CRITICAL"]
           print()
           if critical:
-              print(f"::error::Found {len(critical)} CRITICAL vulnerability(ies) (CVSS >= 9.0) — build failed:")
-              for url, score, pkg, ver in critical:
-                  print(f"  ::error::{pkg} {ver} — {url} (CVSS {score:.1f})")
+              print(f"::error::Found {len(critical)} CRITICAL vulnerability(ies) — build failed:")
+              for sev, cvss, sid, pkg, ver, title in critical:
+                  print(f"  ::error::{pkg} {ver} — {sid} (CVSS {cvss}) {title}")
               sys.exit(1)
           else:
-              print(f"No CRITICAL vulnerabilities (CVSS >= 9.0). {len(rows)} total finding(s) logged above.")
+              print(f"No CRITICAL vulnerabilities. {len(rows)} total finding(s) logged above.")
           EOF
 
       # ── Upload SARIF so findings appear in the Security tab ──
@@ -140,14 +144,16 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: osv-results.sarif
-          category: osv-scanner
+          sarif_file: snyk-results.sarif
+          category: snyk-open-source
 
-      # ── Keep raw results as a downloadable artifact ──
-      - name: Upload SARIF as artifact
+      # ── Keep raw results as downloadable artifacts ──
+      - name: Upload Snyk results as artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: sca-osv-results
-          path: osv-results.sarif
+          name: sca-snyk-results
+          path: |
+            snyk-results.sarif
+            snyk-results.json
           retention-days: 90
