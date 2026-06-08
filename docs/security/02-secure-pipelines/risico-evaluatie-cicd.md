@@ -44,7 +44,7 @@ graph LR
 
     %% Preventieve Barrières (Links)
     subgraph Preventieve_Maatregelen [Preventieve Maatregelen]
-        B1(SCA Scans met OSV-Scanner) --> B2(Genereren & controleren van SBOMs)
+        B1(SCA Scans met Snyk) --> B2(Genereren & controleren van SBOMs)
         B2 --> B3(Pinnen van versies via SHA hashes)
     end
 
@@ -74,7 +74,7 @@ graph LR
 3. Aanval op de package-infrastructuur (zoals Maven Central of een interne registry).
 
 **Preventieve Maatregelen (Barrières links):**
-1. **SCA (Software Composition Analysis):** Scannen van alle dependencies (zoals OSV-Scanner) op bekende kwetsbaarheden voordat de code wordt gemerged.
+1. **SCA (Software Composition Analysis):** Scannen van alle dependencies (Snyk Open Source) op bekende kwetsbaarheden voordat de code wordt gemerged.
 2. **SBOM (Software Bill of Materials):** Altijd transparant inzichteel houden exact welke libraries in de build worden gebruikt via CycloneDX.
 3. **Versie & Hash pinning:** Prik specifieke versies of en commit SHA hashes vast (zoals onlangs ook toegepast in de GitHub Actions), zodat niet ongemerkt een nieuwere malafide versie wordt ingeladen.
 
