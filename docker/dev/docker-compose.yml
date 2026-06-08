@@ -12,5 +12,5 @@ services:
     environment:
       OMRS_DEV_DEBUG: "true"
     volumes:
-      - ./modules:/openmrs/data/modules
+      - ./modules:/openmrs/distribution/openmrs_modules
     restart: "no"
