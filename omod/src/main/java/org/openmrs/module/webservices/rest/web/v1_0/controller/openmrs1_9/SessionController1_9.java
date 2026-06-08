@@ -127,7 +127,11 @@ public class SessionController1_9 extends BaseRestController {
 	@ResponseBody
 	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void delete(HttpServletRequest request) {
+		String username = Context.isAuthenticated() ? Context.getAuthenticatedUser().getUsername() : "unknown";
+		String ip = request.getRemoteAddr();
 		Context.logout();
+		// GrannyGuard patch
+		log.info("AUTH_LOGOUT user=[{}] ip=[{}]", username, ip);
 		HttpSession session = request.getSession(false);
 		if (session != null && request.isRequestedSessionIdValid()) {
 			session.invalidate();
@@ -169,7 +173,9 @@ public class SessionController1_9 extends BaseRestController {
 	 */
 	@RequestMapping(value = "/diag", method = RequestMethod.GET)
 	@ResponseBody
-	public Object getDiagnostics(@org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {
+	public Object getDiagnostics(HttpServletRequest request) {
+		// GrannyGuard patch
+		log.warn("DIAG_ACCESS ip=[{}] authenticated=[{}]", request.getRemoteAddr(), Context.isAuthenticated());
 		SimpleObject diag = new SimpleObject();
 		diag.add("authenticated", Context.isAuthenticated());
 		diag.add("serverTime", System.currentTimeMillis());
