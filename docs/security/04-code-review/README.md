@@ -7,12 +7,33 @@ NEN-7510 controls: **A.8.25** (veilige ontwikkelcyclus), **A.8.28** (veilig code
 
 ## 1. Methodologie
 
-> **TODO:** Beschrijf hoe de code review uitgevoerd is:
-> - Welke tools ingezet (CodeQL, SonarCloud, AI-tooling)?
-> - Welke bestanden / klassen handmatig onderzocht?
-> - Hoe zijn de tools ingezet — welke query-suites, welke prompts bij AI?
->
-> Dit is vereist voor het rubric-onderdeel "gebruik van (AI-)tooling".
+De code review is gelaagd opgezet: geautomatiseerde tooling vormt de eerste verdedigingslinie en menselijke beoordeling vormt de laatste poort vóór merge.
+
+### Geautomatiseerde tooling
+
+**SonarCloud (SAST)**
+Elke pull request triggert een SonarCloud-analyse. De pipeline is geconfigureerd als *quality gate*: een pull request waarop de quality gate faalt (bv. een nieuw security hotspot of een reliability-issue met rating slechter dan A) kan niet gemerged worden totdat het probleem handmatig is opgelost of expliciet gedocumenteerd afgewogen. Dit dwingt af dat bevindingen niet stilzwijgend passeren.
+
+**CodeQL (SAST, query-suite `security-extended`)**
+GitHub Advanced Security voert bij elke push een CodeQL-scan uit met de `security-extended` query-suite (zie [ADR-001](../02-secure-pipelines/adr-001-codeql-query-suite-scope.md) voor de keuzeonderbouwing). Alerts verschijnen als *code scanning alerts* in de GitHub Security-tab. De organisatie-instelling blokkeert merge bij nieuwe hoog-risico-alerts totdat deze worden opgelost of als `false positive` gedismisst met onderbouwing.
+
+**SBOM & CVE-check (SCA)**
+Bij elke pull request wordt een CycloneDX SBOM gegenereerd en gecontroleerd op bekende CVE's (via Dependency-Review Action / Snyk). Een pull request met afhankelijkheden die een CVE bevatten boven de drempelwaarde faalt automatisch. Dit vereist handmatige actie — updaten van de afhankelijkheid of een gedocumenteerde risicoafweging — voordat merge mogelijk is.
+
+**GitHub Advanced Security — AI-ondersteunde review (Copilot Autofix)**
+GitHub's ingebouwde AI-tooling (Copilot Autofix) analyseert CodeQL-alerts en genereert suggesties voor mitigatie rechtstreeks als PR-commentaar. Deze suggesties zijn niet blindelings overgenomen: elke autofix-suggestie is handmatig beoordeeld op correctheid en contextrelevantie voordat deze werd toegepast of verworpen.
+
+### Verplichte menselijke review
+
+Op organisatieniveau is *required reviewers* afgedwongen: elke pull request vereist minimaal één goedkeuring van een ander teamlid voordat merge is toegestaan. Dit voorkomt dat bevindingen van de geautomatiseerde tooling worden omzeild zonder bewust menselijk oordeel. De combinatie van automatische gate (SonarCloud, CodeQL, SBOM) én menselijke goedkeuring zorgt dat kwetsbaarheden die door tooling worden gevlagd altijd een expliciete beslissing vereisen.
+
+### Handmatig onderzochte bestanden
+
+Naast de geautomatiseerde scans zijn de volgende klassen handmatig gereviewed, op basis van het aanvalsoppervlak-overzicht (Sprint 3) en de risicomatrix (Sprint 2):
+
+- `AuthorizationFilter.java` — toegangscontrole en authenticatieverwerking
+- `SessionController1_9.java` — sessiebeheer en inlogstroom
+- `BaseDelegatingResource.java` — centrale resource-routing met brede rechtenimpact
 
 ---
 
