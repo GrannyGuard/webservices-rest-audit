@@ -165,6 +165,26 @@ Requirements:
 - Java 8+
 - Maven
 
+### Running locally with Docker (dev environment)
+
+Copy the environment file and start the dev stack:
+
+```bash
+cp .env.example .env
+docker compose -f docker-compose.yml -f docker/dev/docker-compose.yml up -d
+```
+
+The REST API is then available at `http://localhost:8080/openmrs/ws/rest/v1/`.
+
+To verify it is running:
+
+```bash
+curl http://localhost:8080/openmrs/ws/rest/v1/session
+# expected: {"authenticated":false,...}
+```
+
+See [docker/README.md](docker/README.md) for details on all environments and how module hot-deploy works.
+
 ---
 
 ## Disclaimer
