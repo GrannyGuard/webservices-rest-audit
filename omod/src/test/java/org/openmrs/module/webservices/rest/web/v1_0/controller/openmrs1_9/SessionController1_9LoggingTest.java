@@ -114,6 +114,17 @@ public class SessionController1_9LoggingTest extends BaseModuleWebContextSensiti
 		Assert.assertTrue("Remote IP must appear in AUTH_LOGOUT log entry", hasLog(Level.INFO, TEST_IP));
 	}
 
+	@Test
+	public void delete_withNoSession_logsAuthLogout() {
+		MockHttpServletRequest noSessionRequest = new MockHttpServletRequest();
+		noSessionRequest.setRemoteAddr(TEST_IP);
+
+		controller.delete(noSessionRequest);
+
+		Assert.assertTrue("AUTH_LOGOUT must be logged even when request has no session",
+		    hasLog(Level.INFO, "AUTH_LOGOUT"));
+	}
+
 	// ── /session/diag ─────────────────────────────────────────────────────────
 
 	@Test

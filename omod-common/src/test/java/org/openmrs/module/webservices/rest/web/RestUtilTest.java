@@ -222,4 +222,29 @@ public class RestUtilTest extends BaseModuleWebContextSensitiveTest {
 		LinkedHashMap errorResponseMap = (LinkedHashMap) returnObject.get("error");
 		Assert.assertEquals("", errorResponseMap.get("detail"));
 	}
+
+	@Test
+	public void sanitizeForLog_shouldReturnNullForNullInput() {
+		Assert.assertNull(RestUtil.sanitizeForLog(null));
+	}
+
+	@Test
+	public void sanitizeForLog_shouldReturnSameStringForCleanInput() {
+		Assert.assertEquals("clean-input", RestUtil.sanitizeForLog("clean-input"));
+	}
+
+	@Test
+	public void sanitizeForLog_shouldReturnEmptyStringForEmptyInput() {
+		Assert.assertEquals("", RestUtil.sanitizeForLog(""));
+	}
+
+	@Test
+	public void sanitizeForLog_shouldStripCarriageReturnAndLineFeed() {
+		Assert.assertEquals("injectedentry", RestUtil.sanitizeForLog("injected\r\nentry"));
+	}
+
+	@Test
+	public void sanitizeForLog_shouldStripAllIsoControlCharacters() {
+		Assert.assertEquals("abc", RestUtil.sanitizeForLog("a\tb c"));
+	}
 }

@@ -214,4 +214,32 @@ public class AuthorizationFilterLoggingTest extends BaseModuleWebContextSensitiv
 		    appender.events.stream().anyMatch(
 		        e -> e.getLevel() == Level.WARN && e.getMessage().getFormattedMessage().contains(BLOCKED_IP)));
 	}
+
+	// ── session timeout ───────────────────────────────────────────────────────
+
+	@Test
+	public void doFilter_expiredSession_logsSessionTimeoutAtWarnLevel() throws Exception {
+		MockHttpServletRequest req = new MockHttpServletRequest();
+		req.setRemoteAddr(TEST_IP);
+		req.setRequestURI(TEST_URI);
+		req.setRequestedSessionId("expired-session-id");
+		req.setRequestedSessionIdValid(false);
+
+		filter.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+
+		Assert.assertTrue("Expected WARN log entry with SESSION_TIMEOUT", hasLog(Level.WARN, "SESSION_TIMEOUT"));
+	}
+
+	@Test
+	public void doFilter_expiredSession_logsRemoteIp() throws Exception {
+		MockHttpServletRequest req = new MockHttpServletRequest();
+		req.setRemoteAddr(TEST_IP);
+		req.setRequestURI(TEST_URI);
+		req.setRequestedSessionId("expired-session-id");
+		req.setRequestedSessionIdValid(false);
+
+		filter.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+
+		Assert.assertTrue("Remote IP must appear in SESSION_TIMEOUT log entry", hasLog(Level.WARN, TEST_IP));
+	}
 }

@@ -950,18 +950,23 @@ public class RestUtil implements GlobalPropertyListener {
 	}
 
 	/**
-	 * Strips CR/LF characters from user-controlled input before it is written to the
-	 * application log, preventing log forging/injection (CRLF injection) where an attacker
-	 * could fake additional log entries via request parameters.
+	 * Strips line breaks and non-printable control characters from user-controlled input
+	 * before it is written to the application log, preventing log forging/injection.
 	 *
 	 * @param input the value to sanitize, may be null
-	 * @return the input with all carriage return and line feed characters removed, or null if
-	 *         input was null
+	 * @return the sanitized value, or null if input was null
 	 */
 	public static String sanitizeForLog(String input) {
 		if (input == null) {
 			return null;
 		}
-		return input.replaceAll("[\r\n]", "");
+		StringBuilder sanitized = new StringBuilder(input.length());
+		for (int i = 0; i < input.length(); i++) {
+			char c = input.charAt(i);
+			if (!Character.isISOControl(c)) {
+				sanitized.append(c);
+			}
+		}
+		return sanitized.toString();
 	}
 }
