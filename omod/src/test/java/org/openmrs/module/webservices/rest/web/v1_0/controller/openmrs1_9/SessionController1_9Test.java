@@ -184,4 +184,24 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 		String content = "{\"sessionLocation\":\"fake-nonexistant-uuid\"}";
 		controller.post(hsr, new ObjectMapper().readValue(content, HashMap.class));
 	}
+
+	@Test
+	public void getDiagnostics_shouldReturnAuthInfoWhenAuthenticated() throws Exception {
+		Assert.assertTrue(Context.isAuthenticated());
+		Object ret = controller.getDiagnostics(hsr);
+		Assert.assertEquals(true, PropertyUtils.getProperty(ret, "authenticated"));
+		Assert.assertNotNull(PropertyUtils.getProperty(ret, "currentUser"));
+		Assert.assertNotNull(PropertyUtils.getProperty(ret, "serverTime"));
+		Assert.assertNotNull(PropertyUtils.getProperty(ret, "userRoles"));
+		Assert.assertNotNull(PropertyUtils.getProperty(ret, "userPrivileges"));
+	}
+
+	@Test
+	public void getDiagnostics_shouldReturnMinimalInfoWhenNotAuthenticated() throws Exception {
+		controller.delete(hsr);
+		Assert.assertFalse(Context.isAuthenticated());
+		Object ret = controller.getDiagnostics(hsr);
+		Assert.assertEquals(false, PropertyUtils.getProperty(ret, "authenticated"));
+		Assert.assertNotNull(PropertyUtils.getProperty(ret, "serverTime"));
+	}
 }

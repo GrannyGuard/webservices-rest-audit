@@ -62,10 +62,7 @@ public class ClearDbCacheController2_0 extends BaseRestController {
 		//TODO Replace this logic with the methods added as part of https://issues.openmrs.org/browse/TRUNK-6047
 		SessionFactory sf = Context.getRegisteredComponents(SessionFactory.class).get(0);
 		if (StringUtils.isBlank(resourceName)) {
-			if (log.isDebugEnabled()) {
-				log.debug("Clearing DB cache via REST");
-			}
-			
+			log.debug("Clearing DB cache via REST");
 			sf.getCache().evictAllRegions();
 		} else {
 			if (StringUtils.isNotBlank(subResourceName)) {

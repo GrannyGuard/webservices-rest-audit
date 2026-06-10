@@ -57,10 +57,8 @@ public class SearchIndexController2_0 extends BaseRestController {
 		}
 		
 		if (StringUtils.isBlank(resourceName)) {
-			if (log.isDebugEnabled()) {
-				log.debug("Updating search index via REST" + (async ? " asynchronously" : ""));
-			}
-			
+			log.debug("Updating search index via REST{}", async ? " asynchronously" : "");
+
 			if (async) {
 				Context.updateSearchIndexAsync();
 			} else {
