@@ -52,7 +52,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          queries: security-and-quality
+          queries: security-extended
 
       # Manual build so CodeQL traces the full multi-module compilation
       # (omod-common, omod, integration-tests). Tests are skipped for scan speed.

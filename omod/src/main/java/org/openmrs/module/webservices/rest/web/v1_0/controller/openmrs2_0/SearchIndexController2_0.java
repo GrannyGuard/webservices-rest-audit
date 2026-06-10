@@ -74,11 +74,13 @@ public class SearchIndexController2_0 extends BaseRestController {
 			Resource resource = restService.getResourceByName(buildResourceName(resourceName));
 			Class<?> supportedClass = RestUtil.getSupportedClass(resource);
 			if (StringUtils.isBlank(uuid)) {
-				log.debug("Updating search index via REST for resource: {} ({})", resourceName, supportedClass);
-				
+				log.debug("Updating search index via REST for resource: {} ({})",
+				    RestUtil.sanitizeForLog(resourceName), supportedClass);
+
 				Context.updateSearchIndexForType(supportedClass);
 			} else {
-				log.debug("Updating search index via REST for resource: {} with uuid: {}", resourceName, uuid);
+				log.debug("Updating search index via REST for resource: {} with uuid: {}",
+				    RestUtil.sanitizeForLog(resourceName), RestUtil.sanitizeForLog(uuid));
 				
 				Object object = ((BaseDelegatingResource) resource).getByUniqueId(uuid);
 				Context.updateSearchIndexForObject(object);

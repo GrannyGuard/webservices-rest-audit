@@ -11,7 +11,11 @@ services:
       - "8080:8080"
     environment:
       OMRS_DEV_DEBUG: "true"
+    # Hot-deploy locally built modules. The image WIPES /openmrs/data/modules on
+    # every boot and repopulates it from /openmrs/distribution/openmrs_modules
+    # (see startup-init.sh), so that distribution dir is the supported drop point —
+    # NOT /openmrs/data/modules. Read-only is fine: the entrypoint only copies out of it.
+    # Drop built .omod files into ./docker/dev/modules (see docker/dev/deploy-module.ps1).
     volumes:
-      # Drop the freshly built module from `mvn install` into the hot-deploy folder.
-      - ./omod/target:/openmrs/data/modules:ro
+      - ./docker/dev/modules:/openmrs/distribution/openmrs_modules:ro
     restart: "no"

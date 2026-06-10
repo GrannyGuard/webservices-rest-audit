@@ -1,0 +1,4 @@
+# Locally built .omod artifacts are hot-deployed into the dev OpenMRS container
+# from this directory. They are build output — don't commit them.
+*.omod
+!.gitignore

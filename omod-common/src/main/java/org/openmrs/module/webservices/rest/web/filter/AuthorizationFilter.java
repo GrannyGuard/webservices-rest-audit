@@ -67,7 +67,9 @@ public class AuthorizationFilter implements Filter {
 		
 		// check the IP address first.  If its not valid, return a 403
 		if (!RestUtil.isIpAllowed(request.getRemoteAddr())) {
-			// the ip address is not valid, set a 403 http error code
+			String uri = request instanceof HttpServletRequest ? ((HttpServletRequest) request).getRequestURI() : "-";
+			// GrannyGuard patch
+			log.warn("ACCESS_BLOCKED ip=[{}] uri=[{}]", request.getRemoteAddr(), uri);
 			HttpServletResponse httpresponse = (HttpServletResponse) response;
 			httpresponse.sendError(HttpServletResponse.SC_FORBIDDEN,
 			    "IP address '" + request.getRemoteAddr() + "' is not authorized");
@@ -78,6 +80,8 @@ public class AuthorizationFilter implements Filter {
 		if (request instanceof HttpServletRequest) {
 			HttpServletRequest httpRequest = (HttpServletRequest) request;
 			if (httpRequest.getRequestedSessionId() != null && !httpRequest.isRequestedSessionIdValid()) {
+				// GrannyGuard patch
+				log.warn("SESSION_TIMEOUT ip=[{}] uri=[{}]", httpRequest.getRemoteAddr(), httpRequest.getRequestURI());
 				HttpServletResponse httpResponse = (HttpServletResponse) response;
 				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session timed out");
 			}
@@ -87,6 +91,7 @@ public class AuthorizationFilter implements Filter {
 				if (basicAuth != null) {
 					// check that header is in format "Basic ${base64encode(username + ":" + password)}"
 					if (basicAuth.startsWith("Basic")) {
+						String attemptedUser = null;
 						try {
 							// remove the leading "Basic "
 							basicAuth = basicAuth.substring(6);
@@ -95,22 +100,27 @@ public class AuthorizationFilter implements Filter {
 								httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid credentials provided");
 								return;
 							}
-							
+
 							String decoded = new String(Base64.decodeBase64(basicAuth), Charset.forName("UTF-8"));
 							if (StringUtils.isBlank(decoded) || !decoded.contains(":")) {
 								HttpServletResponse httpResponse = (HttpServletResponse) response;
 								httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid credentials provided");
 								return;
 							}
-							
+
 							String[] userAndPass = decoded.split(":");
+							attemptedUser = userAndPass[0];
 							Context.authenticate(userAndPass[0], userAndPass[1]);
-							log.debug("authenticated [{}]", userAndPass[0]);
+							// GrannyGuard patch
+							log.info("AUTH_SUCCESS user=[{}] ip=[{}] uri=[{}]",
+							    attemptedUser, httpRequest.getRemoteAddr(), httpRequest.getRequestURI());
 						}
 						catch (Exception ex) {
 							// This filter never stops execution. If the user failed to
 							// authenticate, that will be caught later.
-							log.debug("authentication exception ", ex);
+							// GrannyGuard patch
+							log.warn("AUTH_FAILURE user=[{}] ip=[{}] uri=[{}] reason=[{}]",
+							    attemptedUser, httpRequest.getRemoteAddr(), httpRequest.getRequestURI(), ex.getMessage());
 						}
 					}
 				}

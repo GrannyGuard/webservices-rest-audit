@@ -80,3 +80,6 @@ nb-configuration.xml
 
 # Local environment files (never commit real credentials)
 .env
+
+# Built module deploy directory (populated by mvn clean package, not source)
+/modules/

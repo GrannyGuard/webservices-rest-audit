@@ -34,6 +34,7 @@ import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.ConversionUtil;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.annotation.PropertyGetter;
 import org.openmrs.module.webservices.rest.web.annotation.PropertySetter;
 import org.openmrs.module.webservices.rest.web.annotation.RepHandler;
@@ -564,7 +565,7 @@ public class ConceptResource1_8 extends DelegatingCrudResource<Concept> {
 				answerTo = (Concept) ConversionUtil.convert(answerToUuid, Concept.class);
 			}
 			catch (ConversionException ex) {
-				log.error("Unexpected exception while retrieving answerTo Concept with UUID " + answerToUuid, ex);
+				log.error("Unexpected exception while retrieving answerTo Concept with UUID " + RestUtil.sanitizeForLog(answerToUuid), ex);
 			}
 		}
 		
