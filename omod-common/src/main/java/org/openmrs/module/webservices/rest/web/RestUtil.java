@@ -518,7 +518,8 @@ public class RestUtil implements GlobalPropertyListener {
 				return new Integer(paramString);// return the valid value
 			}
 			catch (NumberFormatException e) {
-				log.debug("unable to parse '" + param + "' parameter into a valid integer: " + paramString);
+				log.debug("unable to parse '" + param + "' parameter into a valid integer: "
+				        + sanitizeForLog(paramString));
 			}
 		}
 		
@@ -946,5 +947,21 @@ public class RestUtil implements GlobalPropertyListener {
 
 	public static boolean isValidUuid(String uuid) {
 		return uuid != null && (uuid.length() == 36 || uuid.length() == 38 || uuid.indexOf(' ') < 0 || uuid.indexOf('.') < 0);
+	}
+
+	/**
+	 * Strips CR/LF characters from user-controlled input before it is written to the
+	 * application log, preventing log forging/injection (CRLF injection) where an attacker
+	 * could fake additional log entries via request parameters.
+	 *
+	 * @param input the value to sanitize, may be null
+	 * @return the input with all carriage return and line feed characters removed, or null if
+	 *         input was null
+	 */
+	public static String sanitizeForLog(String input) {
+		if (input == null) {
+			return null;
+		}
+		return input.replaceAll("[\r\n]", "");
 	}
 }
