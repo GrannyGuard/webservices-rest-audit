@@ -59,25 +59,28 @@ NEN-7510 controls: **A.8.25** (veilige ontwikkelcyclus), **A.8.28** (veilig code
   audit-trail-eis (zie kroonjuweel KJ6) moeten voorkomen. CWE-117 wordt door
   OWASP geclassificeerd binnen A09, een categorie die volgens de OWASP Top 10
   2021 in >90% van de onderzochte applicaties aanwezig was.
-- **Status:** ✅ **Gemitigeerd** in commit `831dafb`
+- **Status:** ✅ **Gemitigeerd en geverifieerd** in commit `831dafb`
   ("fix(security): sanitize user input before logging (CWE-117 log injection)").
-  Zie [Mitigatie & validatie §1](../06-mitigatie-en-validatie/README.md#1-cwe-117-log-injection)
-  voor de mitigatie en validatie-status.
-- **Restpunt:** alert #15 (`AuthorizationFilter.java`, oorspronkelijk regel 108) is
-  niet door deze commit aangepakt — dat bestand is in een eerdere commit
-  (`8521cdc`, issue #65 logging-gap-fix) al herschreven met `log.warn(...,
-  attemptedUser, ...)`. Of die nieuwe code nog steeds als `log-injection` flagt
-  (de gebruikersnaam uit Basic Auth is ook user-controlled) moet na de
-  eerstvolgende CodeQL-scan geverifieerd worden — zie
-  [ADR-001 §Validatie](../02-secure-pipelines/adr-001-codeql-query-suite-scope.md#validatie-na-eerstvolgende-scan-op-main).
+  Alle 9 oorspronkelijke `java/log-injection`-alerts (incl. `AuthorizationFilter.java:108`)
+  staan na de scan op `main` (`e476489`, 2026-06-10) op `state: fixed`. Zie
+  [Mitigatie & validatie §1](../06-mitigatie-en-validatie/README.md#1-cwe-117-log-injection)
+  voor de volledige voor/na-tabel.
+- **Restpunt:** dezelfde scan introduceerde 4 *nieuwe* `java/log-injection`-alerts in
+  `AuthorizationFilter.java` (regels 72, 84, 115, 122 — alert-nrs `808`–`811`),
+  veroorzaakt door de logging-herschrijving voor issue #65 (commit `8521cdc`). Deze
+  zijn op 2026-06-08 door @BaasW als **"false positive"** gedismissed zonder
+  toelichting. Voor traceability moet dit nog onderbouwd worden — zie
+  [Mitigatie & validatie §1](../06-mitigatie-en-validatie/README.md#1-cwe-117-log-injection).
 
 ### 2.2 Bevinding 2 — *(titel)*
 
-> **TODO:** Invullen.
-
-### 2.2 Bevinding 2 — *(titel)*
-
-> **TODO:** Invullen.
+> **TODO:** Invullen. Kandidaten uit de resterende 7 open CodeQL-alerts
+> (`security-extended`, scan `e476489`, 2026-06-10):
+> - `java/xss` — `SwaggerDocController.java` (high)
+> - `java/user-controlled-bypass` — `AuthorizationFilter.java` (high)
+> - `java/sensitive-log` — `LayoutTemplateProvider.java` (high)
+> - `java/tainted-arithmetic` ×2 — `RequestContext.java` (high)
+> - `java/overly-large-range` ×2 — `ServerLogActionWrapper.java` (medium)
 
 ### 2.3 Bevinding 3 — *(titel)*
 

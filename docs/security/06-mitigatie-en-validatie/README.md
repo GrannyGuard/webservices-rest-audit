@@ -27,18 +27,42 @@ Rubric: *"Verbeteronderzoek security"* — **Mitigatie & validatie verbeteringen
 
 **Validatie (voor/na):**
 
+Bron: [`codeql.yml` op `main`, commit `e476489`, 2026-06-10](https://github.com/GrannyGuard/webservices-rest-audit/actions/runs/27280969725)
+(`gh api repos/.../code-scanning/alerts`, gefilterd op `rule.id == "java/log-injection"`).
+
 | | Vóór | Na |
 |---|---|---|
-| Open `java/log-injection`-alerts | 9 | _TBD — vul in na eerstvolgende CodeQL-scan op `main`_ |
-| Alerts auto-gesloten door GitHub | n.v.t. | _TBD — alert-nummers + datum noteren_ |
+| Open `java/log-injection`-alerts | 9 | **0** |
+| Alerts auto-gesloten door GitHub (`state: fixed`, 2026-06-10T13:55:43Z) | n.v.t. | **9/9** — alert-nrs `7`–`15` |
 
-> **TODO:** zodra de CodeQL-workflow (`security-extended`) opnieuw op `main`
-> draait, hier de alert-IDs invullen die zijn gesloten en een screenshot/links
-> toevoegen als bewijs. Het 9e alert (`AuthorizationFilter.java`, oorspr.
-> regel 108) is niet door deze fix geraakt — apart valideren of de
-> elders-herschreven logging daar nog steeds flagt (zie
-> [ADR-001 §Validatie](../02-secure-pipelines/adr-001-codeql-query-suite-scope.md#validatie-na-eerstvolgende-scan-op-main)).
-> **Niet als "afgerond" markeren totdat de alerts daadwerkelijk gesloten zijn.**
+| Alert # | Bestand:regel | Status |
+|---:|---|---|
+| 7 | `ClearDbCacheController2_0.java:79` | ✅ fixed |
+| 8 | `ClearDbCacheController2_0.java:86` | ✅ fixed |
+| 9 | `ClearDbCacheController2_0.java:95` | ✅ fixed |
+| 10 | `SearchIndexController2_0.java:77` | ✅ fixed |
+| 11 | `SearchIndexController2_0.java:81` | ✅ fixed |
+| 12 | `SearchIndexController2_0.java:81` | ✅ fixed |
+| 13 | `ConceptResource1_8.java:567` | ✅ fixed |
+| 14 | `RestUtil.java:521` | ✅ fixed |
+| 15 | `AuthorizationFilter.java:108` | ✅ fixed |
+
+Alle 9 oorspronkelijke `java/log-injection`-findings zijn gesloten, inclusief het
+9e alert in `AuthorizationFilter.java:108` (de regel die in commit `8521cdc` voor
+issue #65 al was herschreven naar parameterized logging — die herschrijving plus de
+`sanitizeForLog`-call op `attemptedUser` bleek samen voldoende voor CodeQL om de
+taint-flow als gemitigeerd te beschouwen).
+
+> **Restpunt:** dezelfde scan toont 4 *nieuwe* `java/log-injection`-alerts in
+> `AuthorizationFilter.java` (regels 72, 84, 115, 122 — alert-nrs `808`–`811`),
+> ontstaan door de logging-herschrijving voor issue #65. Deze zijn op 2026-06-08
+> door @BaasW als **"false positive"** gedismissed (geen `dismissed_comment`). Voor
+> de audit-traceability moet dit nog onderbouwd worden: waaróm zijn dit
+> false positives (bv. omdat de waarden al via `sanitizeForLog`/parameterized
+> logging lopen)? Zie ook [F1-restpunt in 04-code-review](../04-code-review/README.md#21-bevinding-1--log-injection-cwe-117-via-rest-request-parameters).
+
+✅ Hiermee is de detect → triage → mitigeer → verifieer-cyclus voor F1 gesloten en
+kwantitatief aangetoond (9 → 0 open alerts).
 
 ---
 

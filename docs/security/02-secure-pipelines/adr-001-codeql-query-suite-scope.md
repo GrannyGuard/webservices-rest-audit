@@ -80,14 +80,15 @@ en een eigen quality gate levert.
 - We verliezen de quality-queries uit `security-and-quality` (bv. boxed-type-vergelijkingen,
   collection-misuse-patronen). Dit is acceptabel omdat SonarCloud (§5.2) deze klasse van
   bevindingen al dekt vanuit het maintainability-perspectief — maar dit moet wel kloppen:
-  als SonarCloud's quality gate niet (nog) als required check staat (zie openstaand punt
-  #5 in [secure pipelines §9](./02.md#9-openstaande-punten-todos)), is er een tijdelijk
-  gat in quality-coverage totdat dat is opgelost.
+  zolang SonarCloud's quality gate nog niet als required status check op `main` staat
+  (zie [secure pipelines §5.2](./02.md#52-sonarcloud--sast--maintainability--quality-gate)),
+  is er een tijdelijk gat in quality-coverage totdat dat is opgelost.
 - Bestaande open CodeQL-alerts die uitsluitend door `-quality`-queries zijn gegenereerd
   sluiten niet bij het mergen van deze configuratiewijziging zelf — pas bij de
   **eerstvolgende CodeQL-scan op `main`** (push of weekly schedule) herproduceert
   CodeQL die queries niet meer, en sluit GitHub de bijbehorende alerts automatisch.
-  Tot die scan gedraaid heeft, blijven de 723 quality-alerts zichtbaar in de Security-tab.
+  ✅ Inmiddels gevalideerd: na de scan op commit `e476489` (2026-06-10) zijn 733 van de
+  739 quality-alerts automatisch op `fixed` gezet — zie Validatie hieronder.
 
 ## Alternatieven overwogen
 
@@ -109,14 +110,32 @@ en een eigen quality gate levert.
 
 ## Validatie (na eerstvolgende scan op `main`)
 
+Run: [`codeql.yml` op `main`, commit `e476489`, 2026-06-10](https://github.com/GrannyGuard/webservices-rest-audit/actions/runs/27280969725)
+(`gh api repos/.../code-scanning/alerts --paginate`, gefilterd op `tool.name == "CodeQL"`).
+
 | Meting | Voor (`security-and-quality`) | Na (`security-extended`) |
 |---|---|---|
-| Totaal open CodeQL-alerts | 739 | _TBD — vul in na scan, datum + run-link_ |
-| Security-findings behouden (16/16)? | n.v.t. | _TBD — met name `overly-large-range` (cwe-020) verifiëren, dit is qua naam de meest twijfelachtige van de 6 query-types_ |
-| Quality-alerts gesloten | 0 | _TBD_ |
+| Totaal CodeQL-alerts (ooit) | 739 | 744 (5 nieuw bijgekomen sinds baseline) |
+| Totaal **open** CodeQL-alerts | 739 | **7** |
+| Security-findings behouden (16/16)? | n.v.t. | ✅ Ja — alle 6 query-types blijven actief, inclusief `overly-large-range` (cwe-020, 2/2, `ServerLogActionWrapper.java`) |
+| Quality-alerts gesloten | 0 | **733** (`state: fixed`, automatisch door GitHub bij de switch naar `security-extended`) |
 
-> **TODO:** invullen zodra de CodeQL-workflow met `security-extended` op `main` heeft
-> gedraaid. Dit sluit de detect → decide → verify-cyclus voor deze ADR.
+De 7 resterende open security-alerts zijn precies de 16 oorspronkelijke **min** de 9
+`java/log-injection`-findings, die ondertussen zijn opgelost (zie
+[Mitigatie & validatie §1](../06-mitigatie-en-validatie/README.md#1-cwe-117-log-injection)):
+
+| Query | Open | CWE |
+|---|---:|---|
+| `java/user-controlled-bypass` | 1 | cwe-290/807 |
+| `java/tainted-arithmetic` | 2 | cwe-190/191 |
+| `java/sensitive-log` | 1 | cwe-532 |
+| `java/overly-large-range` | 2 | cwe-020 |
+| `java/xss` | 1 | cwe-079 |
+| `java/log-injection` | 0 (was 9, alle `fixed`) | cwe-117 |
+
+Hiermee is de detect → decide → verify-cyclus van deze ADR gesloten: de switch naar
+`security-extended` heeft de Security-tab teruggebracht van 739 naar 7 open alerts,
+zonder dat er security-coverage verloren ging.
 
 ## Gerelateerd
 
@@ -124,6 +143,6 @@ en een eigen quality gate levert.
   (NEN-7510 compliance-overzicht) zijn bijgewerkt om naar `security-extended` te
   verwijzen.
 - De 16 resterende echte findings worden getrieerd in
-  [`docs/security/04-code-review/`](../04-code-review/README.md); een deel ervan
-  (log-injection in `ClearDbCacheController2_0` / `SearchIndexController2_0`) is direct
-  gemitigeerd, zie [Mitigatie & validatie](../06-mitigatie-en-validatie/README.md).
+  [`docs/security/04-code-review/`](../04-code-review/README.md); de 9
+  `java/log-injection`-findings zijn gemitigeerd en bevestigd gesloten, zie
+  [Mitigatie & validatie](../06-mitigatie-en-validatie/README.md).
