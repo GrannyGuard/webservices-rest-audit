@@ -85,8 +85,8 @@ jobs:
         run: snyk monitor --file=pom.xml --project-name=webservices-rest-audit
         continue-on-error: true
 
-      # ── Severity-labeled table + hard fail on CRITICAL ──
-      - name: Snyk severity table + fail on CRITICAL
+      # ── Severity-labeled table + hard fail on CVSS >= 9.9 ──
+      - name: Snyk severity table + fail on CVSS >= 9.9
         if: always()
         run: |
           python3 << 'EOF'
@@ -128,15 +128,15 @@ jobs:
               cvss_str = f"{cvss:.1f}" if cvss else "N/A"
               print(f"{sev:<{w[0]}} {cvss_str:>{w[1]}} {sid:<{w[2]}} {pkg:<{w[3]}} {ver:<{w[4]}} {title[:w[5]]}")
 
-          critical = [r for r in rows if r[0] == "CRITICAL"]
+          blocking = [r for r in rows if (r[1] or 0) >= 9.9]
           print()
-          if critical:
-              print(f"::error::Found {len(critical)} CRITICAL vulnerability(ies) — build failed:")
-              for sev, cvss, sid, pkg, ver, title in critical:
+          if blocking:
+              print(f"::error::Found {len(blocking)} vulnerability(ies) with CVSS >= 9.9 — build failed:")
+              for sev, cvss, sid, pkg, ver, title in blocking:
                   print(f"  ::error::{pkg} {ver} — {sid} (CVSS {cvss}) {title}")
               sys.exit(1)
           else:
-              print(f"No CRITICAL vulnerabilities. {len(rows)} total finding(s) logged above.")
+              print(f"No CVSS >= 9.9 vulnerabilities. {len(rows)} total finding(s) logged above.")
           EOF
 
       # ── Upload SARIF so findings appear in the Security tab ──
