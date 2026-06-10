@@ -142,7 +142,7 @@ jobs:
       # ── Upload SARIF so findings appear in the Security tab ──
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('snyk-results.sarif') != ''
         with:
           sarif_file: snyk-results.sarif
           category: snyk-open-source
@@ -156,4 +156,5 @@ jobs:
           path: |
             snyk-results.sarif
             snyk-results.json
+          if-no-files-found: ignore
           retention-days: 90
