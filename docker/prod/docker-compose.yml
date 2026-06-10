@@ -5,12 +5,25 @@ services:
   db:
     restart: always
     # No `ports:` on purpose — the database is only reachable on the internal network.
+    # Re-require secrets with `:?` so prod fails fast instead of silently booting with
+    # the dev defaults from the base file. Mirrors how OPENMRS_TAG is enforced below.
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:?set DB_NAME in prod .env}
+      MYSQL_USER: ${DB_USER:?set DB_USER in prod .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in prod .env, do not use the dev default}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in prod .env, do not use the dev default}
 
   openmrs:
     image: openmrs/openmrs-core:${OPENMRS_TAG:?set a pinned tag in prod, do not use 'nightly'}
     ports:
       - "8080:8080"          # front with a TLS-terminating reverse proxy in a real deployment
     restart: always
+    environment:
+      # Same fail-fast secrets the DB requires — connection config must not fall back
+      # to the dev defaults from the base file.
+      OMRS_CONFIG_CONNECTION_DATABASE: ${DB_NAME:?set DB_NAME in prod .env}
+      OMRS_CONFIG_CONNECTION_USERNAME: ${DB_USER:?set DB_USER in prod .env}
+      OMRS_CONFIG_CONNECTION_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in prod .env, do not use the dev default}
     deploy:
       resources:
         limits:
