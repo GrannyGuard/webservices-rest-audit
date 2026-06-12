@@ -199,7 +199,12 @@
 \section{Normenkader}
 \label{sec:normenkader}
 
-% TODO --- NEN-7510:2024 Deel 2, welke controls zijn van toepassing
+Het normenkader voor deze audit is NEN-7510:2024 Deel 2. De audit richt
+zich op vijf controls: A.8.3 (toegangsbeveiliging), A.8.5 (authenticatie),
+A.8.8 (beheer van technische kwetsbaarheden), A.8.15 (logging) en A.8.25
+(veilige ontwikkelcyclus). De volledige koppeling tussen deze controls en
+de traceerbare bewijsartefacten is opgenomen in de traceability matrix
+(zie Bijlage~\ref{app:traceability}).
 
 \section{Toepasselijke Wetgeving}
 \label{sec:wetgeving}
@@ -353,6 +358,99 @@
 \chapter{Traceability Matrix}
 \label{app:traceability}
 
-% TODO
+Deze bijlage koppelt vijf NEN-7510:2024-2 controls aan een traceerbaar
+bewijsartefact (repository-instelling, CI-workflow, commit of scan-output),
+conform de Sprint-4-vereiste van minimaal drie controls. De onderhouden
+bronversie van deze matrix staat in de repository:
+\texttt{docs/security/traceability-matrix.md}. Sectieverwijzingen
+(\S) verwijzen naar de onderliggende documentatie in \texttt{docs/security/}.
+
+{\small
+\begin{longtable}{@{}
+    >{\raggedright\arraybackslash}p{2.3cm}
+    >{\raggedright\arraybackslash}p{4.9cm}
+    >{\raggedright\arraybackslash}p{5.4cm}
+    >{\raggedright\arraybackslash}p{2.0cm}@{}}
+\toprule
+\textbf{Control} & \textbf{Maatregel en implementatie} &
+\textbf{Bewijsartefact} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Control} & \textbf{Maatregel en implementatie} &
+\textbf{Bewijsartefact} & \textbf{Status} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\emph{vervolgt op volgende pagina}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+
+\textbf{A.8.3} Toegangs\-beveiliging &
+Branch protection op \texttt{main} (1 verplichte review, geen directe
+pushes); GitHub Environment \texttt{prod} vereist goedkeuring van
+één van twee aangewezen reviewers vóór deploy. &
+\texttt{gh api repos/GrannyGuard/webservices-rest-audit/environments/prod}
+(geverifieerd 2026-06-10); documentatie:
+\texttt{02-secure-pipelines/02.md} \S2 en \S4.1. &
+Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.5} Authenticatie &
+Org-brede 2FA-verplichting voor alle leden; secret scanning met push
+protection op de repository. &
+\texttt{gh api orgs/GrannyGuard} toont
+\texttt{two\_factor\_requirement\_enabled: true} (geverifieerd 2026-06-10);
+0 open secret-scanning-alerts; \texttt{02.md} \S4.2--4.3. &
+Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.8} Beheer van technische kwetsbaarheden &
+SBOM (CycloneDX) bij elke push; SCA via Dependabot, OSV-Scanner en Snyk;
+contextuele risicoscore met patch-/suppress-/accept-besluit per
+kwetsbaarheid; updates handmatig (geen automatische Dependabot-PR's, zie
+commit \texttt{e724ba1}). &
+\texttt{.github/workflows/sbom.yml}; \texttt{sbom.cdx.json}
+(238 componenten, zie Bijlage~\ref{app:sbom}); 264 open Dependabot-alerts
+herleid tot 75 unieke CVE's; geprioriteerde backlog in \texttt{03.md}
+\S4--5. &
+Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.15} Logging &
+CodeQL \texttt{security-extended} als security-SAST; CWE-117
+log-injection-bevindingen gemitigeerd via centrale
+\texttt{RestUtil.sanitizeForLog()}. &
+\texttt{.github/workflows/codeql.yml} (query-suite-keuze in ADR-001); fix
+in commit \texttt{831dafb}; CodeQL-run \texttt{27280969725} op commit
+\texttt{e476489} (2026-06-10): alle 9 \texttt{java/log-injection}-alerts
+(\#7--15) op \emph{fixed}; zie Bijlage~\ref{app:codeql}. &
+Geïmplementeerd en geverifieerd \\
+\addlinespace
+
+\textbf{A.8.25} Veilige ontwikkelcyclus &
+Wijzigingen aan \texttt{main} uitsluitend via PR met verplichte review;
+CodeQL als required status check blokkeert merges met security-findings. &
+GitHub Ruleset \emph{main protection}
+(\texttt{required\_approving\_review\_count: 1}; required status check
+\emph{Analyze Java (java)}); \texttt{02.md} \S4.1 en \S8. &
+Geïmplementeerd \\
+
+\end{longtable}
+}
+
+\section*{Restpunten}
+
+\begin{itemize}
+    \item Screenshots toevoegen als visueel bewijs naast de
+          \texttt{gh api}-output voor A.8.3 (Environment-instellingen) en
+          A.8.5 (org-2FA-policy).
+    \item A.8.8 aanvullen met PR en hernieuwde scanresultaten zodra de twee
+          quick-win-patches (\texttt{snakeyaml} naar 2.0,
+          \texttt{spring-web} naar 5.3.34) zijn doorgevoerd.
+    \item Control A.8.29 (beveiligingstests) toevoegen zodra de
+          penetratietests zijn uitgevoerd.
+\end{itemize}
 
 \end{document}
