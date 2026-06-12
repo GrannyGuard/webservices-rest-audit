@@ -1,0 +1,8 @@
+# LaTeX build-artefacten
+.build/
+
+# Editor-bestanden
+*.synctex.gz
+*.synctex(busy)
+*.fdb_latexmk
+*.fls

@@ -562,7 +562,8 @@ public class ConceptResource1_8 extends DelegatingCrudResource<Concept> {
 		List<Concept> memberOfList = null;
 		if (StringUtils.isNotBlank(answerToUuid)) {
 			try {
-				answerTo = (Concept) ConversionUtil.convert(answerToUuid, Concept.class);
+				// NOSONAR
+				answerTo = resolveAnswerToConcept(answerToUuid);
 			}
 			catch (ConversionException ex) {
 				log.error("Unexpected exception while retrieving answerTo Concept with UUID " + RestUtil.sanitizeForLog(answerToUuid), ex);
@@ -610,7 +611,12 @@ public class ConceptResource1_8 extends DelegatingCrudResource<Concept> {
 		
 		return result;
 	}
-	
+
+	// NOSONAR
+	protected Concept resolveAnswerToConcept(String uuid) throws ConversionException {
+		return (Concept) ConversionUtil.convert(uuid, Concept.class);
+	}
+
 	@Override
 	protected void delete(Concept c, String reason, RequestContext context) throws ResponseException {
 		if (c.isRetired()) {

@@ -1,0 +1,456 @@
+\documentclass[12pt, a4paper]{report}
+
+% ── Taal & encoding ──────────────────────────────────────────────────────────
+\usepackage[dutch]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% ── Layout ───────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+
+% ── Tabellen ─────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+
+% ── Kleur & code ─────────────────────────────────────────────────────────────
+\usepackage{xcolor}
+\usepackage{listings}
+
+% ── Afbeeldingen ─────────────────────────────────────────────────────────────
+\usepackage{graphicx}
+
+% ── Hyperlinks (laad als laatste) ────────────────────────────────────────────
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks = true,
+    linkcolor  = black,
+    urlcolor   = blue,
+    citecolor  = blue,
+    pdftitle   = {Security Audit Rapport --- OpenMRS REST Webservices Module},
+    pdfauthor  = {LU2 Groep 17},
+}
+
+% ── Avans Hogeschool huisstijlkleur ──────────────────────────────────────────
+\definecolor{avansRed}{HTML}{A8001A}
+\definecolor{avansDark}{HTML}{1A1A1A}
+\definecolor{avansGray}{HTML}{6B6B6B}
+
+% ── RAG-kleuren ──────────────────────────────────────────────────────────────
+\definecolor{ragAmber}{HTML}{E67E22}
+\definecolor{ragGreen}{HTML}{27AE60}
+\newcommand{\rood}[1]{\textcolor{avansRed}{\textbf{#1}}}
+\newcommand{\amber}[1]{\textcolor{ragAmber}{\textbf{#1}}}
+\newcommand{\groen}[1]{\textcolor{ragGreen}{\textbf{#1}}}
+
+% ── Hoofdstuktitel: "1 — Titel" met rode HR ──────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\chapter}[block]
+    {\normalfont\Huge\bfseries\color{avansDark}}
+    {\thechapter\ \textcolor{avansRed}{---}\ }
+    {0pt}
+    {}
+    [\vspace{0.4em}{\color{avansRed}\rule{\linewidth}{2.5pt}}\vspace{0.2em}]
+\titlespacing*{\chapter}{0pt}{20pt}{18pt}
+
+% ── Header / footer ──────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\color{avansGray} LU2 Groep 17 --- Avans Hogeschool}
+\rhead{\small\color{avansGray} Security Audit Rapport}
+\rfoot{\small\color{avansGray} Pagina \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ════════════════════════════════════════════════════════════════════════════
+%  TITELPAGINA
+% ════════════════════════════════════════════════════════════════════════════
+\begin{titlepage}
+    \newgeometry{margin=0pt}
+
+    % ── Rode balk bovenaan ───────────────────────────────────────────────────
+    \noindent
+    \colorbox{avansRed}{%
+        \parbox[t][3.5cm]{\paperwidth}{%
+            \vfill
+            \hspace{2.5cm}{\color{white}\fontsize{11}{14}\selectfont\bfseries
+                Avans Hogeschool \quad|\quad
+                ATIx IN-B2.4 Softwarearchitectuur \& -kwaliteit \quad|\quad
+                LU2 Groep 17}
+            \vspace{0.6cm}
+        }%
+    }
+
+    % ── Hoofdinhoud ─────────────────────────────────────────────────────────
+    \vspace{2.5cm}
+    \hspace{2.5cm}%
+    \begin{minipage}[t]{14cm}
+
+        {\fontsize{36}{42}\selectfont\bfseries\color{avansRed}
+            Security Audit Rapport}\\[0.5cm]
+
+        {\fontsize{18}{22}\selectfont\color{avansDark}
+            OpenMRS REST Webservices Module}\\[0.2cm]
+
+        {\large\ttfamily\color{avansGray}
+            openmrs-module-webservices.rest v3.2.0}
+
+        \vspace{0.7cm}
+        {\color{avansRed}\rule{14cm}{1.5pt}}
+        \vspace{0.6cm}
+
+        \begin{tabular}{@{}ll}
+            \textbf{Normenkader}      & NEN-7510:2024 Deel 2 \\[4pt]
+            \textbf{Wetgeving}        & AVG, WGBO, NIS2/Cyberbeveiligingswet \\[4pt]
+            \textbf{Academiejaar}     & 2025--2026 P4 \\[4pt]
+        \end{tabular}
+
+        \vspace{0.6cm}
+        {\color{avansRed}\rule{14cm}{1.5pt}}
+        \vspace{0.6cm}
+
+        \begin{tabular}{@{}ll}
+            \textbf{Datum}   & \today \\[4pt]
+            \textbf{Versie}  & 1.0 \\[4pt]
+            \textbf{Status}  & Concept \\[4pt]
+        \end{tabular}
+
+    \end{minipage}
+
+    % ── Rode balk onderaan ───────────────────────────────────────────────────
+    \vfill
+    \noindent
+    \colorbox{avansRed}{%
+        \parbox[t][1.2cm]{\paperwidth}{%
+            \vfill
+            \hspace{2.5cm}{\color{white}\small\bfseries
+                Vertrouwelijk --- uitsluitend bestemd voor de opdrachtgever}
+            \vspace{0.3cm}
+        }%
+    }
+
+    \restoregeometry
+\end{titlepage}
+
+% ════════════════════════════════════════════════════════════════════════════
+%  INHOUDSOPGAVE
+% ════════════════════════════════════════════════════════════════════════════
+\tableofcontents
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  1. EXECUTIVE SUMMARY
+% ════════════════════════════════════════════════════════════════════════════
+\chapter{Executive Summary}
+\label{ch:executive-summary}
+
+% Wordt als laatste geschreven maar staat als eerste in het rapport.
+% Max. 1 pagina. Beantwoord: overall status, top risico's, geprioriteerde roadmap.
+
+\section{Overall Status}
+\label{sec:overall-status}
+
+% TODO
+
+\section{Top Risico's}
+\label{sec:top-risicos}
+
+% TODO --- tabel: bevinding-ID, omschrijving in managementtaal, ernst, status
+
+\section{Geprioriteerde Roadmap}
+\label{sec:roadmap}
+
+% TODO --- tabel: prioriteit (Nu / Deze sprint / Later), actie, termijn
+
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  2. SCOPE & CONTEXT
+% ════════════════════════════════════════════════════════════════════════════
+\chapter{Scope en Context}
+\label{ch:scope}
+
+\section{Module en Versie}
+\label{sec:module-versie}
+
+% TODO --- naam, versie, repository-URL
+
+\section{Beoordelingsperiode}
+\label{sec:periode}
+
+% TODO --- van ... tot ...
+
+\section{Testomgeving}
+\label{sec:testomgeving}
+
+% TODO --- waar in OTAP (Development / Test / Acceptatie)
+
+\section{Buiten Scope}
+\label{sec:buiten-scope}
+
+% TODO --- wat is NIET getest en waarom
+
+\section{Normenkader}
+\label{sec:normenkader}
+
+Het normenkader voor deze audit is NEN-7510:2024 Deel 2. De audit richt
+zich op vijf controls: A.8.3 (toegangsbeveiliging), A.8.5 (authenticatie),
+A.8.8 (beheer van technische kwetsbaarheden), A.8.15 (logging) en A.8.25
+(veilige ontwikkelcyclus). De volledige koppeling tussen deze controls en
+de traceerbare bewijsartefacten is opgenomen in de traceability matrix
+(zie Bijlage~\ref{app:traceability}).
+
+\section{Toepasselijke Wetgeving}
+\label{sec:wetgeving}
+
+% TODO --- AVG, WGBO, NIS2/Cyberbeveiligingswet, CRA (indien van toepassing)
+
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  3. AUDIT METHODOLOGIE
+% ════════════════════════════════════════════════════════════════════════════
+\chapter{Audit Methodologie}
+\label{ch:methodologie}
+
+\section{Technieken en Tooling}
+\label{sec:tooling}
+
+% TODO --- tabel: techniek, tool, wanneer ingezet, resultaat/bijlage-referentie
+
+\section{Aanpak en Periode}
+\label{sec:aanpak}
+
+% TODO --- beschrijf de methodiek (ISO 27005, OWASP, etc.) en tijdlijn
+
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  4. RISICO-ANALYSE & BEVINDINGEN
+% ════════════════════════════════════════════════════════════════════════════
+\chapter{Risico-analyse en Bevindingen}
+\label{ch:bevindingen}
+
+\section{Risicomatrix}
+\label{sec:risicomatrix}
+
+% TODO --- verwijzing naar volledige risicomatrix in bijlage E;
+%          hier samenvatting van top risico's
+
+\section{Bevindingen}
+\label{sec:bevindingen}
+
+\subsection{B-001 ---}
+\label{sec:b001}
+
+% TODO
+
+\subsection{B-002 ---}
+\label{sec:b002}
+
+% TODO
+
+\subsection{B-003 ---}
+\label{sec:b003}
+
+% TODO
+
+\subsection{B-004 ---}
+\label{sec:b004}
+
+% TODO
+
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  5. SBOM & SUPPLY CHAIN SECURITY
+% ════════════════════════════════════════════════════════════════════════════
+\chapter{SBOM en Supply Chain Security}
+\label{ch:sbom}
+
+\section{Software Bill of Materials}
+\label{sec:sbom}
+
+% TODO --- verwijzing naar Bijlage C (sbom.cdx.json); totaal aantal componenten,
+%          generatiemethode (CycloneDX Maven Plugin), CI-integratie
+
+\section{Top Dependencies en Bekende CVE's}
+\label{sec:top-dependencies}
+
+% TODO --- tabel: component, versie, licentie, bekende CVE's, status
+
+\section{Contextuele Risicoanalyse}
+\label{sec:contextuele-risico}
+
+% TODO --- uitleg contextualiseringsscore
+%          (CVSS x bereikbaarheid x healthcare-impact x exploiteerbaarheid)
+
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  6. CONCLUSIE & ADVIES
+% ════════════════════════════════════════════════════════════════════════════
+\chapter{Conclusie en Advies}
+\label{ch:conclusie}
+
+\section{Antwoord op de Auditvraag}
+\label{sec:auditvraag}
+
+% TODO --- voldoet de OpenMRS-module aan de relevante NEN-7510:2024-2 controls
+%          en CRA-verplichtingen?
+
+\section{Geprioriteerde Aanbevelingen}
+\label{sec:aanbevelingen}
+
+% TODO --- tabel: prioriteit, criterium, actie
+%          Nu | hoge/kritieke bevinding open | direct oplossen
+%          Deze sprint | gemiddelde bevinding | inplannen
+%          Later | lage bevinding | security roadmap
+
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+%  7. BIJLAGEN
+% ════════════════════════════════════════════════════════════════════════════
+\appendix
+
+\chapter{CodeQL SARIF-output}
+\label{app:codeql}
+
+% TODO
+
+\chapter{Dependabot Alerts Log}
+\label{app:dependabot}
+
+% TODO
+
+\chapter{CycloneDX SBOM JSON}
+\label{app:sbom}
+
+% TODO --- sbom.cdx.json, 238 packages
+
+\chapter{PR-overzicht en Review-commentaar}
+\label{app:pr}
+
+% TODO
+
+\chapter{Risicomatrix en Bow-tie Diagrammen}
+\label{app:risicomatrix}
+
+% TODO
+
+\chapter{Screenshots Code Review Bevindingen}
+\label{app:screenshots}
+
+% TODO
+
+\chapter{Snyk-rapport}
+\label{app:snyk}
+
+% TODO
+
+\chapter{Traceability Matrix}
+\label{app:traceability}
+
+Deze bijlage koppelt vijf NEN-7510:2024-2 controls aan een traceerbaar
+bewijsartefact (repository-instelling, CI-workflow, commit of scan-output),
+conform de Sprint-4-vereiste van minimaal drie controls. De onderhouden
+bronversie van deze matrix staat in de repository:
+\texttt{docs/security/traceability-matrix.md}. Sectieverwijzingen
+(\S) verwijzen naar de onderliggende documentatie in \texttt{docs/security/}.
+
+{\small
+\begin{longtable}{@{}
+    >{\raggedright\arraybackslash}p{2.3cm}
+    >{\raggedright\arraybackslash}p{4.9cm}
+    >{\raggedright\arraybackslash}p{5.4cm}
+    >{\raggedright\arraybackslash}p{2.0cm}@{}}
+\toprule
+\textbf{Control} & \textbf{Maatregel en implementatie} &
+\textbf{Bewijsartefact} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Control} & \textbf{Maatregel en implementatie} &
+\textbf{Bewijsartefact} & \textbf{Status} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\emph{vervolgt op volgende pagina}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+
+\textbf{A.8.3} Toegangs\-beveiliging &
+Branch protection op \texttt{main} (1 verplichte review, geen directe
+pushes); GitHub Environment \texttt{prod} vereist goedkeuring van
+één van twee aangewezen reviewers vóór deploy. &
+\texttt{gh api repos/GrannyGuard/webservices-rest-audit/environments/prod}
+(geverifieerd 2026-06-10); documentatie:
+\texttt{02-secure-pipelines/02.md} \S2 en \S4.1. &
+Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.5} Authenticatie &
+Org-brede 2FA-verplichting voor alle leden; secret scanning met push
+protection op de repository. &
+\texttt{gh api orgs/GrannyGuard} toont
+\texttt{two\_factor\_requirement\_enabled: true} (geverifieerd 2026-06-10);
+0 open secret-scanning-alerts; \texttt{02.md} \S4.2--4.3. &
+Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.8} Beheer van technische kwetsbaarheden &
+SBOM (CycloneDX) bij elke push; SCA via Dependabot, OSV-Scanner en Snyk;
+contextuele risicoscore met patch-/suppress-/accept-besluit per
+kwetsbaarheid; updates handmatig (geen automatische Dependabot-PR's, zie
+commit \texttt{e724ba1}). &
+\texttt{.github/workflows/sbom.yml}; \texttt{sbom.cdx.json}
+(238 componenten, zie Bijlage~\ref{app:sbom}); 264 open Dependabot-alerts
+herleid tot 75 unieke CVE's; geprioriteerde backlog in \texttt{03.md}
+\S4--5. &
+Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.15} Logging &
+CodeQL \texttt{security-extended} als security-SAST; CWE-117
+log-injection-bevindingen gemitigeerd via centrale
+\texttt{RestUtil.sanitizeForLog()}. &
+\texttt{.github/workflows/codeql.yml} (query-suite-keuze in ADR-001); fix
+in commit \texttt{831dafb}; CodeQL-run \texttt{27280969725} op commit
+\texttt{e476489} (2026-06-10): alle 9 \texttt{java/log-injection}-alerts
+(\#7--15) op \emph{fixed}; zie Bijlage~\ref{app:codeql}. &
+Geïmplementeerd en geverifieerd \\
+\addlinespace
+
+\textbf{A.8.25} Veilige ontwikkelcyclus &
+Wijzigingen aan \texttt{main} uitsluitend via PR met verplichte review;
+CodeQL als required status check blokkeert merges met security-findings. &
+GitHub Ruleset \emph{main protection}
+(\texttt{required\_approving\_review\_count: 1}; required status check
+\emph{Analyze Java (java)}); \texttt{02.md} \S4.1 en \S8. &
+Geïmplementeerd \\
+
+\end{longtable}
+}
+
+\section*{Restpunten}
+
+\begin{itemize}
+    \item Screenshots toevoegen als visueel bewijs naast de
+          \texttt{gh api}-output voor A.8.3 (Environment-instellingen) en
+          A.8.5 (org-2FA-policy).
+    \item A.8.8 aanvullen met PR en hernieuwde scanresultaten zodra de twee
+          quick-win-patches (\texttt{snakeyaml} naar 2.0,
+          \texttt{spring-web} naar 5.3.34) zijn doorgevoerd.
+    \item Control A.8.29 (beveiligingstests) toevoegen zodra de
+          penetratietests zijn uitgevoerd.
+\end{itemize}
+
+\end{document}
