@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.openmrs.Concept;
 import org.openmrs.module.webservices.rest.web.RequestContext;
+import org.openmrs.module.webservices.rest.web.RestTestConstants1_8;
 import org.openmrs.module.webservices.rest.web.resource.api.PageableResult;
 import org.openmrs.module.webservices.rest.web.response.ConversionException;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
@@ -43,5 +44,13 @@ public class ConceptResource1_8Test extends BaseModuleWebContextSensitiveTest {
 		// ConversionException is caught and logged; search continues with answerTo=null
 		PageableResult result = resource.doSearch(context);
 		Assert.assertNotNull(result);
+	}
+
+	@Test
+	public void resolveAnswerToConcept_shouldReturnConceptForValidUuid() throws Exception {
+		ConceptResource1_8 resource = new ConceptResource1_8();
+		Concept result = resource.resolveAnswerToConcept(RestTestConstants1_8.CONCEPT_UUID);
+		Assert.assertNotNull(result);
+		Assert.assertEquals(RestTestConstants1_8.CONCEPT_UUID, result.getUuid());
 	}
 }
