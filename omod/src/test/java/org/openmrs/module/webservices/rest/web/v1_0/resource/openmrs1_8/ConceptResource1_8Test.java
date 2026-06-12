@@ -26,10 +26,12 @@ import org.junit.Test;
 import org.openmrs.Concept;
 import org.openmrs.ConceptAnswer;
 import org.openmrs.ConceptDescription;
+import org.openmrs.ConceptMap;
 import org.openmrs.ConceptName;
 import org.openmrs.ConceptNumeric;
 import org.openmrs.api.ConceptNameType;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.ConceptResource1_8;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestTestConstants1_8;
@@ -74,8 +76,16 @@ public class ConceptResource1_8Test extends BaseModuleWebContextSensitiveTest {
 	public void resolveAnswerToConcept_shouldReturnConceptForValidUuid() throws Exception {
 		ConceptResource1_8 resource = new ConceptResource1_8();
 		Concept result = resource.resolveAnswerToConcept(RestTestConstants1_8.CONCEPT_UUID);
-		Assert.assertNotNull(result);
-		Assert.assertEquals(RestTestConstants1_8.CONCEPT_UUID, result.getUuid());
+		assertNotNull(result);
+		assertEquals(RestTestConstants1_8.CONCEPT_UUID, result.getUuid());
+	}
+
+	@Test
+	public void resolveAnswerToConcept_shouldConvertUuidToConcept() throws Exception {
+		ConceptResource1_8 resource = new ConceptResource1_8();
+		Concept concept = resource.resolveAnswerToConcept(RestTestConstants1_8.CONCEPT2_UUID);
+		assertNotNull(concept);
+		assertEquals(RestTestConstants1_8.CONCEPT2_UUID, concept.getUuid());
 	}
 
 	@Test
@@ -407,5 +417,76 @@ public class ConceptResource1_8Test extends BaseModuleWebContextSensitiveTest {
 		PageableResult result = resource.doSearch(context);
 
 		assertNotNull(result);
+	}
+
+	@Test
+	public void setMappings_shouldIterateAndAddEachMapping() throws Exception {
+		Concept concept = new Concept();
+		List<ConceptMap> mappings = new ArrayList<>();
+
+		ConceptMap map1 = new ConceptMap();
+		ConceptMap map2 = new ConceptMap();
+		mappings.add(map1);
+		mappings.add(map2);
+
+		ConceptResource1_8.setMappings(concept, mappings);
+
+		assertEquals(2, concept.getConceptMappings().size());
+	}
+
+	@Test
+	public void getDisplayString_shouldReturnLocalizationWhenAvailable() throws Exception {
+		ConceptResource1_8 resource = new ConceptResource1_8() {
+			@Override
+			protected String getLocalization(String conceptType, String uuid) {
+				if ("Concept".equals(conceptType)) {
+					return "Localized Concept Name";
+				}
+				return super.getLocalization(conceptType, uuid);
+			}
+		};
+
+		Concept concept = new Concept();
+		concept.setUuid("test-uuid");
+		ConceptName name = new ConceptName("Original Name", Locale.ENGLISH);
+		concept.addName(name);
+
+		String result = resource.getDisplayString(concept);
+
+		assertEquals("Localized Concept Name", result);
+	}
+
+	@Test
+	public void getDisplayString_shouldReturnToStringWhenConceptHasNoName() throws Exception {
+		ConceptResource1_8 resource = new ConceptResource1_8();
+		Concept concept = new Concept();
+		concept.setId(12345);
+		concept.setUuid("concept-no-name-uuid");
+
+		String result = resource.getDisplayString(concept);
+
+		assertNotNull(result);
+		assertTrue(result.length() > 0);
+	}
+
+	@Test
+	public void setNames_shouldCopyAndUpdateNames() throws Exception {
+		Concept concept = new Concept();
+
+		ConceptName name1 = new ConceptName("Name 1", Locale.ENGLISH);
+		name1.setConceptNameType(ConceptNameType.FULLY_SPECIFIED);
+		name1.setUuid("uuid-1");
+
+		ConceptName name2 = new ConceptName("Name 2", Locale.FRENCH);
+		name2.setConceptNameType(ConceptNameType.SHORT);
+		name2.setUuid("uuid-2");
+
+		List<ConceptName> names = new ArrayList<>();
+		names.add(name1);
+		names.add(name2);
+
+		ConceptResource1_8.setNames(concept, names);
+
+		assertEquals(2, concept.getNames().size());
 	}
 }

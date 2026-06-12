@@ -32,8 +32,22 @@ public class SearchIndexController2_0Test extends BaseContextMockTest {
 	@Test
 	public void updateSearchIndex_shouldUpdateTheEntireSearchIndexAsynchronously() throws Exception {
 		controller.updateSearchIndex("{\"async\": true}");
-		
+
 		Mockito.verify(contextDAO, Mockito.times(1)).updateSearchIndexAsync();
 	}
-	
+
+	@Test
+	public void updateSearchIndex_shouldUpdateSearchIndexSynchronouslyWhenAsyncIsFalse() throws Exception {
+		controller.updateSearchIndex("{\"async\": false}");
+
+		Mockito.verify(contextDAO, Mockito.times(1)).updateSearchIndex();
+	}
+
+	@Test
+	public void updateSearchIndex_shouldUpdateSearchIndexSynchronouslyWithEmptyJson() throws Exception {
+		controller.updateSearchIndex("{}");
+
+		Mockito.verify(contextDAO, Mockito.times(1)).updateSearchIndex();
+	}
+
 }
