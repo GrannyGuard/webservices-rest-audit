@@ -429,6 +429,21 @@ in commit \texttt{831dafb}; CodeQL-run \texttt{27280969725} op commit
 Geïmplementeerd en geverifieerd \\
 \addlinespace
 
+\textbf{A.8.15} Logging (auth-events) &
+Zes logging-gaps gedicht conform NEN-7510~8.15: auth-succes en -falen
+verhoogd van DEBUG naar INFO/WARN met gebruikersnaam, remote IP en URI;
+IP-blokkering (\texttt{ACCESS\_BLOCKED}), sessie-timeout
+(\texttt{SESSION\_TIMEOUT}), logout (\texttt{AUTH\_LOGOUT}) en toegang tot
+het diagnose-endpoint (\texttt{DIAG\_ACCESS}) worden nu gelogd.
+Wachtwoorden, sessie-ID's en rollen worden expliciet \emph{niet}
+gelogd. &
+Commit \texttt{8521cdc}; 16 geautomatiseerde tests in
+\texttt{AuthorizationFilterLoggingTest} en
+\texttt{SessionController1\_9LoggingTest} slagen (\texttt{mvn test -pl
+omod-common,omod}); zie \texttt{01-security-audit/01.md} \S3.3. &
+Geïmplementeerd en geverifieerd \\
+\addlinespace
+
 \textbf{A.8.25} Veilige ontwikkelcyclus &
 Wijzigingen aan \texttt{main} uitsluitend via PR met verplichte review;
 CodeQL als required status check blokkeert merges met security-findings. &
