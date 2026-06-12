@@ -311,15 +311,74 @@ bewijsartefacten is opgenomen in de traceability matrix
 \chapter{Audit Methodologie}
 \label{ch:methodologie}
 
-\section{Technieken en Tooling}
-\label{sec:tooling}
-
-% TODO --- tabel: techniek, tool, wanneer ingezet, resultaat/bijlage-referentie
-
-\section{Aanpak en Periode}
+\section{Aanpak}
 \label{sec:aanpak}
 
-% TODO --- beschrijf de methodiek (ISO 27005, OWASP, etc.) en tijdlijn
+De audit is uitgevoerd in vier stappen, conform NEN-7510:2024-2 en de
+risicobeoordelingsaanpak van ISO/IEC 27005:
+
+\begin{enumerate}
+    \item \textbf{Gap-analyse} — per NEN-7510-control is de huidige staat van de
+          module beoordeeld op basis van broncode-analyse en configuratieonderzoek.
+          Elke gap is geclassificeerd als \emph{aanwezig / gedeeltelijk / afwezig}
+          en onderbouwd met concrete codereferenties.
+    \item \textbf{Risicoanalyse} — op basis van de gevonden gaps en een CIA/BIV-classificatie
+          van de kroonjuwelen zijn risico's gescoord via \emph{Kans × Impact} (schaal 1–5).
+          Voor de twee hoogste risico's is een bow-tie-analyse uitgewerkt.
+    \item \textbf{Threat modelling} — de module is beschreven in C4-diagrammen (context,
+          container en component). Op basis daarvan is een STRIDE-analyse uitgevoerd en
+          zijn trust boundaries vastgesteld. Gevonden threats zijn gemapt op de
+          OWASP API Security Top 10:2023.
+    \item \textbf{Verificatie} — bevindingen zijn geverifieerd via SAST (CodeQL),
+          SCA (Dependabot, OSV-Scanner, Snyk), logging-tests en een attack surface mapping.
+          Gemitigeerde kwetsbaarheden zijn herbeoordeeld met dezelfde tooling.
+\end{enumerate}
+
+De werkzaamheden zijn verdeeld over vier sprints (29 mei t/m 18 juni 2026).
+Er is uitsluitend gewerkt op de development/test-omgeving; er is geen toegang
+geweest tot een productiesysteem met echte patiëntdata.
+
+\section{Tooling}
+\label{sec:tooling}
+
+{\small
+\begin{tabularx}{\textwidth}{@{}p{2.2cm}p{4.6cm}X@{}}
+    \toprule
+    \textbf{Categorie} & \textbf{Tool} & \textbf{Doel en inzet} \\
+    \midrule
+    SAST & CodeQL (\texttt{security-extended}) &
+        Statische analyse op elke push/PR; resultaten in GitHub Security-tab
+        (SARIF). Bijlage~\ref{app:codeql}. \\
+    SAST & SonarCloud &
+        Code-kwaliteit en beveiligingsregels; coverage-integratie via JaCoCo.
+        Bijlage~\ref{app:screenshots}. \\
+    SCA & GitHub Dependabot &
+        Primaire kwetsbaarhedenstream op basis van de GitHub Advisory Database;
+        264 alerts, herleid tot 75 unieke CVE's. Bijlage~\ref{app:dependabot}. \\
+    SCA & OSV-Scanner &
+        Onafhankelijke kruisvalidatie op de CycloneDX SBOM via OSV.dev;
+        bevestigt 64 van de 75 Dependabot-CVE's. \\
+    SCA & Snyk &
+        Derde scanner (eigen vulnerability-database); 36 aanvullende CVE's
+        boven op Dependabot. Bijlage~\ref{app:snyk}. \\
+    SBOM & CycloneDX Maven Plugin &
+        Genereert \texttt{sbom.cdx.json} (238 componenten) bij elke push naar
+        \texttt{main}. Bijlage~\ref{app:sbom}. \\
+    Coverage & JaCoCo &
+        Instruction-coverage op de beveiligingsrelevante klassen
+        (\texttt{AuthorizationFilter}, \texttt{SessionController1\_9});
+        rapport als CI-artefact. \\
+    Threat modelling & diagrams.net (\texttt{.drawio}) &
+        C4-diagrammen op context-, container- en componentniveau. \\
+    Methodiek & STRIDE &
+        Systematische dreigingsanalyse per C4-component; 15 threats
+        geïdentificeerd. \\
+    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2023 &
+        Referentiekader voor controls, dreigingsclassificatie en
+        auditcriteria. \\
+    \bottomrule
+\end{tabularx}
+}% end \small
 
 \newpage
 
@@ -550,9 +609,9 @@ Geïmplementeerd \\
 \section*{Restpunten}
 
 \begin{itemize}
-    \item Screenshots toevoegen als visueel bewijs naast de
-          \texttt{gh api}-output voor A.8.3 (Environment-instellingen) en
-          A.8.5 (org-2FA-policy).
+    \item Voor A.8.3 en A.8.5: screenshots toevoegen als visueel bewijs
+          naast de \texttt{gh api}-output
+          (GitHub Environment-instellingen en org-2FA-policy).
     \item A.8.8 aanvullen met PR en hernieuwde scanresultaten zodra de twee
           quick-win-patches (\texttt{snakeyaml} naar 2.0,
           \texttt{spring-web} naar 5.3.34) zijn doorgevoerd.
