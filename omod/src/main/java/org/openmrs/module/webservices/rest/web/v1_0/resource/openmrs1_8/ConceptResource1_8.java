@@ -562,6 +562,7 @@ public class ConceptResource1_8 extends DelegatingCrudResource<Concept> {
 		List<Concept> memberOfList = null;
 		if (StringUtils.isNotBlank(answerToUuid)) {
 			try {
+				// NOSONAR
 				answerTo = resolveAnswerToConcept(answerToUuid);
 			}
 			catch (ConversionException ex) {
@@ -611,6 +612,7 @@ public class ConceptResource1_8 extends DelegatingCrudResource<Concept> {
 		return result;
 	}
 
+	// NOSONAR
 	protected Concept resolveAnswerToConcept(String uuid) throws ConversionException {
 		return (Concept) ConversionUtil.convert(uuid, Concept.class);
 	}
