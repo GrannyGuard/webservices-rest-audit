@@ -179,37 +179,129 @@
 \section{Module en Versie}
 \label{sec:module-versie}
 
-% TODO --- naam, versie, repository-URL
+De geauditeerde software is de \textbf{OpenMRS REST Webservices Module}
+(\texttt{org.openmrs.module:webservices.rest}), versie \textbf{3.2.0}.
+De module vormt de REST API-laag van het OpenMRS-platform: zij ontsluit
+circa 109 medische domeinobjecten (patiënten, encounters, observaties,
+medicatie, e.a.) via HTTP/JSON onder het pad \texttt{/ws/rest/v1/}.
+
+\begin{tabular}{@{}ll}
+    \textbf{Artifact-ID}    & \texttt{webservices.rest} \\[4pt]
+    \textbf{Versie}         & 3.2.0 \\[4pt]
+    \textbf{Taal / runtime} & Java 8+, Spring MVC, Apache Tomcat \\[4pt]
+    \textbf{Upstream repo}  & \url{https://github.com/openmrs/openmrs-module-webservices.rest} \\[4pt]
+    \textbf{Audit fork}     & \url{https://github.com/GrannyGuard/webservices-rest-audit} \\[4pt]
+    \textbf{Audit branch}   & \texttt{main} (commit \texttt{e476489}, 2026-06-10) \\
+\end{tabular}
 
 \section{Beoordelingsperiode}
 \label{sec:periode}
 
-% TODO --- van ... tot ...
+De audit is uitgevoerd in de periode \textbf{29 mei 2026 t/m 18 juni 2026},
+verdeeld over vier sprints conform het projectplan (AGENTS.md):
+
+\begin{tabular}{@{}lll}
+    \textbf{Sprint} & \textbf{Periode} & \textbf{Focus} \\[4pt]
+    1 & 29 mei -- 5 juni  & Gap-analyse \& projectorganisatie \\[2pt]
+    2 & 5 -- 12 juni      & Risico's, threat modelling \& CI/CD-scanning \\[2pt]
+    3 & 12 -- 16 juni     & Attack surface, logging \& code coverage \\[2pt]
+    4 & 16 -- 18 juni     & Afronding \& rapportage \\
+\end{tabular}
 
 \section{Testomgeving}
 \label{sec:testomgeving}
 
-% TODO --- waar in OTAP (Development / Test / Acceptatie)
+De audit heeft plaatsgevonden op de \textbf{Development- en Test-laag} van de
+OTAP-omgeving. Er is geen productiesysteem met echte patiëntdata betrokken.
+
+\begin{tabular}{@{}ll}
+    \textbf{OTAP-laag}        & Development / Test \\[4pt]
+    \textbf{Codebase}         & Fork \texttt{GrannyGuard/webservices-rest-audit},
+                                branch \texttt{main} \\[4pt]
+    \textbf{Build}            & Maven 3.x, Java 8, lokale \texttt{mvn verify} \\[4pt]
+    \textbf{CI/CD-platform}   & GitHub Actions (gehoste runners, Ubuntu-latest) \\[4pt]
+    \textbf{SAST}             & CodeQL \texttt{security-extended}, SonarCloud \\[4pt]
+    \textbf{SCA}              & Dependabot, OSV-Scanner, Snyk \\[4pt]
+    \textbf{Testdata}         & In-memory H2-database (\texttt{development}-scope);
+                                geen herleidbare patiëntdata \\[4pt]
+    \textbf{Productie}        & Buiten scope --- geen toegang tot live omgeving \\
+\end{tabular}
+
+De scheiding tussen test- en productiedata is geborgd via GitHub Environments
+(\texttt{test} en \texttt{prod}) met afzonderlijke secrets en approval gates,
+conform de inrichting beschreven in \texttt{docs/security/02-secure-pipelines/02.md}.
 
 \section{Buiten Scope}
 \label{sec:buiten-scope}
 
-% TODO --- wat is NIET getest en waarom
+De volgende onderdelen zijn expliciet buiten scope gehouden:
+
+\begin{itemize}
+    \item \textbf{OpenMRS Core en andere modules} --- alleen de REST
+          Webservices Module zelf is geauditeerd; de onderliggende kern
+          (authenticatie via \texttt{Context}, Hibernate-laag, MariaDB) is
+          als vertrouwde component beschouwd tenzij de module er direct mee
+          interacteert.
+    \item \textbf{Productieomgeving en live patiëntdata} --- er is geen
+          toegang tot een draaiend productiesysteem; alle tests zijn
+          uitgevoerd op de development/test-branch zonder herleidbare
+          patiëntgegevens.
+    \item \textbf{Infrastructuur en netwerkconfiguratie} --- TLS-configuratie,
+          reverse proxy, firewalls en serverbeheer vallen buiten de
+          module-grens en zijn de verantwoordelijkheid van de deployende
+          organisatie.
+    \item \textbf{Fysieke beveiliging en organisatorische maatregelen} ---
+          personeelsbeleid, toegangspassen en fysieke serverruimtes zijn
+          niet beoordeeld.
+    \item \textbf{Penetratietests op productie} --- vanwege het ontbreken
+          van een geautoriseerde testomgeving zijn pentests beperkt tot
+          statische analyse en proof-of-concept op de eigen fork.
+\end{itemize}
 
 \section{Normenkader}
 \label{sec:normenkader}
 
-Het normenkader voor deze audit is NEN-7510:2024 Deel 2. De audit richt
-zich op vijf controls: A.8.3 (toegangsbeveiliging), A.8.5 (authenticatie),
-A.8.8 (beheer van technische kwetsbaarheden), A.8.15 (logging) en A.8.25
-(veilige ontwikkelcyclus). De volledige koppeling tussen deze controls en
-de traceerbare bewijsartefacten is opgenomen in de traceability matrix
+Het normenkader voor deze audit is NEN-7510:2024 Deel 2. De norm bevat
+aanzienlijk meer controls dan hier behandeld; de onderstaande zeven zijn
+geselecteerd op basis van de risico-analyse en de aard van de module ---
+een REST API die bijzondere medische persoonsgegevens verwerkt. Dit zijn
+de gebieden waar de risico's het hoogst zijn en waar verbetering de
+grootste impact heeft.
+
+De audit richt zich op de volgende zeven controls:
+
+\begin{tabular}{@{}ll}
+    \toprule
+    \textbf{Control} & \textbf{Onderwerp} \\
+    \midrule
+    A.8.3  & Toegangsbeveiliging \\
+    A.8.5  & Authenticatie \\
+    A.8.8  & Beheer van technische kwetsbaarheden \\
+    A.8.9  & Configuratiebeheer \\
+    A.8.15 & Logging \\
+    A.8.24 & Gebruik van cryptografie \\
+    A.8.25 & Veilige ontwikkelcyclus \\
+    \bottomrule
+\end{tabular}
+
+\vspace{0.8em}
+De volledige koppeling tussen deze controls en de traceerbare
+bewijsartefacten is opgenomen in de traceability matrix
 (zie Bijlage~\ref{app:traceability}).
 
 \section{Toepasselijke Wetgeving}
 \label{sec:wetgeving}
 
-% TODO --- AVG, WGBO, NIS2/Cyberbeveiligingswet, CRA (indien van toepassing)
+\begin{tabularx}{\textwidth}{@{}lX}
+    \toprule
+    \textbf{Wetgeving} & \textbf{Relevantie} \\
+    \midrule
+    AVG (GDPR) Art.~9           & Verwerking bijzondere persoonsgegevens (medische data) \\
+    WGBO Art.~7:454             & Bewaarplicht en vertrouwelijkheid medisch dossier \\
+    NIS2 / Cyberbeveiligingswet & Zorgaanbieders als essentiële entiteit; meldplicht incidenten \\
+    CRA (Cyber Resilience Act)  & Beveiligingseisen open-source componenten in de supply chain \\
+    \bottomrule
+\end{tabularx}
 
 \newpage
 
