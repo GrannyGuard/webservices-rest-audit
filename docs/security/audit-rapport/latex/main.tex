@@ -197,14 +197,14 @@ medicatie, e.a.) via HTTP/JSON onder het pad \texttt{/ws/rest/v1/}.
     \textbf{Taal / runtime} & Java 8+, Spring MVC, Apache Tomcat \\[4pt]
     \textbf{Upstream repo}  & \url{https://github.com/openmrs/openmrs-module-webservices.rest} \\[4pt]
     \textbf{Audit fork}     & \url{https://github.com/GrannyGuard/webservices-rest-audit} \\[4pt]
-    \textbf{Audit branch}   & \texttt{main} (commit \texttt{e476489}, 2026-06-10) \\
+    \textbf{Audit branch}   & \texttt{main} \\
 \end{tabular}
 
 \section{Beoordelingsperiode}
 \label{sec:periode}
 
 De audit is uitgevoerd in de periode \textbf{29 mei 2026 t/m 18 juni 2026},
-verdeeld over vier sprints conform het projectplan (AGENTS.md):
+verdeeld over vier sprints conform het projectplan:
 
 \begin{tabular}{@{}lll}
     \textbf{Sprint} & \textbf{Periode} & \textbf{Focus} \\[4pt]
@@ -334,7 +334,7 @@ risicobeoordelingsaanpak van ISO/IEC 27005:
     \item \textbf{Threat modelling} — de module is beschreven in C4-diagrammen (context,
           container en component). Op basis daarvan is een STRIDE-analyse uitgevoerd en
           zijn trust boundaries vastgesteld. Gevonden threats zijn gemapt op de
-          OWASP API Security Top 10:2023.
+          OWASP API Security Top 10:2025.
     \item \textbf{Verificatie} — bevindingen zijn geverifieerd via SAST (CodeQL),
           SCA (Dependabot, OSV-Scanner, Snyk), logging-tests en een attack surface mapping.
           Gemitigeerde kwetsbaarheden zijn herbeoordeeld met dezelfde tooling.
@@ -379,7 +379,7 @@ geweest tot een productiesysteem met echte patiëntdata.
     Methodiek & STRIDE &
         Systematische dreigingsanalyse per C4-component; 15 threats
         geïdentificeerd. \\
-    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2023 &
+    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2025 &
         Referentiekader voor controls, dreigingsclassificatie en
         auditcriteria. \\
     \bottomrule
@@ -520,7 +520,7 @@ Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
 \textbf{Risicoscore} & \rood{20 --- Hoog} (Kans 4 $\times$ Impact 5) --- hoogste van de analyse \\
 \textbf{NEN-7510}    & A.8.9 Configuratiebeheer (tevens A.8.3 Toegangsbeveiliging) \\
 \textbf{Kroonjuwelen}& KJ7, KJ4 --- indirect KJ1, KJ2, KJ3 \\
-\textbf{OWASP API}   & API8:2023 Security Misconfiguration / A01:2021 Broken Access Control \\
+\textbf{OWASP API}   & API8:2025 Security Misconfiguration / A01:2021 Broken Access Control \\
 \textbf{Status}      & \rood{Open --- prioriteit 1 (directe actie)} \\
 \end{tabular}
 
@@ -893,6 +893,9 @@ interpreteren. Het advies prioriteert dan ook \textbf{vijf non-breaking quick-wi
 % ════════════════════════════════════════════════════════════════════════════
 %  7. BIJLAGEN
 % ════════════════════════════════════════════════════════════════════════════
+% Forceer de bijlagen-lijst op een nieuwe pagina in de inhoudsopgave, zodat
+% A--H niet over de paginarand van de TOC worden afgekapt.
+\addtocontents{toc}{\protect\newpage}
 \appendix
 
 \chapter{CodeQL SARIF-output}
