@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -38,7 +39,8 @@ public class SwaggerDocController {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return null;
 		}
-		return "<h1>Debugging Tag: " + tag + "</h1>";
+		// SQ8 / CWE-79 — HTML-encode the user-supplied value before reflecting it into the response.
+		return "<h1>Debugging Tag: " + HtmlUtils.htmlEscape(tag) + "</h1>";
 	}
 
 }
