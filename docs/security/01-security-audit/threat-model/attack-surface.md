@@ -201,6 +201,16 @@ module geraakt worden. Primaire referentie is de
 (`APIx:2023`) omdat de module een REST-API is; web-specifieke items (zoals XSS) zijn
 gekoppeld aan de [OWASP Top 10:2021](https://owasp.org/Top10/) (`Ax:2021`).
 
+> **Bewust meerdere OWASP-edities (2021 + 2023 + 2025).** Dit onderzoek mapt findings
+> opzettelijk over drie OWASP-edities: de **Top 10:2021** (web-breed), de **API Security
+> Top 10:2023** (deze REST-module) en de **Top 10:2025**-conceptcategorieën (gebruikt in
+> het pentestrapport). De edities overlappen maar zijn niet identiek — eenzelfde finding
+> kan onder verschillende categorienamen vallen. Dat is **geen inconsistentie maar
+> bredere dekking**: elke editie belicht een ander deel van het aanvalsoppervlak (bv.
+> "Improper Inventory Management" bestaat alléén in de API-editie, en de 2025-editie
+> voegt o.a. een expliciete supply-chain-categorie toe). De combinatie geeft daardoor
+> een vollediger, beter onderbouwd beeld dan één enkele editie.
+
 | OWASP API Security Top 10:2023 | Geraakte ingang(en) (categorie uit §1) | Bevinding(en) | Status |
 |---|---|---|:---:|
 | **API1 — Broken Object Level Authorization** | Cat. A resources (`/patient*`, `/obs`, `/encounter*`) | TM-E2 (keten) | ❌ open |
