@@ -36,6 +36,45 @@ docker compose -f docker-compose.yml -f docker/prod/docker-compose.yml up -d
 - **test** — isolated host port (8081), disposable, debug off.
 - **prod** — `restart: always`, DB not published, memory limit, image tag must be pinned.
 
+## Least-privilege runtime database user
+
+> NEN-7510 A.8.2 (privileged access rights) / A.8.3 (least privilege) — hardening
+> checklist §2.
+
+The `openmrs/openmrs-core` image connects with a **single** database account that both
+runs Liquibase (DDL) at startup **and** serves runtime traffic. Left on the MariaDB
+image default that account holds `ALL PRIVILEGES` on the database — so an
+application-layer SQL injection or a compromised module could `DROP`/`ALTER` the schema
+(threat-model TM-E2, audit finding SQ7). We split the roles into two accounts:
+
+| Account | Env vars | Privileges | Used for |
+|---------|----------|------------|----------|
+| Migration / admin | `DB_USER` / `DB_PASSWORD` | full rights on the DB | schema creation + Liquibase upgrades at deploy time |
+| Runtime | `DB_APP_USER` / `DB_APP_PASSWORD` | `SELECT, INSERT, UPDATE, DELETE` only — **can never `DROP`/`ALTER`/`CREATE`/`GRANT`** | steady-state application traffic |
+
+The runtime account is provisioned automatically on first DB initialization by
+[`db-init/10-runtime-least-privilege.sh`](db-init/10-runtime-least-privilege.sh), which
+the base compose mounts read-only into `/docker-entrypoint-initdb.d`.
+
+**Deploy procedure (prod):**
+
+1. First boot migrates the schema using the privileged `DB_USER` (Liquibase needs DDL) —
+   this is the default in `docker/prod/docker-compose.yml`.
+2. Once the schema is at the target version, switch the running app to the runtime
+   account: uncomment the `DB_APP_USER`/`DB_APP_PASSWORD` lines for
+   `OMRS_CONFIG_CONNECTION_USERNAME`/`_PASSWORD` in the prod override and redeploy.
+   Future schema upgrades are a privileged deploy-time operation: temporarily point the
+   connection back at `DB_USER`, migrate, then return to `DB_APP_USER`.
+
+**Verify** the runtime account cannot escalate:
+
+```bash
+docker compose -f docker-compose.yml -f docker/prod/docker-compose.yml exec db \
+  mariadb -uroot -p"$DB_ROOT_PASSWORD" -e "SHOW GRANTS FOR '$DB_APP_USER'@'%';"
+# Expect only: GRANT SELECT, INSERT, UPDATE, DELETE ON `openmrs`.* TO ...
+# (no DROP/ALTER/CREATE/GRANT)
+```
+
 ## Deploying the module (dev)
 
 The `openmrs/openmrs-core` image **wipes `/openmrs/data/modules` on every boot** and
