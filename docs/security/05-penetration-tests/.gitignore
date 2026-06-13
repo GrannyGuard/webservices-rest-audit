@@ -1,9 +1,0 @@
-# Negeer alles in deze map behalve de deliverables
-*
-
-!.gitignore
-!images/
-!images/**
-!PentestReport-OpenMRS.md
-!PentestReport-OpenMRS.docx
-!zap-report.html

@@ -83,4 +83,3 @@ nb-configuration.xml
 
 # Built module deploy directory (populated by mvn clean package, not source)
 /modules/
-
