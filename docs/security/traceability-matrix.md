@@ -3,6 +3,15 @@
 Rubric: *"Verbeteronderzoek security"* — Sprint 4 vereiste (≥3 NEN-7510:2024-2
 controls, elk met een traceerbaar bewijsartefact).
 
+Elke rij volgt de keten **maatregel → NEN-7510-control → bewijsartefact** en is, waar
+van toepassing, gekoppeld aan het risico/de bevinding die de maatregel adresseert
+(`SQ*`/`TM-*`/`CD*`/`CQL*` uit de risicomatrix in
+[`01-security-audit/01.md §4`](01-security-audit/01.md#4-risico-evaluatie)). Het
+bewijsartefact is bedoeld om reproduceerbaar te zijn (commit-SHA, CI-run, `gh api`-
+output of bronbestand). De matrix dekt momenteel **10 controls**; dit overstijgt de
+minimumeis van 3 ruim. Bewust niet opgenomen: controls waarvoor (nog) geen hard
+bewijsartefact bestaat — zie *Restpunten*.
+
 ---
 
 ## Matrix
@@ -17,6 +26,8 @@ controls, elk met een traceerbaar bewijsartefact).
 | **A.8.2 / A.8.3** Privileged access / least privilege (database) | Twee-account-DB-model: privileged migratie-account (Liquibase/DDL) gescheiden van een DML-only runtime-account (`SELECT/INSERT/UPDATE/DELETE`, kan nooit `DROP`) | DB-init-script provisioneert het runtime-account bij eerste init; prod-wiring + `SHOW GRANTS`-verificatie | [`docker/db-init/10-runtime-least-privilege.sh`](../../docker/db-init/10-runtime-least-privilege.sh), [`docker-compose.yml`](../../docker-compose.yml), [`docker/prod/docker-compose.yml`](../../docker/prod/docker-compose.yml), [`docker/README.md`](../../docker/README.md); hardening checklist [§2](01-security-audit/threat-model/hardening-checklist.md#2-least-privilege-databasegebruiker-kan-nooit-drop) | ✅ Mechanisme (PoC); prod-runtime-switch = deploy-stap, niet container-geverifieerd |
 | **A.8.20 / A.8.26** Netwerk- & applicatiebeveiliging (Host-validatie) | OpenAPI-spec reflecteert `Host`/`Scheme` niet langer ongevalideerd: Host-allow-list + scheme-sanitisatie (SQ9-fix); Swagger-endpoints uitschakelbaar (A.8.3 least functionality, SQ8-blootstelling) | `RestUtil.resolveSwaggerHost()`/`sanitizeScheme()`/`isSwaggerDocsEnabled()` + global properties; controllers gegate | [`SwaggerSpecificationController.java`](../../omod/src/main/java/org/openmrs/module/webservices/rest/web/controller/SwaggerSpecificationController.java), [`SwaggerDocController.java`](../../omod/src/main/java/org/openmrs/module/webservices/rest/web/controller/SwaggerDocController.java), [`config.xml`](../../omod/src/main/resources/config.xml), unit tests `SwaggerHardeningRestUtilTest` (8/8 groen); hardening checklist [§1](01-security-audit/threat-model/hardening-checklist.md#1-onnodige-features-uitschakelen) + [§10](01-security-audit/threat-model/hardening-checklist.md#10-openapi-specificatie-alleen-naar-specifieke-allowed-hosts) | ✅ Geïmplementeerd + getest (SQ9); SQ8 output-encoding nog open |
 | **A.5.23 / A.8.32** Supply chain security / change management | Reproduceerbare, verifieerbare releases: keyless cosign-signing + SLSA build-provenance + CycloneDX-SBOM naast de `.omod`; alle CI-actions SHA-pinned (was 1/9) | `release-sign.yml` (cosign `sign-blob`, `attest-build-provenance`); SHA-pins in alle workflows | [`.github/workflows/release-sign.yml`](../../.github/workflows/release-sign.yml), [`.github/workflows/`](../../.github/workflows/); hardening checklist [§8](01-security-audit/threat-model/hardening-checklist.md#8-signed-artifacts) + [§9](01-security-audit/threat-model/hardening-checklist.md#9-pinned-versies--git-hashes-voor-cicd-acties) | ✅ Geïmplementeerd (workflow); eerste signed release verifieert downstream met `cosign verify-blob` / `gh attestation verify` |
+| **A.8.28** Veilig coderen | Server-side validatie i.p.v. client-side: Swagger Host-allow-list + scheme-sanitisatie (adresseert SQ9) en centrale CWE-117 log-injectie-neutralisatie (`RestUtil.sanitizeForLog()`, CQL1) | `RestUtil.resolveSwaggerHost()` / `sanitizeScheme()` / `sanitizeForLog()` + unit tests | [`RestUtil.java`](../../omod-common/src/main/java/org/openmrs/module/webservices/rest/web/RestUtil.java); tests `SwaggerHardeningRestUtilTest` (8/8 groen) + `RestUtilTest`; CWE-117-fix commit `831dafb` (zie [04-code-review §2.1](04-code-review/04.md)) | ✅ Geïmplementeerd + getest |
+| **A.8.31** Scheiding ontwikkel-, test- en productieomgevingen | Aparte compose-overrides per omgeving + GitHub Environments (dev/test/prod), gescheiden secrets; prod publiceert de DB niet en faalt fast (`:?`) op ontbrekende secrets | `docker/{dev,test,prod}/docker-compose.yml`; GitHub Environments met protection rules | [`docker/README.md`](../../docker/README.md), [`docker/prod/docker-compose.yml`](../../docker/prod/docker-compose.yml); zie [02.md §2](02-secure-pipelines/02.md#2-omgevingsscheiding-otap--github-environments) | ✅ Geïmplementeerd |
 
 ---
 
