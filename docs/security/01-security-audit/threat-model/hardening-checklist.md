@@ -15,44 +15,61 @@ Elke regel volgt het format:
 
 ## 1. Onnodige features uitschakelen
 
-**Status: ❌ Niet structureel — open actiepunt.**
+**Status: ✅ Geïmplementeerd — Swagger/OpenAPI-endpoints zijn nu uitschakelbaar.**
 
-De drie module-admin controllers in
-[categorie C van de attack surface](attack-surface.md#4-categorie-c--module-admin-controllers-modulewebservicesrestendpoint--️-high-risk)
-(`SettingsFormController`, `SwaggerDocController`, `SwaggerSpecificationController`)
-zijn **altijd actief**, ook in productie, en bieden geen configuratie-optie om ze uit
-te schakelen.
+De Swagger-UI en de OpenAPI-spec (`SwaggerDocController`, `SwaggerSpecificationController`
+— categorie C) zijn nu conditioneel gemaakt op een nieuwe global property
+`webservices.rest.enableSwaggerDocs` (default `true` om bestaand gedrag/pentests te
+behouden; in productie op `false` te zetten). Bij `false` retourneren zowel
+`/module/webservices/rest/apiDocs[/debug]` als `/swagger.json` **HTTP 404**.
 
-- **Aanbeveling:** maak `/module/webservices/rest/apiDocs*` en
-  `/module/webservices/rest/swagger.json` conditioneel op een global property (bv.
-  `webservices.rest.enableSwaggerUI`, default `false` in productie), naar analogie
-  van `webservices.rest.enableStackTraceDetails` (zie §5).
+- **Geïmplementeerd in:**
+  [`SwaggerDocController.java`](../../../../omod/src/main/java/org/openmrs/module/webservices/rest/web/controller/SwaggerDocController.java),
+  [`SwaggerSpecificationController.java`](../../../../omod/src/main/java/org/openmrs/module/webservices/rest/web/controller/SwaggerSpecificationController.java)
+  (gate via `RestUtil.isSwaggerDocsEnabled()`), global property in
+  [`config.xml`](../../../../omod/src/main/resources/config.xml), constant
+  `ENABLE_SWAGGER_DOCS_GLOBAL_PROPERTY_NAME` in `RestConstants.java`. Unit tests:
+  `SwaggerHardeningRestUtilTest`.
 - **NEN-7510:** A.8.3 (Toegangsbeveiliging) — least functionality.
-- **Koppeling:** vermindert de blootstelling van SQ8/SQ9 (TM-T2, TM-S4) zonder de
-  onderliggende code-fix te vervangen.
+- **Koppeling:** vermindert de productie-blootstelling van SQ8/SQ9 (TM-T2, TM-S4); de
+  onderliggende XSS-output-encoding-fix voor SQ8 blijft een aparte code-review-actie.
+- **Restpunt:** `SettingsFormController` (SQ7) is **niet** door deze vlag gedekt en
+  blijft de hoogste open prioriteit (§7 attack surface).
 
 ---
 
 ## 2. Least-privilege databasegebruiker (kan nooit `DROP`)
 
-**Status: ❌ Niet geconfigureerd — open actiepunt.**
+**Status: ✅ Mechanisme geïmplementeerd — twee-account-model voorzien.**
 
-In `docker-compose.yml` / `docker/prod/docker-compose.yml` wordt de applicatie
-verbonden met `MYSQL_USER`/`DB_USER`, dat via het standaard MySQL-imagegedrag
-**volledige rechten (incl. `DROP`, `ALTER`, `GRANT`) op de eigen database** krijgt.
-Er is geen apart, beperkt account voor de runtime-verbinding van de
-`webservices.rest`-module.
+De applicatie verbond voorheen uitsluitend met `MYSQL_USER`/`DB_USER`, dat via het
+standaard MariaDB-imagegedrag **volledige rechten (incl. `DROP`, `ALTER`, `GRANT`) op
+de eigen database** krijgt. De `openmrs/openmrs-core`-image gebruikt dat ene account
+zowel voor Liquibase (DDL bij opstarten) als voor runtime-verkeer; daarom is een
+twee-account-model geïntroduceerd:
 
-- **Aanbeveling:** introduceer een `openmrs_app`-gebruiker met alleen
-  `SELECT, INSERT, UPDATE, DELETE` (geen `DROP`, `ALTER`, `CREATE`) voor de
-  runtime-verbinding (`OMRS_CONFIG_CONNECTION_USERNAME`); reserveer een apart
-  migratie-account met hogere rechten uitsluitend voor Liquibase-runs tijdens
-  deployment.
+- **`DB_USER`** — migratie/admin-account (volledige rechten), uitsluitend voor
+  schema-creatie en Liquibase-upgrades op deploy-moment.
+- **`DB_APP_USER`** (`openmrs_app`) — runtime-account met **alleen
+  `SELECT, INSERT, UPDATE, DELETE`** op de database; kan nooit `DROP`/`ALTER`/
+  `CREATE`/`GRANT`.
+
+- **Geïmplementeerd in:**
+  [`docker/db-init/10-runtime-least-privilege.sh`](../../../../docker/db-init/10-runtime-least-privilege.sh)
+  (provisioneert het runtime-account bij eerste DB-init), gemount via
+  [`docker-compose.yml`](../../../../docker-compose.yml); prod-wiring + verificatie
+  (`SHOW GRANTS`) in [`docker/prod/docker-compose.yml`](../../../../docker/prod/docker-compose.yml)
+  en [`docker/README.md`](../../../../docker/README.md) → "Least-privilege runtime
+  database user".
 - **NEN-7510:** A.8.3 (least privilege), A.8.2 (Privileged access rights).
 - **Koppeling:** beperkt de **impact** van elke SQL-injectie- of
-  privilege-escalatieketen (TM-E2, SQ7) — zelfs als een aanvaller via de
-  applicatielaag database-toegang krijgt, kan deze geen tabellen droppen of het
-  schema wijzigen (mitigeert mede CD1/CD6 supply-chain-impact, §4.4).
+  privilege-escalatieketen (TM-E2, SQ7) — zelfs bij applicatielaag-DB-toegang kan de
+  runtime-gebruiker geen tabellen droppen of het schema wijzigen (mitigeert mede
+  CD1/CD6 supply-chain-impact, §4.4).
+- **Restpunt:** de productie-`openmrs`-connectie staat bij eerste deploy nog op
+  `DB_USER` (Liquibase heeft DDL nodig); de documented steady-state-switch naar
+  `DB_APP_USER` is een operationele deploy-stap (niet container-geverifieerd in deze
+  omgeving — Docker-daemon was niet beschikbaar).
 
 ---
 
@@ -171,16 +188,21 @@ configuratie van dit project — het standaardwachtwoord is een eigenschap van d
 
 ## 8. Signed artifacts
 
-**Status: ❌ Niet geconfigureerd — open actiepunt (bonus, "Marcel would love").**
+**Status: ✅ Geïmplementeerd — keyless cosign-signing + SLSA-provenance + SBOM.**
 
-Geen `maven-gpg-plugin`, `jarsigner`, of vergelijkbare signing-stap is aangetroffen
-in de Maven-configuratie of GitHub Actions-workflows.
+Een release-workflow signeert de gebouwde `.omod` keyless (Sigstore/OIDC, géén
+langlevende sleutels), maakt een SLSA build-provenance-attestatie en genereert een
+CycloneDX-SBOM, en publiceert alle drie naast het `.omod`-bestand.
 
-- **Aanbeveling:** voeg een signing-stap toe aan de release-workflow die de
-  gebouwde `.omod`/`.jar`-artefacten signeert (bv. met `cosign` voor
-  keyless-signing via GitHub OIDC, of GPG met een in GitHub Secrets opgeslagen
-  sleutel). Publiceer de signature/SBOM-attestation als CI-artefact naast het
-  `.omod`-bestand.
+- **Geïmplementeerd in:**
+  [`.github/workflows/release-sign.yml`](../../../../.github/workflows/release-sign.yml)
+  — `cosign sign-blob` (detached `.sig` + certificaat),
+  `actions/attest-build-provenance` (verifieerbaar met `gh attestation verify`), en
+  `cyclonedx-maven-plugin` voor de SBOM. Assets worden bij een gepubliceerde Release
+  aangehangen, of als workflow-artefact gepubliceerd bij handmatige runs.
+- **Verificatie downstream:** `cosign verify-blob --signature <omod>.sig
+  --certificate <omod>.pem --certificate-oidc-issuer
+  https://token.actions.githubusercontent.com ...` (zie commentaar in de workflow).
 - **NEN-7510:** A.8.32 (Change management) / A.5.23 (Supply chain security),
   CRA-conformiteit (zie [`begrippenkader.md`](../../../00-project-context/begrippenkader.md)).
 - **Koppeling:** CD1 (Supply Chain Attack, §4.4) — signed artifacts geven
@@ -191,20 +213,21 @@ in de Maven-configuratie of GitHub Actions-workflows.
 
 ## 9. Pinned versies / git hashes voor CI/CD-acties
 
-**Status: 🟡 Gedeeltelijk — slechts 1 van 9 third-party actions is SHA-pinned.**
+**Status: ✅ Geïmplementeerd — alle third-party actions zijn SHA-pinned.**
 
-In `.github/workflows/` zijn alle `actions/*`-stappen (checkout, setup-java, cache,
-upload-artifact) gepind op een **versie-tag** (`@v6`, `@v5`, `@v4`), niet op een
-SHA-commit-hash. Alleen `snyk/actions/setup` in `sbom.yml:68` is correct
-SHA-gepind:
-`uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04  # v1.0.0`.
+Alle `uses:`-referenties in `codeql.yml`, `sbom.yml`, `sonarcloud-coverage.yml` en de
+nieuwe `release-sign.yml` zijn gepind op hun volledige commit-SHA met de versie als
+`# vX`-commentaar (bv. `actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6`).
+Eerder was slechts `snyk/actions/setup` SHA-gepind.
 
-- **Aanbeveling:** pin alle `uses:`-referenties in `codeql.yml`, `sbom.yml` en
-  `sonarcloud-coverage.yml` op hun volledige commit-SHA (met versie als
-  `# vX`-commentaar, zoals nu al bij `snyk/actions/setup`). Versie-tags zoals
-  `@v6` zijn muteerbaar door de upstream-maintainer (of een aanvaller die hun
-  account compromitteert) — een SHA is dat niet.
+- **Geïmplementeerd in:** alle vier workflows in
+  [`.github/workflows/`](../../../../.github/workflows/). Versie-tags zoals `@v6` zijn
+  muteerbaar door de upstream-maintainer (of een aanvaller die hun account
+  compromitteert) — een SHA is dat niet.
 - **NEN-7510:** A.5.23 (Supply chain security), A.8.32.
+- **Onderhoud:** bij het verhogen van een action-versie moet de SHA opnieuw worden
+  geresolved (`git ls-remote --tags <repo> <tag>`), bij voorkeur via Dependabot's
+  `github-actions`-ecosystem dat SHA-pins automatisch bijwerkt.
 - **Koppeling:** CD1/CD6 (Supply Chain Attack, §4.4) — sluit direct aan bij de
   bestaande SBOM/SCA-mitigaties; SonarCloud signaleerde dit patroon al eerder
   (vandaar "zoals SonarQube ook zei").
@@ -213,22 +236,29 @@ SHA-gepind:
 
 ## 10. OpenAPI-specificatie alleen naar specifieke ALLOWED hosts
 
-**Status: ❌ Niet geïmplementeerd — directe oorzaak van SQ9.**
+**Status: ✅ Geïmplementeerd — Host-allow-list + scheme-sanitisatie (SQ9-fix).**
 
-`SwaggerSpecificationController.getSwaggerSpecification()`
-(`omod/.../controller/SwaggerSpecificationController.java:30-40`) neemt de
-client-aangeleverde `Host`- en `X-Forwarded-Proto`-headers **ongevalideerd** over
-in het gepubliceerde `host`/`scheme`-veld van de OpenAPI-spec.
+`SwaggerSpecificationController.getSwaggerSpecification()` nam de client-aangeleverde
+`Host`- en `X-Forwarded-Proto`-headers voorheen **ongevalideerd** over in het
+`host`/`scheme`-veld van de OpenAPI-spec. Dit is nu gevalideerd:
 
-- **Aanbeveling:** introduceer een global property (bv.
-  `webservices.rest.swaggerAllowedHosts`, comma-separated allow-list, analoog aan
-  `REST_ALLOWED_IPS`). Valideer de `Host`-header tegen deze lijst; bij een
-  niet-toegestane host: gebruik een geconfigureerde default-host in plaats van de
-  request-header, of retourneer een 400.
+- nieuwe global property `webservices.rest.swaggerAllowedHosts` (comma-separated
+  allow-list, analoog aan `REST_ALLOWED_IPS`). Bij een lege lijst blijft het
+  legacy-gedrag behouden; bij een niet-toegestane `Host` valt de spec terug op de
+  eerste geconfigureerde (canonieke) host i.p.v. de client-waarde
+  (`RestUtil.resolveSwaggerHost()`);
+- het scheme wordt gesaneerd tot uitsluitend `http`/`https`
+  (`RestUtil.sanitizeScheme()`), wat `X-Forwarded-Proto`-injectie blokkeert.
+
+- **Geïmplementeerd in:**
+  [`SwaggerSpecificationController.java`](../../../../omod/src/main/java/org/openmrs/module/webservices/rest/web/controller/SwaggerSpecificationController.java),
+  helpers in `RestUtil.java`, global property in
+  [`config.xml`](../../../../omod/src/main/resources/config.xml). Unit tests:
+  `SwaggerHardeningRestUtilTest` (`resolveSwaggerHost*`, `sanitizeScheme*`).
 - **NEN-7510:** A.8.20 (Netwerkbeveiliging), A.8.26 (Application security
   requirements).
 - **Koppeling:** **SQ9 / TM-S4** (§3.5.3, §3.5.4) — prioriteit 9 in §5.1 van het
-  hoofddocument.
+  hoofddocument; nu gemitigeerd.
 
 ---
 
@@ -253,14 +283,14 @@ zodra:
 
 | # | Maatregel | Status | NEN-7510 | Gekoppeld aan |
 |---|---|:---:|---|---|
-| 1 | Onnodige features uitschakelen | ❌ | A.8.3 | SQ8/SQ9 (categorie C) |
-| 2 | Least-privilege DB-gebruiker (geen `DROP`) | ❌ | A.8.2/A.8.3 | CD1/CD6, SQ7/TM-E2 |
+| 1 | Onnodige features uitschakelen (Swagger-gating) | ✅ | A.8.3 | SQ8/SQ9 (categorie C) |
+| 2 | Least-privilege DB-gebruiker (geen `DROP`) | ✅ (mechanisme; prod-switch = deploy-stap) | A.8.2/A.8.3 | CD1/CD6, SQ7/TM-E2 |
 | 3 | Endpoints minimaliseren / IP-whitelisting | 🟡 | A.8.3/A.8.20 | TM-S3, TB4, TB6 |
 | 4 | Server-side validatie | ✅ (1 restpunt) | A.8.28 | `REST_ALLOWED_IPS`-validatie |
 | 5 | Geen stack traces naar browser | ✅ (1 restpunt) | A.8.28/A.5.1 | TM-E2 |
 | 6 | WARN-only logging productie | ✅ | A.8.15 | TM-R2/TM-R3 |
 | 7 | Default admin-wachtwoord wijzigen | ⚠️ (OTAP-actie) | A.8.5 | SQ1/TM-S1/TM-S2 |
-| 8 | Signed artifacts | ❌ | A.5.23/A.8.32 | CD1 |
-| 9 | Pinned CI/CD-actie-versies (SHA) | 🟡 (1/9) | A.5.23/A.8.32 | CD1/CD6 |
-| 10 | OpenAPI ALLOWED-hosts | ❌ | A.8.20/A.8.26 | SQ9/TM-S4 — prio 9 (§5.1) |
+| 8 | Signed artifacts (cosign keyless + provenance + SBOM) | ✅ | A.5.23/A.8.32 | CD1 |
+| 9 | Pinned CI/CD-actie-versies (SHA) | ✅ (alle workflows) | A.5.23/A.8.32 | CD1/CD6 |
+| 10 | OpenAPI ALLOWED-hosts | ✅ | A.8.20/A.8.26 | SQ9/TM-S4 — prio 9 (§5.1) |
 | 11 | Checklist naast threat model | ✅ | — | dit document |
