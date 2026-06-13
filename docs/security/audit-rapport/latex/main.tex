@@ -10,6 +10,10 @@
 \usepackage{fancyhdr}
 \usepackage{parskip}
 
+% Laat TeX moeilijke regels (lange \texttt-paden) als laatste redmiddel rekken
+% i.p.v. over de marge te lopen.
+\setlength{\emergencystretch}{3em}
+
 % ── Tabellen ─────────────────────────────────────────────────────────────────
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -43,8 +47,10 @@
 % ── RAG-kleuren ──────────────────────────────────────────────────────────────
 \definecolor{ragAmber}{HTML}{E67E22}
 \definecolor{ragGreen}{HTML}{27AE60}
+\definecolor{ragYellow}{HTML}{C9A227}
 \newcommand{\rood}[1]{\textcolor{avansRed}{\textbf{#1}}}
 \newcommand{\amber}[1]{\textcolor{ragAmber}{\textbf{#1}}}
+\newcommand{\geel}[1]{\textcolor{ragYellow}{\textbf{#1}}}
 \newcommand{\groen}[1]{\textcolor{ragGreen}{\textbf{#1}}}
 
 % ── Hoofdstuktitel: "1 — Titel" met rode HR ──────────────────────────────────
@@ -179,37 +185,129 @@
 \section{Module en Versie}
 \label{sec:module-versie}
 
-% TODO --- naam, versie, repository-URL
+De geauditeerde software is de \textbf{OpenMRS REST Webservices Module}
+(\texttt{org.openmrs.module:webservices.rest}), versie \textbf{3.2.0}.
+De module vormt de REST API-laag van het OpenMRS-platform: zij ontsluit
+circa 109 medische domeinobjecten (patiënten, encounters, observaties,
+medicatie, e.a.) via HTTP/JSON onder het pad \texttt{/ws/rest/v1/}.
+
+\begin{tabular}{@{}ll}
+    \textbf{Artifact-ID}    & \texttt{webservices.rest} \\[4pt]
+    \textbf{Versie}         & 3.2.0 \\[4pt]
+    \textbf{Taal / runtime} & Java 8+, Spring MVC, Apache Tomcat \\[4pt]
+    \textbf{Upstream repo}  & \url{https://github.com/openmrs/openmrs-module-webservices.rest} \\[4pt]
+    \textbf{Audit fork}     & \url{https://github.com/GrannyGuard/webservices-rest-audit} \\[4pt]
+    \textbf{Audit branch}   & \texttt{main} \\
+\end{tabular}
 
 \section{Beoordelingsperiode}
 \label{sec:periode}
 
-% TODO --- van ... tot ...
+De audit is uitgevoerd in de periode \textbf{29 mei 2026 t/m 18 juni 2026},
+verdeeld over vier sprints conform het projectplan:
+
+\begin{tabular}{@{}lll}
+    \textbf{Sprint} & \textbf{Periode} & \textbf{Focus} \\[4pt]
+    1 & 29 mei -- 5 juni  & Gap-analyse \& projectorganisatie \\[2pt]
+    2 & 5 -- 12 juni      & Risico's, threat modelling \& CI/CD-scanning \\[2pt]
+    3 & 12 -- 16 juni     & Attack surface, logging \& code coverage \\[2pt]
+    4 & 16 -- 18 juni     & Afronding \& rapportage \\
+\end{tabular}
 
 \section{Testomgeving}
 \label{sec:testomgeving}
 
-% TODO --- waar in OTAP (Development / Test / Acceptatie)
+De audit heeft plaatsgevonden op de \textbf{Development- en Test-laag} van de
+OTAP-omgeving. Er is geen productiesysteem met echte patiëntdata betrokken.
+
+\begin{tabular}{@{}ll}
+    \textbf{OTAP-laag}        & Development / Test \\[4pt]
+    \textbf{Codebase}         & Fork \texttt{GrannyGuard/webservices-rest-audit},
+                                branch \texttt{main} \\[4pt]
+    \textbf{Build}            & Maven 3.x, Java 8, lokale \texttt{mvn verify} \\[4pt]
+    \textbf{CI/CD-platform}   & GitHub Actions (gehoste runners, Ubuntu-latest) \\[4pt]
+    \textbf{SAST}             & CodeQL \texttt{security-extended}, SonarCloud \\[4pt]
+    \textbf{SCA}              & Dependabot, OSV-Scanner, Snyk \\[4pt]
+    \textbf{Testdata}         & In-memory H2-database (\texttt{development}-scope);
+                                geen herleidbare patiëntdata \\[4pt]
+    \textbf{Productie}        & Buiten scope --- geen toegang tot live omgeving \\
+\end{tabular}
+
+De scheiding tussen test- en productiedata is geborgd via GitHub Environments
+(\texttt{test} en \texttt{prod}) met afzonderlijke secrets en approval gates,
+conform de inrichting beschreven in \texttt{docs/security/02-secure-pipelines/02.md}.
 
 \section{Buiten Scope}
 \label{sec:buiten-scope}
 
-% TODO --- wat is NIET getest en waarom
+De volgende onderdelen zijn expliciet buiten scope gehouden:
+
+\begin{itemize}
+    \item \textbf{OpenMRS Core en andere modules} --- alleen de REST
+          Webservices Module zelf is geauditeerd; de onderliggende kern
+          (authenticatie via \texttt{Context}, Hibernate-laag, MariaDB) is
+          als vertrouwde component beschouwd tenzij de module er direct mee
+          interacteert.
+    \item \textbf{Productieomgeving en live patiëntdata} --- er is geen
+          toegang tot een draaiend productiesysteem; alle tests zijn
+          uitgevoerd op de development/test-branch zonder herleidbare
+          patiëntgegevens.
+    \item \textbf{Infrastructuur en netwerkconfiguratie} --- TLS-configuratie,
+          reverse proxy, firewalls en serverbeheer vallen buiten de
+          module-grens en zijn de verantwoordelijkheid van de deployende
+          organisatie.
+    \item \textbf{Fysieke beveiliging en organisatorische maatregelen} ---
+          personeelsbeleid, toegangspassen en fysieke serverruimtes zijn
+          niet beoordeeld.
+    \item \textbf{Penetratietests op productie} --- vanwege het ontbreken
+          van een geautoriseerde testomgeving zijn pentests beperkt tot
+          statische analyse en proof-of-concept op de eigen fork.
+\end{itemize}
 
 \section{Normenkader}
 \label{sec:normenkader}
 
-Het normenkader voor deze audit is NEN-7510:2024 Deel 2. De audit richt
-zich op vijf controls: A.8.3 (toegangsbeveiliging), A.8.5 (authenticatie),
-A.8.8 (beheer van technische kwetsbaarheden), A.8.15 (logging) en A.8.25
-(veilige ontwikkelcyclus). De volledige koppeling tussen deze controls en
-de traceerbare bewijsartefacten is opgenomen in de traceability matrix
+Het normenkader voor deze audit is NEN-7510:2024 Deel 2. De norm bevat
+aanzienlijk meer controls dan hier behandeld; de onderstaande zeven zijn
+geselecteerd op basis van de risico-analyse en de aard van de module ---
+een REST API die bijzondere medische persoonsgegevens verwerkt. Dit zijn
+de gebieden waar de risico's het hoogst zijn en waar verbetering de
+grootste impact heeft.
+
+De audit richt zich op de volgende zeven controls:
+
+\begin{tabular}{@{}ll}
+    \toprule
+    \textbf{Control} & \textbf{Onderwerp} \\
+    \midrule
+    A.8.3  & Toegangsbeveiliging \\
+    A.8.5  & Authenticatie \\
+    A.8.8  & Beheer van technische kwetsbaarheden \\
+    A.8.9  & Configuratiebeheer \\
+    A.8.15 & Logging \\
+    A.8.24 & Gebruik van cryptografie \\
+    A.8.25 & Veilige ontwikkelcyclus \\
+    \bottomrule
+\end{tabular}
+
+\vspace{0.8em}
+De volledige koppeling tussen deze controls en de traceerbare
+bewijsartefacten is opgenomen in de traceability matrix
 (zie Bijlage~\ref{app:traceability}).
 
 \section{Toepasselijke Wetgeving}
 \label{sec:wetgeving}
 
-% TODO --- AVG, WGBO, NIS2/Cyberbeveiligingswet, CRA (indien van toepassing)
+\begin{tabularx}{\textwidth}{@{}lX}
+    \toprule
+    \textbf{Wetgeving} & \textbf{Relevantie} \\
+    \midrule
+    AVG (GDPR) Art.~9           & Verwerking bijzondere persoonsgegevens (medische data) \\
+    WGBO Art.~7:454             & Bewaarplicht en vertrouwelijkheid medisch dossier \\
+    NIS2 / Cyberbeveiligingswet & Zorgaanbieders als essentiële entiteit; meldplicht incidenten \\
+    CRA (Cyber Resilience Act)  & Beveiligingseisen open-source componenten in de supply chain \\
+    \bottomrule
+\end{tabularx}
 
 \newpage
 
@@ -219,15 +317,74 @@ de traceerbare bewijsartefacten is opgenomen in de traceability matrix
 \chapter{Audit Methodologie}
 \label{ch:methodologie}
 
-\section{Technieken en Tooling}
-\label{sec:tooling}
-
-% TODO --- tabel: techniek, tool, wanneer ingezet, resultaat/bijlage-referentie
-
-\section{Aanpak en Periode}
+\section{Aanpak}
 \label{sec:aanpak}
 
-% TODO --- beschrijf de methodiek (ISO 27005, OWASP, etc.) en tijdlijn
+De audit is uitgevoerd in vier stappen, conform NEN-7510:2024-2 en de
+risicobeoordelingsaanpak van ISO/IEC 27005:
+
+\begin{enumerate}
+    \item \textbf{Gap-analyse} — per NEN-7510-control is de huidige staat van de
+          module beoordeeld op basis van broncode-analyse en configuratieonderzoek.
+          Elke gap is geclassificeerd als \emph{aanwezig / gedeeltelijk / afwezig}
+          en onderbouwd met concrete codereferenties.
+    \item \textbf{Risicoanalyse} — op basis van de gevonden gaps en een CIA/BIV-classificatie
+          van de kroonjuwelen zijn risico's gescoord via \emph{Kans × Impact} (schaal 1–5).
+          Voor de twee hoogste risico's is een bow-tie-analyse uitgewerkt.
+    \item \textbf{Threat modelling} — de module is beschreven in C4-diagrammen (context,
+          container en component). Op basis daarvan is een STRIDE-analyse uitgevoerd en
+          zijn trust boundaries vastgesteld. Gevonden threats zijn gemapt op de
+          OWASP API Security Top 10:2025.
+    \item \textbf{Verificatie} — bevindingen zijn geverifieerd via SAST (CodeQL),
+          SCA (Dependabot, OSV-Scanner, Snyk), logging-tests en een attack surface mapping.
+          Gemitigeerde kwetsbaarheden zijn herbeoordeeld met dezelfde tooling.
+\end{enumerate}
+
+De werkzaamheden zijn verdeeld over vier sprints (29 mei t/m 18 juni 2026).
+Er is uitsluitend gewerkt op de development/test-omgeving; er is geen toegang
+geweest tot een productiesysteem met echte patiëntdata.
+
+\section{Tooling}
+\label{sec:tooling}
+
+{\small
+\begin{tabularx}{\textwidth}{@{}p{2.2cm}p{4.6cm}X@{}}
+    \toprule
+    \textbf{Categorie} & \textbf{Tool} & \textbf{Doel en inzet} \\
+    \midrule
+    SAST & CodeQL (\texttt{security-extended}) &
+        Statische analyse op elke push/PR; resultaten in GitHub Security-tab
+        (SARIF). Bijlage~\ref{app:codeql}. \\
+    SAST & SonarCloud &
+        Code-kwaliteit en beveiligingsregels; coverage-integratie via JaCoCo.
+        Bijlage~\ref{app:screenshots}. \\
+    SCA & GitHub Dependabot &
+        Primaire kwetsbaarhedenstream op basis van de GitHub Advisory Database;
+        264 alerts, herleid tot 75 unieke CVE's. Bijlage~\ref{app:dependabot}. \\
+    SCA & OSV-Scanner &
+        Onafhankelijke kruisvalidatie op de CycloneDX SBOM via OSV.dev;
+        bevestigt 64 van de 75 Dependabot-CVE's. \\
+    SCA & Snyk &
+        Derde scanner (eigen vulnerability-database); 36 aanvullende CVE's
+        boven op Dependabot. Bijlage~\ref{app:snyk}. \\
+    SBOM & CycloneDX Maven Plugin &
+        Genereert \texttt{sbom.cdx.json} (238 componenten) bij elke push naar
+        \texttt{main}. Bijlage~\ref{app:sbom}. \\
+    Coverage & JaCoCo &
+        Instruction-coverage op de beveiligingsrelevante klassen
+        (\texttt{AuthorizationFilter}, \texttt{SessionController1\_9});
+        rapport als CI-artefact. \\
+    Threat modelling & diagrams.net (\texttt{.drawio}) &
+        C4-diagrammen op context-, container- en componentniveau. \\
+    Methodiek & STRIDE &
+        Systematische dreigingsanalyse per C4-component; 15 threats
+        geïdentificeerd. \\
+    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2025 &
+        Referentiekader voor controls, dreigingsclassificatie en
+        auditcriteria. \\
+    \bottomrule
+\end{tabularx}
+}% end \small
 
 \newpage
 
@@ -237,34 +394,296 @@ de traceerbare bewijsartefacten is opgenomen in de traceability matrix
 \chapter{Risico-analyse en Bevindingen}
 \label{ch:bevindingen}
 
+De risicoanalyse brengt de gevonden gaps, de CIA/BIV-classificatie van de
+kroonjuwelen en de STRIDE-dreigingsanalyse samen tot één gescoorde risicomatrix
+(\S\ref{sec:risicomatrix}). Daaruit volgen de vijf uitgewerkte bevindingen
+(\S\ref{sec:bevindingen}). De volledige analyse --- de zeven gap-tabellen per
+control, de C4-diagrammen, de STRIDE-tabel met vijftien threats en de twintig
+gescoorde risico's --- is vastgelegd in
+\texttt{docs/security/01-security-audit/01.md}.
+
 \section{Risicomatrix}
 \label{sec:risicomatrix}
 
-% TODO --- verwijzing naar volledige risicomatrix in bijlage E;
-%          hier samenvatting van top risico's
+Risico's zijn gescoord volgens \textbf{Risicoscore = Kans $\times$ Impact}, elk op
+een schaal van 1--5 (ISO/IEC 27005). De \emph{risicobereidheid} is laag omdat de
+module bijzondere persoonsgegevens (AVG Art.~9) verwerkt: elk risico met score
+$\geq 10$ dat de vertrouwelijkheid of integriteit van een patiënt-, medisch- of
+authenticatie-kroonjuweel (KJ1, KJ2, KJ3) raakt, geldt automatisch als
+\emph{onacceptabel} en vereist directe actie.
+
+\begin{minipage}[t]{0.56\textwidth}
+\small
+\textbf{Score-grid (Impact $\times$ Kans):}\\[0.4em]
+\begin{tabular}{@{}c|ccccc@{}}
+ & \textbf{K1} & \textbf{K2} & \textbf{K3} & \textbf{K4} & \textbf{K5} \\
+\midrule
+\textbf{I5} & \geel{5}  & \amber{10} & \rood{15} & \rood{20} & \rood{25} \\
+\textbf{I4} & \groen{4} & \geel{8}   & \amber{12}& \rood{16} & \rood{20} \\
+\textbf{I3} & \groen{3} & \geel{6}   & \amber{9} & \amber{12}& \rood{15} \\
+\textbf{I2} & \groen{2} & \groen{4}  & \geel{6}  & \geel{8}  & \amber{10}\\
+\textbf{I1} & \groen{1} & \groen{2}  & \groen{3} & \groen{4} & \geel{5}  \\
+\end{tabular}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.40\textwidth}
+\small
+\textbf{Classificatie:}\\[0.4em]
+\begin{tabular}{@{}ll@{}}
+\groen{Laag}        & 1--4 \\
+\geel{Laag-Midden}  & 5--8 \\
+\amber{Midden}      & 9--12 \\
+\rood{Hoog}         & 13--25 \\
+\end{tabular}\\[0.6em]
+Grenswaarden: $\geq 9$ niet acceptabel
+(mitigatie $\leq$ 1 maand); $\geq 13$ onacceptabel
+(directe escalatie).
+\end{minipage}
+
+\vspace{1em}
+De analyse leverde \textbf{twintig gescoorde risico's} op uit vier bronnen ---
+SonarQube (SQ), CI/CD (CD), CodeQL (CQL) en het threat model (AT). Achttien
+daarvan vallen in Midden of hoger; elf zijn \emph{onacceptabel} (zes maal
+\rood{Hoog} plus vijf Midden-risico's die KJ1/KJ2/KJ3 met score $\geq 10$ raken).
+De volgende tabel
+toont de top van de matrix (score $\geq 12$); de volledige twintig staan in
+\texttt{01.md} \S4.2.
+
+{\small
+\begin{longtable}{@{}
+    >{\raggedright\arraybackslash}p{1.3cm}
+    >{\raggedright\arraybackslash}p{6.2cm}
+    >{\centering\arraybackslash}p{1.0cm}
+    >{\centering\arraybackslash}p{1.4cm}
+    >{\raggedright\arraybackslash}p{3.4cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Omschrijving} & \textbf{Score} & \textbf{Klasse} &
+\textbf{Kroonjuwelen} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Omschrijving} & \textbf{Score} & \textbf{Klasse} &
+\textbf{Kroonjuwelen} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r}{\emph{vervolgt op volgende pagina}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\textbf{SQ7} & Ongeauth.\ uitlezing van alle global properties & \rood{20} & \rood{Hoog} & KJ7, KJ4 $\to$ KJ1/2/3 \\
+\addlinespace
+\textbf{SQ2} & Onvolledige switch-statements (zoeklogica)      & \rood{16} & \rood{Hoog} & KJ2 \\
+\addlinespace
+\textbf{SQ1} & Kwetsbare sessie-validatie (session fixation)   & \rood{15} & \rood{Hoog} & KJ3, KJ1, KJ2 \\
+\addlinespace
+\textbf{SQ3} & Foute testassertions (verbergen bugs)           & \rood{15} & \rood{Hoog} & KJ2 \\
+\addlinespace
+\textbf{CD1} & Supply chain attack (dependency)                & \rood{15} & \rood{Hoog} & KJ7, KJ1, KJ2 \\
+\addlinespace
+\textbf{AT2} & Bulk data-exfiltratie via REST API              & \rood{15} & \rood{Hoog} & KJ1, KJ2 \\
+\addlinespace
+\textbf{SQ8} & Reflected XSS in Swagger debug-endpoint          & \amber{12}$^\triangle$ & \amber{Midden} & KJ3 \\
+\addlinespace
+\textbf{CD2} & Lekkage van secrets                              & \amber{12}$^\triangle$ & \amber{Midden} & KJ7, KJ3 \\
+\addlinespace
+\textbf{CQL1}& Log injection (CWE-117) via REST-parameters      & \amber{12} & \amber{Midden} & KJ6 \\
+\addlinespace
+\textbf{AT3} & Credential-aanvallen via wachtwoordherstel       & \amber{12}$^\triangle$ & \amber{Midden} & KJ3, KJ1, KJ2 \\
+\addlinespace
+\textbf{AT4} & Gecompromitteerde derde-partij-integratie        & \amber{12}$^\triangle$ & \amber{Midden} & KJ1, KJ2, KJ3 \\
+\end{longtable}
+}
+
+\noindent\small $^\triangle$ Midden-score (9--12) maar raakt KJ1/KJ2/KJ3 met
+score $\geq 10$ $\to$ conform de risicobereidheid (\S\ref{sec:normenkader})
+geclassificeerd als \emph{onacceptabel}.\normalsize
+
+\vspace{0.6em}
+Voor de twee hoogst scorende aanvalsketens is een \textbf{bow-tie-analyse}
+uitgewerkt: \texttt{SQ1} (sessie-overname) in \texttt{01.md} \S4.3 en \texttt{CD1}
+(supply chain) in \texttt{02.md} \S7.2 --- elk met de preventieve barrières vóór
+en de correctieve maatregelen ná het top-event.
 
 \section{Bevindingen}
 \label{sec:bevindingen}
 
-\subsection{B-001 ---}
+Hieronder zijn vijf bevindingen uitgewerkt, geselecteerd op risicoscore en op
+spreiding over de geauditeerde controls. Vier staan nog open (B-001 t/m B-004);
+B-005 toont een afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
+Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
+
+\subsection{B-001 --- Ongeauthenticeerde uitlezing van alle systeemconfiguratie (SQ7)}
 \label{sec:b001}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \rood{20 --- Hoog} (Kans 4 $\times$ Impact 5) --- hoogste van de analyse \\
+\textbf{NEN-7510}    & A.8.9 Configuratiebeheer (tevens A.8.3 Toegangsbeveiliging) \\
+\textbf{Kroonjuwelen}& KJ7, KJ4 --- indirect KJ1, KJ2, KJ3 \\
+\textbf{OWASP API}   & API8:2025 Security Misconfiguration / A01:2021 Broken Access Control \\
+\textbf{Status}      & \rood{Open --- prioriteit 1 (directe actie)} \\
+\end{tabular}
 
-\subsection{B-002 ---}
+\textbf{Beschrijving.} Het endpoint
+\texttt{GET /module/\allowbreak webservices/\allowbreak rest/\allowbreak settings.form/\allowbreak search?prefix=}
+retourneert \emph{alle} OpenMRS global properties (naam én waarde) die op de opgegeven prefix
+matchen, zonder enige authenticatiecheck. Met een lege prefix worden in beginsel
+\emph{alle} instellingen teruggegeven --- inclusief eventuele als global property
+opgeslagen credentials (database-, mailserverwachtwoorden) en de
+toegangsbeveiligingsconfiguratie \texttt{REST\_ALLOWED\_IPS} zelf.
+
+\textbf{Bewijs.} \texttt{SettingsFormController.java:50--63} ---
+\texttt{searchProperties(prefix)} is in de Javadoc expliciet gemarkeerd als
+\emph{``No authorization check''}. Het endpoint ligt buiten de
+\texttt{AuthorizationFilter}-keten (trust boundary TB1) en erft daarom noch de
+IP-allowlist noch de Basic-Auth-drempel.
+
+\textbf{Impact.} Een ongeauthenticeerde aanvaller kan de volledige
+beveiligingsconfiguratie inventariseren en potentieel credentials buitmaken. Dit
+vormt de opmaat naar volledige systeemcompromittering via de keten TM-E2
+(\texttt{/session/diag} $\to$ rollen + \texttt{settings.form/search} $\to$
+\texttt{REST\_ALLOWED\_IPS}/credentials). De score van 20 én de directe raakvlakken
+met KJ1/KJ2/KJ3 maken dit onacceptabel.
+
+\textbf{Aanbeveling.} Het endpoint achter de \texttt{AuthorizationFilter}-keten
+plaatsen en een privilege-check (\texttt{Context.hasPrivilege}) afdwingen, of ---
+indien de zoekfunctie geen productiefunctie heeft --- verwijderen.
+
+\subsection{B-002 --- Sessie-fixatie en best-effort toegangsfilter (SQ1, F3/F7)}
 \label{sec:b002}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \rood{15 --- Hoog} (Kans 3 $\times$ Impact 5) \\
+\textbf{NEN-7510}    & A.8.5 Authenticatie (tevens A.8.3 Toegangsbeveiliging) \\
+\textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
+\textbf{OWASP}       & A07:2021 Identification \& Authentication Failures (CWE-384/302) \\
+\textbf{Status}      & \rood{Open --- prioriteit 2/6}; bow-tie in \texttt{01.md} \S4.3 \\
+\end{tabular}
 
-\subsection{B-003 ---}
+\textbf{Beschrijving.} De \texttt{AuthorizationFilter} ververst het sessie-ID
+\emph{niet} na een succesvolle login: een door een aanvaller vooraf ``geplant''
+sessie-ID blijft na authenticatie geldig (session fixation, CWE-384). De filter is
+bovendien \emph{by design} best-effort --- het klassecommentaar stelt dat het filter
+\emph{``never stops execution''} en op de service-laag vertrouwt om alsnog te falen.
+
+\textbf{Bewijs.} \texttt{AuthorizationFilter.java:82} ---
+\texttt{getRequestedSessionId()} geeft het client-aangeleverde sessie-ID terug
+zonder server-side validatie; \texttt{:113} --- na \texttt{Context.authenticate()}
+wordt de sessie niet geïnvalideerd. Aanvullend (CodeQL \texttt{java/user-controlled-bypass},
+alert \#908) ontbreekt op \texttt{:86} een \texttt{return} na \texttt{sendError(401)},
+waardoor de keten dóórloopt naar \texttt{chain.doFilter()}.
+
+\textbf{Impact.} Sessie-overname geeft een aanvaller volledige toegang tot
+patiëntdossiers (KJ1, KJ2) met de rechten van het slachtoffer --- een meldplichtig
+datalek (AVG Art.~33). In combinatie met B-004 (XSS) ontstaat een complete keten:
+XSS steelt de sessiecookie, waarna de niet-verversde sessie wordt overgenomen.
+
+\textbf{Aanbeveling.} Sessie-ID regenereren na login (\texttt{session.invalidate()}
++ nieuwe sessie); \texttt{return} toevoegen na de 401; op termijn declaratieve
+autorisatie (Spring Security) in plaats van het best-effort filter.
+
+\subsection{B-003 --- Ontbrekende brute-force-bescherming op authenticatie (F8)}
 \label{sec:b003}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \rood{Hoog} (gap A.8.5; prioriteit 3) --- raakt KJ3 \\
+\textbf{NEN-7510}    & A.8.5 Authenticatie \\
+\textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
+\textbf{OWASP}       & A07:2021 Identification \& Authentication Failures (CWE-307) \\
+\textbf{Status}      & \rood{Open --- prioriteit 3 (directe actie)} \\
+\end{tabular}
 
-\subsection{B-004 ---}
+\textbf{Beschrijving.} De \texttt{AuthorizationFilter} stuurt elke binnenkomende
+Basic-Auth-aanvraag rechtstreeks door naar \texttt{Context.authenticate()} zonder
+account-lockout, rate-limiting of throttling. Geautomatiseerde aanvallen
+(credential stuffing, dictionary attack, brute force) zijn daarmee triviaal
+uitvoerbaar.
+
+\textbf{Bewijs.} \texttt{AuthorizationFilter.java:113} ---
+\texttt{Context.authenticate(userAndPass[0], userAndPass[1])} wordt in een onbegrensde
+stroom aangeroepen; handmatige review toont geen enkel beperkend mechanisme.
+
+\textbf{Impact.} In een ziekenhuisomgeving met veelgebruikte zwakke wachtwoorden
+(naam + geboortejaar, afdelingsnaam) is een dictionary attack realistisch en snel
+succesvol. Een gecompromitteerd klinisch account geeft direct toegang tot alle
+patiëntdossiers van die gebruiker (KJ1, KJ2). OWASP ASVS Level~1 vereist
+account-lockout als minimumvereiste.
+
+\textbf{Aanbeveling.} Rate-limiting / account-lockout invoeren op de
+authenticatie-keten (bv.\ exponentiële back-off per bron-IP/gebruiker), met een
+\texttt{ACCESS\_BLOCKED}-logregel bij overschrijding.
+
+\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2)}
 \label{sec:b004}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \amber{12 --- Midden}$^\triangle$ (Kans 3 $\times$ Impact 4) --- onacceptabel (raakt KJ3) \\
+\textbf{NEN-7510}    & A.8.28 Veilig coderen (output-encoding), A.8.26 \\
+\textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
+\textbf{OWASP}       & A03:2021 Injection (XSS) --- CodeQL \texttt{java/xss}, alert \#1 (high) \\
+\textbf{Status}      & \rood{Open --- prioriteit 7} \\
+\end{tabular}
+
+\textbf{Beschrijving.} De \texttt{debug}-handler plaatst de request-parameter
+\texttt{tag} ongesanitized in een HTML-respons:
+\begin{quote}\ttfamily\small return "<h1>Debugging Tag: " + tag + "</h1>";\end{quote}
+Een aanvaller kan \texttt{?tag=<script>\ldots</script>} injecteren. Het endpoint
+\texttt{/module/\allowbreak webservices/\allowbreak rest/\allowbreak apiDocs/\allowbreak debug}
+ligt buiten de \texttt{AuthorizationFilter}-keten en is dus zonder authenticatie
+én zonder IP-allowlist bereikbaar.
+
+\textbf{Bewijs.} \texttt{SwaggerDocController.java:27} (CodeQL-meldtekst:
+\emph{``Cross-site scripting vulnerability due to a user-provided value''}).
+
+\textbf{Impact.} Eén crafted phishing-link volstaat: uitgevoerd in de browser van
+een ingelogde admin/zorgverlener kan de XSS sessiecookies of CSRF-tokens stelen
+$\to$ overname van een geprivilegieerde sessie (KJ3) en van daaruit toegang tot
+KJ1/KJ2. Geen voorafgaande toegang vereist.
+
+\textbf{Aanbeveling.} \texttt{tag} HTML-encoden (bv.\ Spring
+\texttt{HtmlUtils.htmlEscape}) of het debug-endpoint verwijderen --- het heeft geen
+productiefunctie.
+
+\subsection{B-005 --- Log injection (CWE-117): gemitigeerd en geverifieerd (CQL1, F1)}
+\label{sec:b005}
+
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \amber{12 --- Midden} (Kans 4 $\times$ Impact 3) --- raakt KJ6 \\
+\textbf{NEN-7510}    & A.8.15 Logging \\
+\textbf{Kroonjuwelen}& KJ6 Audit logs (integriteit) \\
+\textbf{OWASP}       & A09:2021 Logging \& Monitoring Failures (CWE-117) \\
+\textbf{Status}      & \groen{Gemitigeerd en geverifieerd --- commit \texttt{831dafb}} \\
+\end{tabular}
+
+\textbf{Beschrijving.} Meerdere REST-controllers logden request-afgeleide waarden
+(\texttt{resource}, \texttt{uuid}, query-parameters) zonder neutralisatie. Een
+aanvaller kon CR/LF-tekens injecteren om valse logregels te vervalsen (``log
+forging''), bijvoorbeeld een nep-\texttt{INFO}-regel die een geslaagde login
+suggereert --- waarmee forensisch onderzoek wordt misleid en de integriteit van het
+audit trail (KJ6) wordt aangetast.
+
+\textbf{Bewijs (vóór fix).} CodeQL \texttt{java/log-injection}
+(\texttt{security-extended}): 9~alerts in o.a.\ \texttt{RestUtil.java:521},
+\texttt{ClearDbCacheController2\_0.java:79/86/95} en
+\texttt{ConceptResource1\_8.java:567}.
+
+\textbf{Mitigatie.} Eén centrale helper \texttt{RestUtil.sanitizeForLog(String)}
+verwijdert \texttt{\textbackslash r}/\texttt{\textbackslash n} uit user-controlled
+waarden (het door CodeQL herkende taint-barrier-patroon) en is toegepast op alle
+acht call-sites. Gerealiseerd met Claude Code (Sonnet~4.6); de fix is handmatig
+gereviewd vóór commit.
+
+\textbf{Validatie (voor/na).} De CodeQL-run op \texttt{main}
+(commit \texttt{e476489}, 2026-06-10) sluit \textbf{9 van 9}
+\texttt{java/log-injection}-alerts (\#7--15, \texttt{state: fixed}). Open alerts:
+\textbf{9 $\to$ 0}. Daarmee is de detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus
+kwantitatief en reproduceerbaar afgesloten.
+
+\textbf{Restpunt.} Dezelfde herschrijving introduceerde 4 \emph{nieuwe}
+\texttt{java/log-injection}-alerts (\texttt{AuthorizationFilter.java:72/84/115/122}),
+op 2026-06-08 als \emph{``false positive''} gedismissed \emph{zonder} onderbouwing.
+Audit-observatie: deze classificatie moet nog worden vastgelegd (escapet de
+productie-logconfiguratie newlines?) of alsnog gesanitized worden.
 
 \newpage
 
@@ -274,22 +693,178 @@ de traceerbare bewijsartefacten is opgenomen in de traceability matrix
 \chapter{SBOM en Supply Chain Security}
 \label{ch:sbom}
 
+Een aanzienlijk deel van het aanvalsoppervlak van de module zit niet in de eigen
+broncode, maar in de \emph{toeleveringsketen}: 237 externe open-source componenten
+die worden meegebundeld in het productie-artefact. Dit hoofdstuk inventariseert
+die keten (\S\ref{sec:sbom}), vat de belangrijkste bekende kwetsbaarheden samen
+(\S\ref{sec:top-dependencies}) en licht toe waarom de prioritering op een
+\emph{contextuele} risicoscore berust in plaats van op de ruwe CVSS-score
+(\S\ref{sec:contextuele-risico}). De volledige analyse --- inclusief de
+geprioriteerde backlog van 16 bevindingen en het patch-/suppress-/accept-besluit
+per kwetsbaarheid --- is vastgelegd in het bronbestand \texttt{03.md} onder
+\texttt{docs/security/03-sbom-en-cve-advies/}.
+
 \section{Software Bill of Materials}
 \label{sec:sbom}
 
-% TODO --- verwijzing naar Bijlage C (sbom.cdx.json); totaal aantal componenten,
-%          generatiemethode (CycloneDX Maven Plugin), CI-integratie
+De SBOM is het fundament van kwetsbaarhedenbeheer (NEN-7510:2024-2 \textbf{A.8.8}):
+zonder een actuele, machine-leesbare inventaris van alle componenten is niet vast
+te stellen wélke onderdelen gepatcht moeten worden. De module genereert deze
+inventaris geautomatiseerd in het CI-proces.
+
+\begin{tabular}{@{}ll}
+    \toprule
+    \textbf{Eigenschap} & \textbf{Waarde} \\
+    \midrule
+    Formaat          & CycloneDX 1.6 (JSON) \\
+    Artefact         & \texttt{sbom.cdx.json} ($\sim$520 kB) \\
+    Componenten      & 238 (237 afhankelijkheden + de module zelf) \\
+    Generator        & \texttt{cyclonedx-maven-plugin:2.9.1:makeAggregateBom} \\
+    Trigger          & elke push naar \texttt{main}/\texttt{develop} + elke PR \\
+    CI-workflow      & \texttt{.github/workflows/sbom.yml} \\
+    CI-artefact      & \texttt{sbom-cyclonedx} (90 dagen bewaard) \\
+    Aanvullende scan & OSV-Scanner + Snyk in dezelfde job \\
+    \bottomrule
+\end{tabular}
+
+De plugin-versie is \emph{gepind} (\texttt{2.9.1}) zodat de SBOM-generator zelf
+reproduceerbaar is en niet stilzwijgend naar een nieuwere, niet-vertrouwde release
+wordt opgewaardeerd. CycloneDX is bovendien het formaat dat de \textbf{Cyber
+Resilience Act (CRA)} als (toekomstige) wettelijke eis aan softwareproducten
+hanteert; de module voldoet daarmee nu al aan die aankomende verplichting. Het
+bestand zelf is opgenomen als Bijlage~\ref{app:sbom}.
+
+\subsection*{Reikwijdte van de SBOM}
+
+De \texttt{makeAggregateBom}-doelstelling neemt standaard alléén de \texttt{compile}-,
+\texttt{runtime}- en \texttt{provided}-scopes mee; de \texttt{test}-scope wordt
+uitgesloten. De 238 componenten vormen daarmee de \emph{productie-relevante}
+afhankelijkheidsset. Dit is geverifieerd: test-only componenten zoals de
+H2-testdatabase en JUnit/Mockito komen niet in de SBOM voor. Dat is op zichzelf
+bewijs voor het suppress-besluit rond de twee H2-RCE's
+(\S\ref{sec:contextuele-risico}): de component bereikt het productie-artefact
+aantoonbaar niet.
+
+\subsection*{Licentie-observatie}
+
+Van de 237 afhankelijkheden staan er 160 onder Apache-2.0 en nog enkele tientallen
+onder permissieve licenties (BSD, MIT, UPL). Daarnaast bevat de keten echter ook
+\emph{copyleft}-componenten --- LGPL-2.1, GPL en MPL-1.1 --- en negen componenten
+zonder gedeclareerde licentie. Voor een zorgproduct dat (her)gedistribueerd kan
+worden is dat een aandachtspunt voor de juridische supply-chain-naleving, naast
+het puur technische kwetsbaarhedenbeheer.
 
 \section{Top Dependencies en Bekende CVE's}
 \label{sec:top-dependencies}
 
-% TODO --- tabel: component, versie, licentie, bekende CVE's, status
+Drie onafhankelijke SCA-bronnen zijn gekruisvalideerd: \textbf{Dependabot}
+(GitHub Advisory Database), \textbf{OSV-Scanner} (scant de CycloneDX SBOM) en
+\textbf{Snyk} (eigen database). De \textbf{264 ruwe Dependabot-alerts} herleiden
+zich na deduplicatie tot \textbf{75 unieke CVE's} (3 critical, 32 high, 35 medium,
+5 low); OSV-Scanner bevestigt daarvan 64 onafhankelijk en Snyk voegt nog 36 unieke
+CVE's toe die Dependabot mist. De onderstaande tabel toont de hoogst scorende
+bevindingen ná contextuele weging (\S\ref{sec:contextuele-risico}); de volledige
+top-16-backlog staat in \texttt{03.md} \S4 en het Snyk-rapport in
+Bijlage~\ref{app:snyk}.
+
+{\small
+\begin{longtable}{@{}
+    >{\raggedright\arraybackslash}p{3.6cm}
+    >{\raggedright\arraybackslash}p{1.2cm}
+    >{\centering\arraybackslash}p{0.85cm}
+    >{\centering\arraybackslash}p{0.95cm}
+    >{\raggedright\arraybackslash}p{1.4cm}
+    >{\raggedright\arraybackslash}p{5.4cm}@{}}
+\toprule
+\textbf{Component} & \textbf{Versie} & \textbf{CVSS} & \textbf{Score} &
+\textbf{Besluit} & \textbf{Toelichting} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Component} & \textbf{Versie} & \textbf{CVSS} & \textbf{Score} &
+\textbf{Besluit} & \textbf{Toelichting} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{\emph{vervolgt op volgende pagina}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{spring-web} & 5.3.30 & 9.8 & \rood{9.0} & Patch &
+    CVE-2016-1000027; deserialisatie\,$\rightarrow$\,RCE, kern van de REST-laag.
+    Fix = Spring~6 (major, gefaseerd). \\
+\addlinespace
+\texttt{jackson-mapper-asl} & 1.9.14 & 9.8 & \rood{8.1} & Patch &
+    Codehaus Jackson is EOL; migreren naar \texttt{jackson-databind}~2.x. \\
+\addlinespace
+\texttt{snakeyaml} & 1.30 & 8.3 & \rood{6.2} & Patch &
+    CVE-2022-1471, hoogste EPSS (0.94). Zie convergentie-observatie hieronder. \\
+\addlinespace
+\texttt{hibernate-core} & 5.6.15 & 8.3 & \amber{6.0} & Accept &
+    CVE-2026-0603 (SQLi); geen patch, EPSS verwaarloosbaar, parametrized criteria. \\
+\addlinespace
+\texttt{netty-handler} & 4.1.118 & 9.2 & \amber{5.9} & Patch &
+    HTTP-I/O-laag; fix in 4.1.119+ (non-breaking). \\
+\addlinespace
+\texttt{c3p0} & 0.9.5.5 & 8.9 & \amber{5.8} & Patch &
+    Deserialisatie in de DB-connection-pool; fix in 0.10.x. \\
+\addlinespace
+\texttt{spring-web} & 5.3.30 & 8.1 & \amber{5.7} & Patch &
+    CVE-2024-22262; patch 5.3.34 \emph{zonder} breaking changes. \\
+\addlinespace
+\texttt{log4j-core} & 2.22.1 & 7.7 & \amber{4.7} & Patch &
+    Log-injectie (CWE-117); versterkt de applicatie-fix uit commit \texttt{831dafb}. \\
+\end{longtable}
+}
+
+\subsection*{SBOM-observatie: gemengde \texttt{snakeyaml}-versies}
+
+De SBOM legt een concreet supply-chain-defect bloot dat een losse CVE-lijst zou
+missen: \texttt{snakeyaml} komt \emph{tweemaal} in de afhankelijkheidsboom voor ---
+zowel de kwetsbare \texttt{1.30} als de reeds gepatchte \texttt{2.4}, via
+verschillende transitieve paden. Het patchen van bevinding~\#3 is daarmee geen
+simpele versie-bump maar een \emph{convergentieprobleem}: pas een geforceerde
+\texttt{<dependencyManagement>}-override naar één 2.x-versie verwijdert het
+kwetsbare \texttt{1.30}-artefact volledig uit de productie-build.
 
 \section{Contextuele Risicoanalyse}
 \label{sec:contextuele-risico}
 
-% TODO --- uitleg contextualiseringsscore
-%          (CVSS x bereikbaarheid x healthcare-impact x exploiteerbaarheid)
+Een ruwe CVSS-score zegt niets over het \emph{werkelijke} risico voor déze module.
+Daarom is elke bevinding gescoord met een contextuele formule die CVSS combineert
+met drie genormaliseerde factoren (schaal 0.0--1.0):
+
+\begin{quote}
+\textbf{Contextueel = CVSS $\times$ (Bereikbaarheid $\times$ 0.4 +
+Healthcare-impact $\times$ 0.4 + Exploiteerbaarheid $\times$ 0.2)}
+\end{quote}
+
+\textbf{Bereikbaarheid} weegt of de component in het REST-aanvraagpad zit
+(runtime/productie) of alleen in test/build; \textbf{healthcare-impact} weegt of
+misbruik patiënt-/medische gegevens of authenticatie raakt; \textbf{exploiteerbaarheid}
+gebruikt de EPSS-waarde (kans op misbruik binnen 30 dagen). Geen van de 75 CVE's
+staat in de CISA KEV-catalogus (gecontroleerd 2026-06-08) --- er is dus geen
+\emph{actief} misbruik in het wild bekend voor deze versies. De volledige
+scoringscriteria per factor (de drempelwaarden voor elke stap op de
+0.0--1.0-schaal), de berekende score per bevinding en het bijbehorende
+patch-/suppress-/accept-besluit zijn uitgewerkt in het bronbestand \texttt{03.md}
+\S3--5.
+
+Het effect van deze weging is fundamenteel. De twee H2-database-RCE's hebben de
+\emph{hoogst mogelijke} CVSS (9.8) én een zeer hoge EPSS (0.91 / 0.27), maar zakken
+naar de onderkant van de backlog: H2 draait uitsluitend in \texttt{test}-scope en
+komt --- zoals in \S\ref{sec:sbom} aangetoond --- niet eens in de productie-SBOM
+voor. Omgekeerd stijgt \texttt{spring-web} (CVE-2016-1000027), met een
+\emph{gemiddelde} EPSS van 0.60, naar de absolute top: het is zowel maximaal
+bereikbaar (kern van de REST-laag) als maximaal impactvol (deserialisatie
+$\rightarrow$ RCE $\rightarrow$ volledige toegang tot de kroonjuwelen KJ1/KJ2/KJ3).
+
+Dit is de kern van de audit-mindset: niet de scanner-output overnemen, maar
+interpreteren. Het advies prioriteert dan ook \textbf{vijf non-breaking quick-wins}
+(\texttt{snakeyaml}, \texttt{spring-web}~5.3.34, \texttt{netty-handler},
+\texttt{c3p0}, \texttt{log4j-core}) boven de twee grote EOL-migraties
+(\texttt{spring-web}~6 en \texttt{struts-core}-vervanging), die --- met onderbouwing
+--- als geaccepteerde kortetermijnrisico's met interim-mitigatie worden vastgelegd.
 
 \newpage
 
@@ -318,6 +893,9 @@ de traceerbare bewijsartefacten is opgenomen in de traceability matrix
 % ════════════════════════════════════════════════════════════════════════════
 %  7. BIJLAGEN
 % ════════════════════════════════════════════════════════════════════════════
+% Forceer de bijlagen-lijst op een nieuwe pagina in de inhoudsopgave, zodat
+% A--H niet over de paginarand van de TOC worden afgekapt.
+\addtocontents{toc}{\protect\newpage}
 \appendix
 
 \chapter{CodeQL SARIF-output}
@@ -333,7 +911,46 @@ de traceerbare bewijsartefacten is opgenomen in de traceability matrix
 \chapter{CycloneDX SBOM JSON}
 \label{app:sbom}
 
-% TODO --- sbom.cdx.json, 238 packages
+De volledige Software Bill of Materials is een machine-leesbaar
+CycloneDX~1.6-bestand en is vanwege de omvang (237 componenten,
+$\sim$520 kB) niet integraal in dit rapport opgenomen. Het artefact is
+op twee manieren herleidbaar:
+
+\begin{itemize}
+    \item \textbf{In de repository:}
+          \texttt{docs/security/03-sbom-en-cve-advies/sbom.cdx.json}.
+    \item \textbf{Als CI-artefact:} de workflow \texttt{.github/workflows/sbom.yml}
+          genereert het bestand bij elke push naar \texttt{main}/\texttt{develop}
+          en uploadt het als artefact \texttt{sbom-cyclonedx} (90 dagen bewaard):\\
+          \url{https://github.com/GrannyGuard/webservices-rest-audit/actions/workflows/sbom.yml}
+\end{itemize}
+
+Onderstaand fragment toont de structuur (metadata + één component); de overige
+236 componenten volgen hetzelfde stramien.
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:e39d869d-48d4-3a68-b00d-a60013f432b2",
+  "metadata": {
+    "timestamp": "2026-06-13T14:17:17Z",
+    "tools": [{ "name": "cyclonedx-maven-plugin", "version": "2.9.1" }],
+    "component": {
+      "group": "org.openmrs.module", "name": "webservices.rest",
+      "version": "3.2.0", "type": "library"
+    }
+  },
+  "components": [
+    {
+      "group": "org.springframework", "name": "spring-web",
+      "version": "5.3.30", "scope": "required",
+      "purl": "pkg:maven/org.springframework/spring-web@5.3.30?type=jar"
+    }
+    // ... 236 verdere componenten ...
+  ]
+}
+\end{lstlisting}
 
 \chapter{PR-overzicht en Review-commentaar}
 \label{app:pr}
@@ -429,6 +1046,21 @@ in commit \texttt{831dafb}; CodeQL-run \texttt{27280969725} op commit
 Geïmplementeerd en geverifieerd \\
 \addlinespace
 
+\textbf{A.8.15} Logging (auth-events) &
+Zes logging-gaps gedicht conform NEN-7510~8.15: auth-succes en -falen
+verhoogd van DEBUG naar INFO/WARN met gebruikersnaam, remote IP en URI;
+IP-blokkering (\texttt{ACCESS\_BLOCKED}), sessie-timeout
+(\texttt{SESSION\_TIMEOUT}), logout (\texttt{AUTH\_LOGOUT}) en toegang tot
+het diagnose-endpoint (\texttt{DIAG\_ACCESS}) worden nu gelogd.
+Wachtwoorden, sessie-ID's en rollen worden expliciet \emph{niet}
+gelogd. &
+Commit \texttt{8521cdc}; 16 geautomatiseerde tests in
+\texttt{AuthorizationFilterLoggingTest} en
+\texttt{SessionController1\_9LoggingTest} slagen (\texttt{mvn test -pl
+omod-common,omod}); zie \texttt{01-security-audit/01.md} \S3.3. &
+Geïmplementeerd en geverifieerd \\
+\addlinespace
+
 \textbf{A.8.25} Veilige ontwikkelcyclus &
 Wijzigingen aan \texttt{main} uitsluitend via PR met verplichte review;
 CodeQL als required status check blokkeert merges met security-findings. &
@@ -443,9 +1075,9 @@ Geïmplementeerd \\
 \section*{Restpunten}
 
 \begin{itemize}
-    \item Screenshots toevoegen als visueel bewijs naast de
-          \texttt{gh api}-output voor A.8.3 (Environment-instellingen) en
-          A.8.5 (org-2FA-policy).
+    \item Voor A.8.3 en A.8.5: screenshots toevoegen als visueel bewijs
+          naast de \texttt{gh api}-output
+          (GitHub Environment-instellingen en org-2FA-policy).
     \item A.8.8 aanvullen met PR en hernieuwde scanresultaten zodra de twee
           quick-win-patches (\texttt{snakeyaml} naar 2.0,
           \texttt{spring-web} naar 5.3.34) zijn doorgevoerd.
