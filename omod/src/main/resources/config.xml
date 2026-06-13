@@ -66,6 +66,16 @@
 		<defaultValue>true</defaultValue>
 		<description>If the value of this setting is "true", then the details of the stackTrace would be shown in the error response. However, the recommendation is to keep it as "false", from the Security perspective, to avoid leaking implementation details.</description>
 	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.swaggerAllowedHosts</property>
+		<defaultValue></defaultValue>
+		<description>A comma-separated allow-list of Host headers (host[:port]) that may be written into the generated OpenAPI/Swagger specification. When non-empty, a request whose Host header is not on the list falls back to the first allowed host instead of reflecting the client-supplied value. An empty value preserves the legacy behaviour of trusting the request Host header. Mitigates Host-header reflection (audit finding SQ9).</description>
+	</globalProperty>
+	<globalProperty>
+		<property>@MODULE_ID@.enableSwaggerDocs</property>
+		<defaultValue>true</defaultValue>
+		<description>If "true", the Swagger UI and OpenAPI specification endpoints (/module/webservices/rest/apiDocs and /swagger.json) are served. Set to "false" in production to reduce the attack surface (NEN-7510 A.8.3, least functionality); the endpoints then return HTTP 404.</description>
+	</globalProperty>
 
     <!-- DWR -->
 	

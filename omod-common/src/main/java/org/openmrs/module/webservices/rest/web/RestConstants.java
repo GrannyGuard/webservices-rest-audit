@@ -222,4 +222,23 @@ public class RestConstants {
 	 * responses. When set to 'false', stack trace details will be omitted.
 	 */
 	public static String ENABLE_STACK_TRACE_DETAILS_GLOBAL_PROPERTY_NAME = MODULE_ID + ".enableStackTraceDetails";
+
+	/**
+	 * Global property name holding a comma-separated allow-list of Host headers (host[:port]) that
+	 * may be reflected into the generated OpenAPI/Swagger specification ({@code host} field). When
+	 * the list is non-empty and the request Host header is not on it, the first configured host is
+	 * used instead of the client-supplied value. An empty value preserves the legacy behaviour of
+	 * trusting the request Host header. Mitigates the unvalidated Host/Scheme reflection in
+	 * {@code swagger.json} (audit finding SQ9, NEN-7510 A.8.20/A.8.26).
+	 */
+	public static String SWAGGER_ALLOWED_HOSTS_GLOBAL_PROPERTY_NAME = MODULE_ID + ".swaggerAllowedHosts";
+
+	/**
+	 * Global property name (boolean) toggling the publicly reachable Swagger UI / OpenAPI
+	 * documentation endpoints ({@code /module/webservices/rest/apiDocs*} and
+	 * {@code /module/webservices/rest/swagger.json}). Defaults to {@code true} to preserve
+	 * behaviour; production deployments should set it to {@code false} to reduce the attack surface
+	 * (least functionality, NEN-7510 A.8.3) — the endpoints then return HTTP 404.
+	 */
+	public static String ENABLE_SWAGGER_DOCS_GLOBAL_PROPERTY_NAME = MODULE_ID + ".enableSwaggerDocs";
 }
