@@ -10,6 +10,6 @@ Rubric: *"Verbeteronderzoek security"* — Sprint 4 eindoplevering.
 - [ ] **Scope en Context** beschrijven — wat onderzocht, wat buiten scope, wettelijk kader (AVG, WGBO, NEN-7510:2024-2)
 - [ ] **Audit Methodologie** beschrijven — aanpak, tooling, testmethode
 - [ ] **Risico-analyse** opnemen met ten minste 4 bevindingen — per bevinding: beschrijving, risicoscore, impact, aanbeveling
-- [ ] **SBOM en Supply Chain Security** samenvatten — verwijzen naar `03-sbom-en-cve-advies/`
+- [x] **SBOM en Supply Chain Security** samenvatten — verwijzen naar `03-sbom-en-cve-advies/` (H5 + Bijlage C geschreven; `sbom.cdx.json` gevuld met echte CycloneDX 1.6 SBOM, 237 componenten)
 - [ ] **Conclusie en Advies** schrijven — geprioriteerde verbeteracties
 - [ ] **Bijlagen toevoegen:** traceability matrix, SBOM (CycloneDX JSON), SAST-output, risicomatrix, bow-tie diagrammen, Snyk-rapport, CRA-mapping

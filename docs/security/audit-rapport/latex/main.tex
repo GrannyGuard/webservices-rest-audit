@@ -425,22 +425,178 @@ geweest tot een productiesysteem met echte patiëntdata.
 \chapter{SBOM en Supply Chain Security}
 \label{ch:sbom}
 
+Een aanzienlijk deel van het aanvalsoppervlak van de module zit niet in de eigen
+broncode, maar in de \emph{toeleveringsketen}: 237 externe open-source componenten
+die worden meegebundeld in het productie-artefact. Dit hoofdstuk inventariseert
+die keten (\S\ref{sec:sbom}), vat de belangrijkste bekende kwetsbaarheden samen
+(\S\ref{sec:top-dependencies}) en licht toe waarom de prioritering op een
+\emph{contextuele} risicoscore berust in plaats van op de ruwe CVSS-score
+(\S\ref{sec:contextuele-risico}). De volledige analyse --- inclusief de
+geprioriteerde backlog van 16 bevindingen en het patch-/suppress-/accept-besluit
+per kwetsbaarheid --- is vastgelegd in het bronbestand \texttt{03.md} onder
+\texttt{docs/security/03-sbom-en-cve-advies/}.
+
 \section{Software Bill of Materials}
 \label{sec:sbom}
 
-% TODO --- verwijzing naar Bijlage C (sbom.cdx.json); totaal aantal componenten,
-%          generatiemethode (CycloneDX Maven Plugin), CI-integratie
+De SBOM is het fundament van kwetsbaarhedenbeheer (NEN-7510:2024-2 \textbf{A.8.8}):
+zonder een actuele, machine-leesbare inventaris van alle componenten is niet vast
+te stellen wélke onderdelen gepatcht moeten worden. De module genereert deze
+inventaris geautomatiseerd in het CI-proces.
+
+\begin{tabular}{@{}ll}
+    \toprule
+    \textbf{Eigenschap} & \textbf{Waarde} \\
+    \midrule
+    Formaat          & CycloneDX 1.6 (JSON) \\
+    Artefact         & \texttt{sbom.cdx.json} ($\sim$520 kB) \\
+    Componenten      & 238 (237 afhankelijkheden + de module zelf) \\
+    Generator        & \texttt{cyclonedx-maven-plugin:2.9.1:makeAggregateBom} \\
+    Trigger          & elke push naar \texttt{main}/\texttt{develop} + elke PR \\
+    CI-workflow      & \texttt{.github/workflows/sbom.yml} \\
+    CI-artefact      & \texttt{sbom-cyclonedx} (90 dagen bewaard) \\
+    Aanvullende scan & OSV-Scanner + Snyk in dezelfde job \\
+    \bottomrule
+\end{tabular}
+
+De plugin-versie is \emph{gepind} (\texttt{2.9.1}) zodat de SBOM-generator zelf
+reproduceerbaar is en niet stilzwijgend naar een nieuwere, niet-vertrouwde release
+wordt opgewaardeerd. CycloneDX is bovendien het formaat dat de \textbf{Cyber
+Resilience Act (CRA)} als (toekomstige) wettelijke eis aan softwareproducten
+hanteert; de module voldoet daarmee nu al aan die aankomende verplichting. Het
+bestand zelf is opgenomen als Bijlage~\ref{app:sbom}.
+
+\subsection*{Reikwijdte van de SBOM}
+
+De \texttt{makeAggregateBom}-doelstelling neemt standaard alléén de \texttt{compile}-,
+\texttt{runtime}- en \texttt{provided}-scopes mee; de \texttt{test}-scope wordt
+uitgesloten. De 238 componenten vormen daarmee de \emph{productie-relevante}
+afhankelijkheidsset. Dit is geverifieerd: test-only componenten zoals de
+H2-testdatabase en JUnit/Mockito komen niet in de SBOM voor. Dat is op zichzelf
+bewijs voor het suppress-besluit rond de twee H2-RCE's
+(\S\ref{sec:contextuele-risico}): de component bereikt het productie-artefact
+aantoonbaar niet.
+
+\subsection*{Licentie-observatie}
+
+Van de 237 afhankelijkheden staan er 160 onder Apache-2.0 en nog enkele tientallen
+onder permissieve licenties (BSD, MIT, UPL). Daarnaast bevat de keten echter ook
+\emph{copyleft}-componenten --- LGPL-2.1, GPL en MPL-1.1 --- en negen componenten
+zonder gedeclareerde licentie. Voor een zorgproduct dat (her)gedistribueerd kan
+worden is dat een aandachtspunt voor de juridische supply-chain-naleving, naast
+het puur technische kwetsbaarhedenbeheer.
 
 \section{Top Dependencies en Bekende CVE's}
 \label{sec:top-dependencies}
 
-% TODO --- tabel: component, versie, licentie, bekende CVE's, status
+Drie onafhankelijke SCA-bronnen zijn gekruisvalideerd: \textbf{Dependabot}
+(GitHub Advisory Database), \textbf{OSV-Scanner} (scant de CycloneDX SBOM) en
+\textbf{Snyk} (eigen database). De \textbf{264 ruwe Dependabot-alerts} herleiden
+zich na deduplicatie tot \textbf{75 unieke CVE's} (3 critical, 32 high, 35 medium,
+5 low); OSV-Scanner bevestigt daarvan 64 onafhankelijk en Snyk voegt nog 36 unieke
+CVE's toe die Dependabot mist. De onderstaande tabel toont de hoogst scorende
+bevindingen ná contextuele weging (\S\ref{sec:contextuele-risico}); de volledige
+top-16-backlog staat in \texttt{03.md} \S4 en het Snyk-rapport in
+Bijlage~\ref{app:snyk}.
+
+{\small
+\begin{longtable}{@{}
+    >{\raggedright\arraybackslash}p{3.6cm}
+    >{\raggedright\arraybackslash}p{1.2cm}
+    >{\centering\arraybackslash}p{0.85cm}
+    >{\centering\arraybackslash}p{0.95cm}
+    >{\raggedright\arraybackslash}p{1.4cm}
+    >{\raggedright\arraybackslash}p{5.4cm}@{}}
+\toprule
+\textbf{Component} & \textbf{Versie} & \textbf{CVSS} & \textbf{Score} &
+\textbf{Besluit} & \textbf{Toelichting} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Component} & \textbf{Versie} & \textbf{CVSS} & \textbf{Score} &
+\textbf{Besluit} & \textbf{Toelichting} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{\emph{vervolgt op volgende pagina}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{spring-web} & 5.3.30 & 9.8 & \rood{9.0} & Patch &
+    CVE-2016-1000027; deserialisatie\,$\rightarrow$\,RCE, kern van de REST-laag.
+    Fix = Spring~6 (major, gefaseerd). \\
+\addlinespace
+\texttt{jackson-mapper-asl} & 1.9.14 & 9.8 & \rood{8.1} & Patch &
+    Codehaus Jackson is EOL; migreren naar \texttt{jackson-databind}~2.x. \\
+\addlinespace
+\texttt{snakeyaml} & 1.30 & 8.3 & \rood{6.2} & Patch &
+    CVE-2022-1471, hoogste EPSS (0.94). Zie convergentie-observatie hieronder. \\
+\addlinespace
+\texttt{hibernate-core} & 5.6.15 & 8.3 & \amber{6.0} & Accept &
+    CVE-2026-0603 (SQLi); geen patch, EPSS verwaarloosbaar, parametrized criteria. \\
+\addlinespace
+\texttt{netty-handler} & 4.1.118 & 9.2 & \amber{5.9} & Patch &
+    HTTP-I/O-laag; fix in 4.1.119+ (non-breaking). \\
+\addlinespace
+\texttt{c3p0} & 0.9.5.5 & 8.9 & \amber{5.8} & Patch &
+    Deserialisatie in de DB-connection-pool; fix in 0.10.x. \\
+\addlinespace
+\texttt{spring-web} & 5.3.30 & 8.1 & \amber{5.7} & Patch &
+    CVE-2024-22262; patch 5.3.34 \emph{zonder} breaking changes. \\
+\addlinespace
+\texttt{log4j-core} & 2.22.1 & 7.7 & \amber{4.7} & Patch &
+    Log-injectie (CWE-117); versterkt de applicatie-fix uit commit \texttt{831dafb}. \\
+\end{longtable}
+}
+
+\subsection*{SBOM-observatie: gemengde \texttt{snakeyaml}-versies}
+
+De SBOM legt een concreet supply-chain-defect bloot dat een losse CVE-lijst zou
+missen: \texttt{snakeyaml} komt \emph{tweemaal} in de afhankelijkheidsboom voor ---
+zowel de kwetsbare \texttt{1.30} als de reeds gepatchte \texttt{2.4}, via
+verschillende transitieve paden. Het patchen van bevinding~\#3 is daarmee geen
+simpele versie-bump maar een \emph{convergentieprobleem}: pas een geforceerde
+\texttt{<dependencyManagement>}-override naar één 2.x-versie verwijdert het
+kwetsbare \texttt{1.30}-artefact volledig uit de productie-build.
 
 \section{Contextuele Risicoanalyse}
 \label{sec:contextuele-risico}
 
-% TODO --- uitleg contextualiseringsscore
-%          (CVSS x bereikbaarheid x healthcare-impact x exploiteerbaarheid)
+Een ruwe CVSS-score zegt niets over het \emph{werkelijke} risico voor déze module.
+Daarom is elke bevinding gescoord met een contextuele formule die CVSS combineert
+met drie genormaliseerde factoren (schaal 0.0--1.0):
+
+\begin{quote}
+\textbf{Contextueel = CVSS $\times$ (Bereikbaarheid $\times$ 0.4 +
+Healthcare-impact $\times$ 0.4 + Exploiteerbaarheid $\times$ 0.2)}
+\end{quote}
+
+\textbf{Bereikbaarheid} weegt of de component in het REST-aanvraagpad zit
+(runtime/productie) of alleen in test/build; \textbf{healthcare-impact} weegt of
+misbruik patiënt-/medische gegevens of authenticatie raakt; \textbf{exploiteerbaarheid}
+gebruikt de EPSS-waarde (kans op misbruik binnen 30 dagen). Geen van de 75 CVE's
+staat in de CISA KEV-catalogus (gecontroleerd 2026-06-08) --- er is dus geen
+\emph{actief} misbruik in het wild bekend voor deze versies. De volledige
+scoringscriteria per factor (de drempelwaarden voor elke stap op de
+0.0--1.0-schaal), de berekende score per bevinding en het bijbehorende
+patch-/suppress-/accept-besluit zijn uitgewerkt in het bronbestand \texttt{03.md}
+\S3--5.
+
+Het effect van deze weging is fundamenteel. De twee H2-database-RCE's hebben de
+\emph{hoogst mogelijke} CVSS (9.8) én een zeer hoge EPSS (0.91 / 0.27), maar zakken
+naar de onderkant van de backlog: H2 draait uitsluitend in \texttt{test}-scope en
+komt --- zoals in \S\ref{sec:sbom} aangetoond --- niet eens in de productie-SBOM
+voor. Omgekeerd stijgt \texttt{spring-web} (CVE-2016-1000027), met een
+\emph{gemiddelde} EPSS van 0.60, naar de absolute top: het is zowel maximaal
+bereikbaar (kern van de REST-laag) als maximaal impactvol (deserialisatie
+$\rightarrow$ RCE $\rightarrow$ volledige toegang tot de kroonjuwelen KJ1/KJ2/KJ3).
+
+Dit is de kern van de audit-mindset: niet de scanner-output overnemen, maar
+interpreteren. Het advies prioriteert dan ook \textbf{vijf non-breaking quick-wins}
+(\texttt{snakeyaml}, \texttt{spring-web}~5.3.34, \texttt{netty-handler},
+\texttt{c3p0}, \texttt{log4j-core}) boven de twee grote EOL-migraties
+(\texttt{spring-web}~6 en \texttt{struts-core}-vervanging), die --- met onderbouwing
+--- als geaccepteerde kortetermijnrisico's met interim-mitigatie worden vastgelegd.
 
 \newpage
 
@@ -484,7 +640,46 @@ geweest tot een productiesysteem met echte patiëntdata.
 \chapter{CycloneDX SBOM JSON}
 \label{app:sbom}
 
-% TODO --- sbom.cdx.json, 238 packages
+De volledige Software Bill of Materials is een machine-leesbaar
+CycloneDX~1.6-bestand en is vanwege de omvang (237 componenten,
+$\sim$520 kB) niet integraal in dit rapport opgenomen. Het artefact is
+op twee manieren herleidbaar:
+
+\begin{itemize}
+    \item \textbf{In de repository:}
+          \texttt{docs/security/03-sbom-en-cve-advies/sbom.cdx.json}.
+    \item \textbf{Als CI-artefact:} de workflow \texttt{.github/workflows/sbom.yml}
+          genereert het bestand bij elke push naar \texttt{main}/\texttt{develop}
+          en uploadt het als artefact \texttt{sbom-cyclonedx} (90 dagen bewaard):\\
+          \url{https://github.com/GrannyGuard/webservices-rest-audit/actions/workflows/sbom.yml}
+\end{itemize}
+
+Onderstaand fragment toont de structuur (metadata + één component); de overige
+236 componenten volgen hetzelfde stramien.
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:e39d869d-48d4-3a68-b00d-a60013f432b2",
+  "metadata": {
+    "timestamp": "2026-06-13T14:17:17Z",
+    "tools": [{ "name": "cyclonedx-maven-plugin", "version": "2.9.1" }],
+    "component": {
+      "group": "org.openmrs.module", "name": "webservices.rest",
+      "version": "3.2.0", "type": "library"
+    }
+  },
+  "components": [
+    {
+      "group": "org.springframework", "name": "spring-web",
+      "version": "5.3.30", "scope": "required",
+      "purl": "pkg:maven/org.springframework/spring-web@5.3.30?type=jar"
+    }
+    // ... 236 verdere componenten ...
+  ]
+}
+\end{lstlisting}
 
 \chapter{PR-overzicht en Review-commentaar}
 \label{app:pr}
