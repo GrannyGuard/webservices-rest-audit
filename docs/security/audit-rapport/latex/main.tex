@@ -10,6 +10,10 @@
 \usepackage{fancyhdr}
 \usepackage{parskip}
 
+% Laat TeX moeilijke regels (lange \texttt-paden) als laatste redmiddel rekken
+% i.p.v. over de marge te lopen.
+\setlength{\emergencystretch}{3em}
+
 % ── Tabellen ─────────────────────────────────────────────────────────────────
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -43,8 +47,10 @@
 % ── RAG-kleuren ──────────────────────────────────────────────────────────────
 \definecolor{ragAmber}{HTML}{E67E22}
 \definecolor{ragGreen}{HTML}{27AE60}
+\definecolor{ragYellow}{HTML}{C9A227}
 \newcommand{\rood}[1]{\textcolor{avansRed}{\textbf{#1}}}
 \newcommand{\amber}[1]{\textcolor{ragAmber}{\textbf{#1}}}
+\newcommand{\geel}[1]{\textcolor{ragYellow}{\textbf{#1}}}
 \newcommand{\groen}[1]{\textcolor{ragGreen}{\textbf{#1}}}
 
 % ── Hoofdstuktitel: "1 — Titel" met rode HR ──────────────────────────────────
@@ -388,34 +394,296 @@ geweest tot een productiesysteem met echte patiëntdata.
 \chapter{Risico-analyse en Bevindingen}
 \label{ch:bevindingen}
 
+De risicoanalyse brengt de gevonden gaps, de CIA/BIV-classificatie van de
+kroonjuwelen en de STRIDE-dreigingsanalyse samen tot één gescoorde risicomatrix
+(\S\ref{sec:risicomatrix}). Daaruit volgen de vijf uitgewerkte bevindingen
+(\S\ref{sec:bevindingen}). De volledige analyse --- de zeven gap-tabellen per
+control, de C4-diagrammen, de STRIDE-tabel met vijftien threats en de twintig
+gescoorde risico's --- is vastgelegd in
+\texttt{docs/security/01-security-audit/01.md}.
+
 \section{Risicomatrix}
 \label{sec:risicomatrix}
 
-% TODO --- verwijzing naar volledige risicomatrix in bijlage E;
-%          hier samenvatting van top risico's
+Risico's zijn gescoord volgens \textbf{Risicoscore = Kans $\times$ Impact}, elk op
+een schaal van 1--5 (ISO/IEC 27005). De \emph{risicobereidheid} is laag omdat de
+module bijzondere persoonsgegevens (AVG Art.~9) verwerkt: elk risico met score
+$\geq 10$ dat de vertrouwelijkheid of integriteit van een patiënt-, medisch- of
+authenticatie-kroonjuweel (KJ1, KJ2, KJ3) raakt, geldt automatisch als
+\emph{onacceptabel} en vereist directe actie.
+
+\begin{minipage}[t]{0.56\textwidth}
+\small
+\textbf{Score-grid (Impact $\times$ Kans):}\\[0.4em]
+\begin{tabular}{@{}c|ccccc@{}}
+ & \textbf{K1} & \textbf{K2} & \textbf{K3} & \textbf{K4} & \textbf{K5} \\
+\midrule
+\textbf{I5} & \geel{5}  & \amber{10} & \rood{15} & \rood{20} & \rood{25} \\
+\textbf{I4} & \groen{4} & \geel{8}   & \amber{12}& \rood{16} & \rood{20} \\
+\textbf{I3} & \groen{3} & \geel{6}   & \amber{9} & \amber{12}& \rood{15} \\
+\textbf{I2} & \groen{2} & \groen{4}  & \geel{6}  & \geel{8}  & \amber{10}\\
+\textbf{I1} & \groen{1} & \groen{2}  & \groen{3} & \groen{4} & \geel{5}  \\
+\end{tabular}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.40\textwidth}
+\small
+\textbf{Classificatie:}\\[0.4em]
+\begin{tabular}{@{}ll@{}}
+\groen{Laag}        & 1--4 \\
+\geel{Laag-Midden}  & 5--8 \\
+\amber{Midden}      & 9--12 \\
+\rood{Hoog}         & 13--25 \\
+\end{tabular}\\[0.6em]
+Grenswaarden: $\geq 9$ niet acceptabel
+(mitigatie $\leq$ 1 maand); $\geq 13$ onacceptabel
+(directe escalatie).
+\end{minipage}
+
+\vspace{1em}
+De analyse leverde \textbf{twintig gescoorde risico's} op uit vier bronnen ---
+SonarQube (SQ), CI/CD (CD), CodeQL (CQL) en het threat model (AT). Achttien
+daarvan vallen in Midden of hoger; elf zijn \emph{onacceptabel} (zes maal
+\rood{Hoog} plus vijf Midden-risico's die KJ1/KJ2/KJ3 met score $\geq 10$ raken).
+De volgende tabel
+toont de top van de matrix (score $\geq 12$); de volledige twintig staan in
+\texttt{01.md} \S4.2.
+
+{\small
+\begin{longtable}{@{}
+    >{\raggedright\arraybackslash}p{1.3cm}
+    >{\raggedright\arraybackslash}p{6.2cm}
+    >{\centering\arraybackslash}p{1.0cm}
+    >{\centering\arraybackslash}p{1.4cm}
+    >{\raggedright\arraybackslash}p{3.4cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Omschrijving} & \textbf{Score} & \textbf{Klasse} &
+\textbf{Kroonjuwelen} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Omschrijving} & \textbf{Score} & \textbf{Klasse} &
+\textbf{Kroonjuwelen} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r}{\emph{vervolgt op volgende pagina}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\textbf{SQ7} & Ongeauth.\ uitlezing van alle global properties & \rood{20} & \rood{Hoog} & KJ7, KJ4 $\to$ KJ1/2/3 \\
+\addlinespace
+\textbf{SQ2} & Onvolledige switch-statements (zoeklogica)      & \rood{16} & \rood{Hoog} & KJ2 \\
+\addlinespace
+\textbf{SQ1} & Kwetsbare sessie-validatie (session fixation)   & \rood{15} & \rood{Hoog} & KJ3, KJ1, KJ2 \\
+\addlinespace
+\textbf{SQ3} & Foute testassertions (verbergen bugs)           & \rood{15} & \rood{Hoog} & KJ2 \\
+\addlinespace
+\textbf{CD1} & Supply chain attack (dependency)                & \rood{15} & \rood{Hoog} & KJ7, KJ1, KJ2 \\
+\addlinespace
+\textbf{AT2} & Bulk data-exfiltratie via REST API              & \rood{15} & \rood{Hoog} & KJ1, KJ2 \\
+\addlinespace
+\textbf{SQ8} & Reflected XSS in Swagger debug-endpoint          & \amber{12}$^\triangle$ & \amber{Midden} & KJ3 \\
+\addlinespace
+\textbf{CD2} & Lekkage van secrets                              & \amber{12}$^\triangle$ & \amber{Midden} & KJ7, KJ3 \\
+\addlinespace
+\textbf{CQL1}& Log injection (CWE-117) via REST-parameters      & \amber{12} & \amber{Midden} & KJ6 \\
+\addlinespace
+\textbf{AT3} & Credential-aanvallen via wachtwoordherstel       & \amber{12}$^\triangle$ & \amber{Midden} & KJ3, KJ1, KJ2 \\
+\addlinespace
+\textbf{AT4} & Gecompromitteerde derde-partij-integratie        & \amber{12}$^\triangle$ & \amber{Midden} & KJ1, KJ2, KJ3 \\
+\end{longtable}
+}
+
+\noindent\small $^\triangle$ Midden-score (9--12) maar raakt KJ1/KJ2/KJ3 met
+score $\geq 10$ $\to$ conform de risicobereidheid (\S\ref{sec:normenkader})
+geclassificeerd als \emph{onacceptabel}.\normalsize
+
+\vspace{0.6em}
+Voor de twee hoogst scorende aanvalsketens is een \textbf{bow-tie-analyse}
+uitgewerkt: \texttt{SQ1} (sessie-overname) in \texttt{01.md} \S4.3 en \texttt{CD1}
+(supply chain) in \texttt{02.md} \S7.2 --- elk met de preventieve barrières vóór
+en de correctieve maatregelen ná het top-event.
 
 \section{Bevindingen}
 \label{sec:bevindingen}
 
-\subsection{B-001 ---}
+Hieronder zijn vijf bevindingen uitgewerkt, geselecteerd op risicoscore en op
+spreiding over de geauditeerde controls. Vier staan nog open (B-001 t/m B-004);
+B-005 toont een afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
+Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
+
+\subsection{B-001 --- Ongeauthenticeerde uitlezing van alle systeemconfiguratie (SQ7)}
 \label{sec:b001}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \rood{20 --- Hoog} (Kans 4 $\times$ Impact 5) --- hoogste van de analyse \\
+\textbf{NEN-7510}    & A.8.9 Configuratiebeheer (tevens A.8.3 Toegangsbeveiliging) \\
+\textbf{Kroonjuwelen}& KJ7, KJ4 --- indirect KJ1, KJ2, KJ3 \\
+\textbf{OWASP API}   & API8:2023 Security Misconfiguration / A01:2021 Broken Access Control \\
+\textbf{Status}      & \rood{Open --- prioriteit 1 (directe actie)} \\
+\end{tabular}
 
-\subsection{B-002 ---}
+\textbf{Beschrijving.} Het endpoint
+\texttt{GET /module/\allowbreak webservices/\allowbreak rest/\allowbreak settings.form/\allowbreak search?prefix=}
+retourneert \emph{alle} OpenMRS global properties (naam én waarde) die op de opgegeven prefix
+matchen, zonder enige authenticatiecheck. Met een lege prefix worden in beginsel
+\emph{alle} instellingen teruggegeven --- inclusief eventuele als global property
+opgeslagen credentials (database-, mailserverwachtwoorden) en de
+toegangsbeveiligingsconfiguratie \texttt{REST\_ALLOWED\_IPS} zelf.
+
+\textbf{Bewijs.} \texttt{SettingsFormController.java:50--63} ---
+\texttt{searchProperties(prefix)} is in de Javadoc expliciet gemarkeerd als
+\emph{``No authorization check''}. Het endpoint ligt buiten de
+\texttt{AuthorizationFilter}-keten (trust boundary TB1) en erft daarom noch de
+IP-allowlist noch de Basic-Auth-drempel.
+
+\textbf{Impact.} Een ongeauthenticeerde aanvaller kan de volledige
+beveiligingsconfiguratie inventariseren en potentieel credentials buitmaken. Dit
+vormt de opmaat naar volledige systeemcompromittering via de keten TM-E2
+(\texttt{/session/diag} $\to$ rollen + \texttt{settings.form/search} $\to$
+\texttt{REST\_ALLOWED\_IPS}/credentials). De score van 20 én de directe raakvlakken
+met KJ1/KJ2/KJ3 maken dit onacceptabel.
+
+\textbf{Aanbeveling.} Het endpoint achter de \texttt{AuthorizationFilter}-keten
+plaatsen en een privilege-check (\texttt{Context.hasPrivilege}) afdwingen, of ---
+indien de zoekfunctie geen productiefunctie heeft --- verwijderen.
+
+\subsection{B-002 --- Sessie-fixatie en best-effort toegangsfilter (SQ1, F3/F7)}
 \label{sec:b002}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \rood{15 --- Hoog} (Kans 3 $\times$ Impact 5) \\
+\textbf{NEN-7510}    & A.8.5 Authenticatie (tevens A.8.3 Toegangsbeveiliging) \\
+\textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
+\textbf{OWASP}       & A07:2021 Identification \& Authentication Failures (CWE-384/302) \\
+\textbf{Status}      & \rood{Open --- prioriteit 2/6}; bow-tie in \texttt{01.md} \S4.3 \\
+\end{tabular}
 
-\subsection{B-003 ---}
+\textbf{Beschrijving.} De \texttt{AuthorizationFilter} ververst het sessie-ID
+\emph{niet} na een succesvolle login: een door een aanvaller vooraf ``geplant''
+sessie-ID blijft na authenticatie geldig (session fixation, CWE-384). De filter is
+bovendien \emph{by design} best-effort --- het klassecommentaar stelt dat het filter
+\emph{``never stops execution''} en op de service-laag vertrouwt om alsnog te falen.
+
+\textbf{Bewijs.} \texttt{AuthorizationFilter.java:82} ---
+\texttt{getRequestedSessionId()} geeft het client-aangeleverde sessie-ID terug
+zonder server-side validatie; \texttt{:113} --- na \texttt{Context.authenticate()}
+wordt de sessie niet geïnvalideerd. Aanvullend (CodeQL \texttt{java/user-controlled-bypass},
+alert \#908) ontbreekt op \texttt{:86} een \texttt{return} na \texttt{sendError(401)},
+waardoor de keten dóórloopt naar \texttt{chain.doFilter()}.
+
+\textbf{Impact.} Sessie-overname geeft een aanvaller volledige toegang tot
+patiëntdossiers (KJ1, KJ2) met de rechten van het slachtoffer --- een meldplichtig
+datalek (AVG Art.~33). In combinatie met B-004 (XSS) ontstaat een complete keten:
+XSS steelt de sessiecookie, waarna de niet-verversde sessie wordt overgenomen.
+
+\textbf{Aanbeveling.} Sessie-ID regenereren na login (\texttt{session.invalidate()}
++ nieuwe sessie); \texttt{return} toevoegen na de 401; op termijn declaratieve
+autorisatie (Spring Security) in plaats van het best-effort filter.
+
+\subsection{B-003 --- Ontbrekende brute-force-bescherming op authenticatie (F8)}
 \label{sec:b003}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \rood{Hoog} (gap A.8.5; prioriteit 3) --- raakt KJ3 \\
+\textbf{NEN-7510}    & A.8.5 Authenticatie \\
+\textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
+\textbf{OWASP}       & A07:2021 Identification \& Authentication Failures (CWE-307) \\
+\textbf{Status}      & \rood{Open --- prioriteit 3 (directe actie)} \\
+\end{tabular}
 
-\subsection{B-004 ---}
+\textbf{Beschrijving.} De \texttt{AuthorizationFilter} stuurt elke binnenkomende
+Basic-Auth-aanvraag rechtstreeks door naar \texttt{Context.authenticate()} zonder
+account-lockout, rate-limiting of throttling. Geautomatiseerde aanvallen
+(credential stuffing, dictionary attack, brute force) zijn daarmee triviaal
+uitvoerbaar.
+
+\textbf{Bewijs.} \texttt{AuthorizationFilter.java:113} ---
+\texttt{Context.authenticate(userAndPass[0], userAndPass[1])} wordt in een onbegrensde
+stroom aangeroepen; handmatige review toont geen enkel beperkend mechanisme.
+
+\textbf{Impact.} In een ziekenhuisomgeving met veelgebruikte zwakke wachtwoorden
+(naam + geboortejaar, afdelingsnaam) is een dictionary attack realistisch en snel
+succesvol. Een gecompromitteerd klinisch account geeft direct toegang tot alle
+patiëntdossiers van die gebruiker (KJ1, KJ2). OWASP ASVS Level~1 vereist
+account-lockout als minimumvereiste.
+
+\textbf{Aanbeveling.} Rate-limiting / account-lockout invoeren op de
+authenticatie-keten (bv.\ exponentiële back-off per bron-IP/gebruiker), met een
+\texttt{ACCESS\_BLOCKED}-logregel bij overschrijding.
+
+\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2)}
 \label{sec:b004}
 
-% TODO
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \amber{12 --- Midden}$^\triangle$ (Kans 3 $\times$ Impact 4) --- onacceptabel (raakt KJ3) \\
+\textbf{NEN-7510}    & A.8.28 Veilig coderen (output-encoding), A.8.26 \\
+\textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
+\textbf{OWASP}       & A03:2021 Injection (XSS) --- CodeQL \texttt{java/xss}, alert \#1 (high) \\
+\textbf{Status}      & \rood{Open --- prioriteit 7} \\
+\end{tabular}
+
+\textbf{Beschrijving.} De \texttt{debug}-handler plaatst de request-parameter
+\texttt{tag} ongesanitized in een HTML-respons:
+\begin{quote}\ttfamily\small return "<h1>Debugging Tag: " + tag + "</h1>";\end{quote}
+Een aanvaller kan \texttt{?tag=<script>\ldots</script>} injecteren. Het endpoint
+\texttt{/module/\allowbreak webservices/\allowbreak rest/\allowbreak apiDocs/\allowbreak debug}
+ligt buiten de \texttt{AuthorizationFilter}-keten en is dus zonder authenticatie
+én zonder IP-allowlist bereikbaar.
+
+\textbf{Bewijs.} \texttt{SwaggerDocController.java:27} (CodeQL-meldtekst:
+\emph{``Cross-site scripting vulnerability due to a user-provided value''}).
+
+\textbf{Impact.} Eén crafted phishing-link volstaat: uitgevoerd in de browser van
+een ingelogde admin/zorgverlener kan de XSS sessiecookies of CSRF-tokens stelen
+$\to$ overname van een geprivilegieerde sessie (KJ3) en van daaruit toegang tot
+KJ1/KJ2. Geen voorafgaande toegang vereist.
+
+\textbf{Aanbeveling.} \texttt{tag} HTML-encoden (bv.\ Spring
+\texttt{HtmlUtils.htmlEscape}) of het debug-endpoint verwijderen --- het heeft geen
+productiefunctie.
+
+\subsection{B-005 --- Log injection (CWE-117): gemitigeerd en geverifieerd (CQL1, F1)}
+\label{sec:b005}
+
+\begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
+\textbf{Risicoscore} & \amber{12 --- Midden} (Kans 4 $\times$ Impact 3) --- raakt KJ6 \\
+\textbf{NEN-7510}    & A.8.15 Logging \\
+\textbf{Kroonjuwelen}& KJ6 Audit logs (integriteit) \\
+\textbf{OWASP}       & A09:2021 Logging \& Monitoring Failures (CWE-117) \\
+\textbf{Status}      & \groen{Gemitigeerd en geverifieerd --- commit \texttt{831dafb}} \\
+\end{tabular}
+
+\textbf{Beschrijving.} Meerdere REST-controllers logden request-afgeleide waarden
+(\texttt{resource}, \texttt{uuid}, query-parameters) zonder neutralisatie. Een
+aanvaller kon CR/LF-tekens injecteren om valse logregels te vervalsen (``log
+forging''), bijvoorbeeld een nep-\texttt{INFO}-regel die een geslaagde login
+suggereert --- waarmee forensisch onderzoek wordt misleid en de integriteit van het
+audit trail (KJ6) wordt aangetast.
+
+\textbf{Bewijs (vóór fix).} CodeQL \texttt{java/log-injection}
+(\texttt{security-extended}): 9~alerts in o.a.\ \texttt{RestUtil.java:521},
+\texttt{ClearDbCacheController2\_0.java:79/86/95} en
+\texttt{ConceptResource1\_8.java:567}.
+
+\textbf{Mitigatie.} Eén centrale helper \texttt{RestUtil.sanitizeForLog(String)}
+verwijdert \texttt{\textbackslash r}/\texttt{\textbackslash n} uit user-controlled
+waarden (het door CodeQL herkende taint-barrier-patroon) en is toegepast op alle
+acht call-sites. Gerealiseerd met Claude Code (Sonnet~4.6); de fix is handmatig
+gereviewd vóór commit.
+
+\textbf{Validatie (voor/na).} De CodeQL-run op \texttt{main}
+(commit \texttt{e476489}, 2026-06-10) sluit \textbf{9 van 9}
+\texttt{java/log-injection}-alerts (\#7--15, \texttt{state: fixed}). Open alerts:
+\textbf{9 $\to$ 0}. Daarmee is de detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus
+kwantitatief en reproduceerbaar afgesloten.
+
+\textbf{Restpunt.} Dezelfde herschrijving introduceerde 4 \emph{nieuwe}
+\texttt{java/log-injection}-alerts (\texttt{AuthorizationFilter.java:72/84/115/122}),
+op 2026-06-08 als \emph{``false positive''} gedismissed \emph{zonder} onderbouwing.
+Audit-observatie: deze classificatie moet nog worden vastgelegd (escapet de
+productie-logconfiguratie newlines?) of alsnog gesanitized worden.
 
 \newpage
 
