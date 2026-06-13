@@ -969,4 +969,62 @@ public class RestUtil implements GlobalPropertyListener {
 		}
 		return sanitized.toString();
 	}
+
+	/**
+	 * Indicates whether the Swagger UI / OpenAPI documentation endpoints
+	 * ({@code /module/webservices/rest/apiDocs*} and {@code /swagger.json}) should be served.
+	 * Controlled by {@link RestConstants#ENABLE_SWAGGER_DOCS_GLOBAL_PROPERTY_NAME}; defaults to
+	 * {@code true} to preserve behaviour. Production deployments set it to {@code false} to reduce
+	 * the attack surface (NEN-7510 A.8.3, least functionality).
+	 *
+	 * @return true unless the global property is explicitly set to "false"
+	 */
+	public static boolean isSwaggerDocsEnabled() {
+		return !"false".equalsIgnoreCase(
+		    getGlobalProperty(RestConstants.ENABLE_SWAGGER_DOCS_GLOBAL_PROPERTY_NAME, "true"));
+	}
+
+	/**
+	 * Validates a client-supplied Host header against the configured allow-list
+	 * ({@link RestConstants#SWAGGER_ALLOWED_HOSTS_GLOBAL_PROPERTY_NAME}) so the value cannot be
+	 * reflected unchanged into the published OpenAPI specification (audit finding SQ9). When the
+	 * allow-list is empty the request host is trusted (legacy behaviour); otherwise a host that is
+	 * not on the list is replaced by the first configured (canonical) host.
+	 *
+	 * @param requestHost the raw Host header from the request, may be null
+	 * @return the request host when allowed, otherwise the canonical configured host
+	 */
+	public static String resolveSwaggerHost(String requestHost) {
+		String allowed = getGlobalProperty(RestConstants.SWAGGER_ALLOWED_HOSTS_GLOBAL_PROPERTY_NAME, "");
+		if (StringUtils.isBlank(allowed)) {
+			return requestHost;
+		}
+		String normalizedRequest = StringUtils.trimToEmpty(requestHost);
+		String[] allowedHosts = allowed.split(",");
+		for (String candidate : allowedHosts) {
+			if (StringUtils.equalsIgnoreCase(StringUtils.trimToEmpty(candidate), normalizedRequest)) {
+				return requestHost;
+			}
+		}
+		return StringUtils.trimToEmpty(allowedHosts[0]);
+	}
+
+	/**
+	 * Normalises a request scheme to a value safe to reflect into the OpenAPI specification.
+	 * Only {@code http} and {@code https} are accepted; any other (e.g. an injected
+	 * {@code X-Forwarded-Proto}) falls back to the supplied default scheme.
+	 *
+	 * @param scheme the candidate scheme (e.g. from {@code X-Forwarded-Proto}), may be null
+	 * @param defaultScheme the scheme to use when {@code scheme} is not http/https
+	 * @return a sanitized "http" or "https" value
+	 */
+	public static String sanitizeScheme(String scheme, String defaultScheme) {
+		if ("https".equalsIgnoreCase(scheme)) {
+			return "https";
+		}
+		if ("http".equalsIgnoreCase(scheme)) {
+			return "http";
+		}
+		return defaultScheme;
+	}
 }

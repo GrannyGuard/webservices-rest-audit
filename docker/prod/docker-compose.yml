@@ -12,6 +12,9 @@ services:
       MYSQL_USER: ${DB_USER:?set DB_USER in prod .env}
       MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in prod .env, do not use the dev default}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in prod .env, do not use the dev default}
+      # Least-privilege runtime account is mandatory in prod (NEN-7510 A.8.2/A.8.3).
+      DB_APP_USER: ${DB_APP_USER:?set DB_APP_USER in prod .env}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in prod .env, do not use the dev default}
 
   openmrs:
     image: openmrs/openmrs-core:${OPENMRS_TAG:?set a pinned tag in prod, do not use 'nightly'}
@@ -22,6 +25,12 @@ services:
       # Same fail-fast secrets the DB requires — connection config must not fall back
       # to the dev defaults from the base file.
       OMRS_CONFIG_CONNECTION_DATABASE: ${DB_NAME:?set DB_NAME in prod .env}
+      # First deploy migrates the schema with the privileged DB_USER (Liquibase needs DDL).
+      # Steady state: once the schema is at the target version, switch the two lines below
+      # to the least-privilege runtime account so the running app can never DROP/ALTER:
+      #   OMRS_CONFIG_CONNECTION_USERNAME: ${DB_APP_USER:?set DB_APP_USER in prod .env}
+      #   OMRS_CONFIG_CONNECTION_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in prod .env}
+      # See docker/README.md → "Least-privilege runtime database user".
       OMRS_CONFIG_CONNECTION_USERNAME: ${DB_USER:?set DB_USER in prod .env}
       OMRS_CONFIG_CONNECTION_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in prod .env, do not use the dev default}
     deploy:

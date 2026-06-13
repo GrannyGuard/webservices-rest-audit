@@ -84,6 +84,9 @@ public class AuthorizationFilter implements Filter {
 				log.warn("SESSION_TIMEOUT ip=[{}] uri=[{}]", httpRequest.getRemoteAddr(), httpRequest.getRequestURI());
 				HttpServletResponse httpResponse = (HttpServletResponse) response;
 				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session timed out");
+				// CWE-302 (alert #908) — stop the chain after a timed-out session instead of
+				// falling through to chain.doFilter() with a 401 already committed.
+				return;
 			}
 			
 			if (!Context.isAuthenticated()) {

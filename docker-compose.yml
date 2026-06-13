@@ -14,11 +14,19 @@ services:
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_DATABASE: ${DB_NAME:-openmrs}
+      # DB_USER is the privileged MIGRATION account (full rights on the DB) used by
+      # OpenMRS/Liquibase to create and upgrade the schema at deploy time.
       MYSQL_USER: ${DB_USER:-openmrs}
       MYSQL_PASSWORD: ${DB_PASSWORD:-openmrs}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change_me_root}
+      # DB_APP_USER is the least-privilege RUNTIME account (DML only, can never DROP)
+      # created by docker/db-init/10-runtime-least-privilege.sh — NEN-7510 A.8.2/A.8.3.
+      DB_APP_USER: ${DB_APP_USER:-openmrs_app}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-openmrs_app}
     volumes:
       - db-data:/var/lib/mysql
+      # Least-privilege runtime user is provisioned on first DB initialization.
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s

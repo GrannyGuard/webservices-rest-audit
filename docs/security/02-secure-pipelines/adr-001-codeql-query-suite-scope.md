@@ -122,7 +122,7 @@ Run: [`codeql.yml` op `main`, commit `e476489`, 2026-06-10](https://github.com/G
 
 De 7 resterende open security-alerts zijn precies de 16 oorspronkelijke **min** de 9
 `java/log-injection`-findings, die ondertussen zijn opgelost (zie
-[Mitigatie & validatie §1](../06-mitigatie-en-validatie/README.md#1-cwe-117-log-injection)):
+[Mitigatie & validatie §1](../06-mitigatie-en-validatie/06.md#1-cwe-117-log-injection)):
 
 | Query | Open | CWE |
 |---|---:|---|
@@ -145,4 +145,4 @@ zonder dat er security-coverage verloren ging.
 - De 16 resterende echte findings worden getrieerd in
   [`docs/security/04-code-review/`](../04-code-review/README.md); de 9
   `java/log-injection`-findings zijn gemitigeerd en bevestigd gesloten, zie
-  [Mitigatie & validatie](../06-mitigatie-en-validatie/README.md).
+  [Mitigatie & validatie](../06-mitigatie-en-validatie/06.md).

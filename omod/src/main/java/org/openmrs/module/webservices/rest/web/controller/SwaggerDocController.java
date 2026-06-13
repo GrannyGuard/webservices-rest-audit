@@ -9,22 +9,38 @@
  */
 package org.openmrs.module.webservices.rest.web.controller;
 
+import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Controller("webservices.rest.SwaggerDocController")
 @RequestMapping("/module/webservices/rest/apiDocs")
 public class SwaggerDocController {
-	
+
 	@RequestMapping(method = RequestMethod.GET)
-	public void get() {
+	public void get(HttpServletResponse response) throws IOException {
+		// NEN-7510 A.8.3 — the Swagger UI can be disabled in production to reduce the attack surface.
+		if (!RestUtil.isSwaggerDocsEnabled()) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND);
+		}
 	}
 
 	@RequestMapping(value = "/debug", method = RequestMethod.GET)
-	@org.springframework.web.bind.annotation.ResponseBody
-	public String debug(@org.springframework.web.bind.annotation.RequestParam("tag") String tag) {
-		return "<h1>Debugging Tag: " + tag + "</h1>";
+	@ResponseBody
+	public String debug(@RequestParam("tag") String tag, HttpServletResponse response) throws IOException {
+		if (!RestUtil.isSwaggerDocsEnabled()) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return null;
+		}
+		// SQ8 / CWE-79 — HTML-encode the user-supplied value before reflecting it into the response.
+		return "<h1>Debugging Tag: " + HtmlUtils.htmlEscape(tag) + "</h1>";
 	}
-	
+
 }
