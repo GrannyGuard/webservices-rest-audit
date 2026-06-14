@@ -8,7 +8,7 @@ van toepassing, gekoppeld aan het risico/de bevinding die de maatregel adresseer
 (`SQ*`/`TM-*`/`CD*`/`CQL*` uit de risicomatrix in
 [`01-security-audit/01.md §4`](01-security-audit/01.md#4-risico-evaluatie)). Het
 bewijsartefact is bedoeld om reproduceerbaar te zijn (commit-SHA, CI-run, `gh api`-
-output of bronbestand). De matrix dekt momenteel **10 controls**; dit overstijgt de
+output of bronbestand). De matrix dekt momenteel **11 controls**; dit overstijgt de
 minimumeis van 3 ruim. Bewust niet opgenomen: controls waarvoor (nog) geen hard
 bewijsartefact bestaat — zie *Restpunten*.
 
@@ -28,6 +28,7 @@ bewijsartefact bestaat — zie *Restpunten*.
 | **A.5.23 / A.8.32** Supply chain security / change management | Reproduceerbare, verifieerbare releases: keyless cosign-signing + SLSA build-provenance + CycloneDX-SBOM naast de `.omod`; alle CI-actions SHA-pinned (was 1/9) | `release-sign.yml` (cosign `sign-blob`, `attest-build-provenance`); SHA-pins in alle workflows | [`.github/workflows/release-sign.yml`](../../.github/workflows/release-sign.yml), [`.github/workflows/`](../../.github/workflows/); hardening checklist [§8](01-security-audit/threat-model/hardening-checklist.md#8-signed-artifacts) + [§9](01-security-audit/threat-model/hardening-checklist.md#9-pinned-versies--git-hashes-voor-cicd-acties) | ✅ Geïmplementeerd (workflow); eerste signed release verifieert downstream met `cosign verify-blob` / `gh attestation verify` |
 | **A.8.28** Veilig coderen | Server-side validatie i.p.v. client-side: Swagger Host-allow-list + scheme-sanitisatie (adresseert SQ9) en centrale CWE-117 log-injectie-neutralisatie (`RestUtil.sanitizeForLog()`, CQL1) | `RestUtil.resolveSwaggerHost()` / `sanitizeScheme()` / `sanitizeForLog()` + unit tests | [`RestUtil.java`](../../omod-common/src/main/java/org/openmrs/module/webservices/rest/web/RestUtil.java); tests `SwaggerHardeningRestUtilTest` (8/8 groen) + `RestUtilTest`; CWE-117-fix commit `831dafb` (zie [04-code-review §2.1](04-code-review/04.md)) | ✅ Geïmplementeerd + getest |
 | **A.8.31** Scheiding ontwikkel-, test- en productieomgevingen | Aparte compose-overrides per omgeving + GitHub Environments (dev/test/prod), gescheiden secrets; prod publiceert de DB niet en faalt fast (`:?`) op ontbrekende secrets | `docker/{dev,test,prod}/docker-compose.yml`; GitHub Environments met protection rules | [`docker/README.md`](../../docker/README.md), [`docker/prod/docker-compose.yml`](../../docker/prod/docker-compose.yml); zie [02.md §2](02-secure-pipelines/02.md#2-omgevingsscheiding-otap--github-environments) | ✅ Geïmplementeerd |
+| **A.8.29** Beveiligingstests | Penetratietest op de development/test-fork: ZAP-scan + handmatige tests tegen alle endpoint-categorieën; bevindingen F1–F9 gekoppeld aan de SQ*/TM-*-risico's uit de threat-modelling en aan de B-001..B-005-bevindingen in het audit-rapport | ZAP-scan + handmatige verificatie per endpoint-categorie | [`05-penetration-tests/PentestReport-OpenMRS.md`](05-penetration-tests/PentestReport-OpenMRS.md) (F1–F9), [`zap-report.html`](05-penetration-tests/zap-report.html), [`endpoints.md`](05-penetration-tests/endpoints.md) | ✅ Uitgevoerd en gedocumenteerd |
 
 ---
 
@@ -41,5 +42,10 @@ bewijsartefact bestaat — zie *Restpunten*.
   [03.md §7](03-sbom-en-cve-advies/03.md#7-kostenraming-indicatief)
   (`snakeyaml` → 2.0, `spring-web` → 5.3.34) zijn doorgevoerd, de PR + hernieuwde
   scan-resultaten als extra bewijsartefact toevoegen.
-- [ ] **Pentest-control toevoegen** (bv. A.8.29 — beveiligingstests) zodra
-  [05-penetration-tests](05-penetration-tests/README.md) is uitgevoerd.
+- [x] **Pentest-control toegevoegd** (A.8.29 — beveiligingstests, hierboven) na
+  afronding van [05-penetration-tests](05-penetration-tests/PentestReport-OpenMRS.md)
+  (F1–F9).
+- [ ] **A.8.9 / A.8.24** (gap-analyse, zie `01-security-audit/01.md` §3.4–3.5)
+  zijn bewust niet als "geïmplementeerd" opgenomen — de bijbehorende
+  bevindingen (B-001 resp. TM-I4) staan nog open. Zodra gemitigeerd: rij
+  toevoegen met bewijsartefact.
