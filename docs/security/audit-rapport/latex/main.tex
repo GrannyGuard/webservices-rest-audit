@@ -1587,9 +1587,89 @@ GitHub Ruleset \emph{main protection}
 (\texttt{required\_approving\_review\_count: 1}; required status check
 \emph{Analyze Java (java)}); \texttt{02.md} \S4.1 en \S8. &
 Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.9} Configuratiebeheer --- \emph{gap} &
+\texttt{settings.form/search} retourneert alle global properties (incl.\
+\texttt{REST\_ALLOWED\_IPS}) zonder authenticatie --- B-001/SQ7, risicoscore
+20, hoogste van de analyse. Nog niet gemitigeerd. &
+\texttt{01-security-audit/01.md} \S3.5 (gap-analyse); B-001
+(\S\ref{sec:b001}); \texttt{SettingsFormController.java:50--63}. &
+\rood{Open --- prio.\ 1} \\
+\addlinespace
+
+\textbf{A.8.24} Cryptografie --- \emph{gap} &
+Module dwingt zelf geen TLS af; HTTP Basic Auth-credentials reizen als
+plaintext zonder gegarandeerde TLS op deployment-niveau (TM-I4). CI/CD-secrets
+zijn wel beschermd (secret scanning, zie A.8.5). &
+\texttt{01-security-audit/01.md} \S3.4 (gap-analyse);
+\texttt{AuthorizationFilter.java:86--114}. &
+\amber{Gedeeltelijk} \\
+\addlinespace
+
+\textbf{A.8.29} Beveiligingstests &
+Penetratietest op de development/test-fork: ZAP-scan + handmatige tests
+tegen alle endpoint-categorieën; bevindingen F1--F9 gekoppeld aan de
+SQ*/TM-*-risico's uit de threat-modelling en aan B-001 t/m B-005 hierboven. &
+\texttt{05-penetration-tests/PentestReport-OpenMRS.md} (F1--F9);
+\texttt{zap-report.html}; \texttt{endpoints.md}. &
+Uitgevoerd en gedocumenteerd \\
+\addlinespace
+
+\textbf{A.8.2 / A.8.3} Least-privilege database &
+Twee-account-DB-model: privileged migratie-account (Liquibase/DDL)
+gescheiden van een DML-only runtime-account
+(\texttt{SELECT/INSERT/UPDATE/DELETE}, kan nooit \texttt{DROP}). &
+\texttt{docker/db-init/10-runtime-least-privilege.sh},
+\texttt{docker-compose.yml}, \texttt{docker/prod/docker-compose.yml};
+hardening checklist \S2. &
+Mechanisme (PoC)$^\ast$ \\
+\addlinespace
+
+\textbf{A.8.20 / A.8.26} Host-validatie (Swagger/OpenAPI) &
+OpenAPI-spec reflecteert \texttt{Host}/\texttt{X-Forwarded-Proto} niet langer
+ongevalideerd: Host-allow-list + scheme-sanitisatie (SQ9); Swagger-endpoints
+uitschakelbaar via \texttt{enableSwaggerDocs}. &
+\texttt{RestUtil.resolveSwaggerHost()}/\texttt{sanitizeScheme()}/
+\texttt{isSwaggerDocsEnabled()}; unit tests
+\texttt{SwaggerHardeningRestUtilTest} (8/8 groen); hardening checklist
+\S1, \S10. &
+Geïmplementeerd en getest \\
+\addlinespace
+
+\textbf{A.5.23 / A.8.32} Supply chain security &
+Reproduceerbare, verifieerbare releases: keyless cosign-signing + SLSA
+build-provenance + CycloneDX-SBOM naast de \texttt{.omod}; alle CI-actions
+SHA-pinned (was 1/9). &
+\texttt{.github/workflows/release-sign.yml}; SHA-pins in alle workflows;
+hardening checklist \S8, \S9. &
+Geïmplementeerd (workflow) \\
+\addlinespace
+
+\textbf{A.8.28} Veilig coderen &
+Server-side validatie i.p.v.\ client-side: Swagger Host-allow-list +
+scheme-sanitisatie (SQ9) en centrale CWE-117 log-injectie-neutralisatie
+(\texttt{RestUtil.sanitizeForLog()}, CQL1). &
+\texttt{RestUtil.java}; tests \texttt{SwaggerHardeningRestUtilTest} (8/8) +
+\texttt{RestUtilTest}; CWE-117-fix commit \texttt{831dafb}. &
+Geïmplementeerd en getest \\
+\addlinespace
+
+\textbf{A.8.31} Scheiding OTAP-omgevingen &
+Aparte compose-overrides per omgeving + GitHub Environments
+(dev/test/prod) met gescheiden secrets; prod publiceert de DB niet en faalt
+fast (\texttt{:?}) op ontbrekende secrets. &
+\texttt{docker/\{dev,test,prod\}/docker-compose.yml},
+\texttt{docker/README.md}; \texttt{02.md} \S2. &
+Geïmplementeerd \\
 
 \end{longtable}
 }
+
+$^\ast$ Het mechanisme is aanwezig en lokaal geverifieerd; de
+prod-runtime-switch naar het DML-only account is een deploy-stap die in deze
+omgeving niet container-geverifieerd kon worden (Docker-daemon niet
+beschikbaar).
 
 \section*{Restpunten}
 
@@ -1600,8 +1680,15 @@ Geïmplementeerd \\
     \item A.8.8 aanvullen met PR en hernieuwde scanresultaten zodra de twee
           quick-win-patches (\texttt{snakeyaml} naar 2.0,
           \texttt{spring-web} naar 5.3.34) zijn doorgevoerd.
-    \item Control A.8.29 (beveiligingstests) toevoegen zodra de
-          penetratietests zijn uitgevoerd.
+    \item A.8.9 / A.8.24 (\emph{gap}-rijen) bijwerken naar
+          ``Geïmplementeerd'' zodra B-001 (settings.form-autorisatie) resp.\
+          de TLS-afdwinging zijn gerealiseerd.
+    \item Voor A.8.20/A.8.26 (SQ9): de open SQ8-restpunt (CodeQL-herscan
+          alert \#1 op \texttt{state: fixed}) als bewijsartefact toevoegen
+          zodra de eerstvolgende CodeQL-run op \texttt{main} is afgerond.
+    \item Voor A.8.2/A.8.3 (least-privilege database): de prod-runtime-switch
+          ($^\ast$) container-verifiëren zodra een omgeving met
+          Docker-daemon beschikbaar is.
 \end{itemize}
 
 \end{document}
