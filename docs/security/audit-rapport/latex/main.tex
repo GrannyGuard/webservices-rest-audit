@@ -623,36 +623,47 @@ account-lockout als minimumvereiste.
 authenticatie-keten (bv.\ exponentiële back-off per bron-IP/gebruiker), met een
 \texttt{ACCESS\_BLOCKED}-logregel bij overschrijding.
 
-\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2)}
+\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2): gemitigeerd}
 \label{sec:b004}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
-\textbf{Risicoscore} & \amber{12 --- Midden}$^\triangle$ (Kans 3 $\times$ Impact 4) --- onacceptabel (raakt KJ3) \\
+\textbf{Risicoscore} & \amber{12 --- Midden}$^\triangle$ (Kans 3 $\times$ Impact 4) --- vóór mitigatie \\
 \textbf{NEN-7510}    & A.8.28 Veilig coderen (output-encoding), A.8.26 \\
 \textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
 \textbf{OWASP}       & A03:2021 Injection (XSS) --- CodeQL \texttt{java/xss}, alert \#1 (high) \\
-\textbf{Status}      & \rood{Open --- prioriteit 7} \\
+\textbf{Status}      & \groen{Gemitigeerd --- commit \texttt{e3f3c7d}} \\
 \end{tabular}
 
-\textbf{Beschrijving.} De \texttt{debug}-handler plaatst de request-parameter
-\texttt{tag} ongesanitized in een HTML-respons:
+\textbf{Beschrijving (vóór fix).} De \texttt{debug}-handler plaatste de
+request-parameter \texttt{tag} ongesanitized in een HTML-respons:
 \begin{quote}\ttfamily\small return "<h1>Debugging Tag: " + tag + "</h1>";\end{quote}
-Een aanvaller kan \texttt{?tag=<script>\ldots</script>} injecteren. Het endpoint
+Een aanvaller kon \texttt{?tag=<script>\ldots</script>} injecteren. Het endpoint
 \texttt{/module/\allowbreak webservices/\allowbreak rest/\allowbreak apiDocs/\allowbreak debug}
-ligt buiten de \texttt{AuthorizationFilter}-keten en is dus zonder authenticatie
+ligt buiten de \texttt{AuthorizationFilter}-keten en was dus zonder authenticatie
 én zonder IP-allowlist bereikbaar.
 
-\textbf{Bewijs.} \texttt{SwaggerDocController.java:27} (CodeQL-meldtekst:
+\textbf{Bewijs (vóór fix).} \texttt{SwaggerDocController.java:27} (CodeQL-meldtekst:
 \emph{``Cross-site scripting vulnerability due to a user-provided value''}).
 
-\textbf{Impact.} Eén crafted phishing-link volstaat: uitgevoerd in de browser van
-een ingelogde admin/zorgverlener kan de XSS sessiecookies of CSRF-tokens stelen
-$\to$ overname van een geprivilegieerde sessie (KJ3) en van daaruit toegang tot
-KJ1/KJ2. Geen voorafgaande toegang vereist.
+\textbf{Impact (vóór fix).} Eén crafted phishing-link volstaat: uitgevoerd in de
+browser van een ingelogde admin/zorgverlener kon de XSS sessiecookies of
+CSRF-tokens stelen $\to$ overname van een geprivilegieerde sessie (KJ3) en van
+daaruit toegang tot KJ1/KJ2. Geen voorafgaande toegang vereist.
 
-\textbf{Aanbeveling.} \texttt{tag} HTML-encoden (bv.\ Spring
-\texttt{HtmlUtils.htmlEscape}) of het debug-endpoint verwijderen --- het heeft geen
-productiefunctie.
+\textbf{Mitigatie (twee lagen).} \texttt{tag} wordt nu HTML-geëncodeerd met
+\texttt{org.springframework.web.util.HtmlUtils.htmlEscape(...)} vóórdat het in
+de respons wordt geplaatst --- dit neutraliseert de \texttt{java/xss}-taintflow.
+Als defense-in-depth is de hele \texttt{/apiDocs}-boom bovendien uitschakelbaar
+via de global property \texttt{webservices.rest.enableSwaggerDocs}: in productie
+(\texttt{false}) geeft het endpoint HTTP 404 en is de vector volledig weg.
+
+\textbf{Validatie (voor/na).} Payload \texttt{?tag=<script>alert(1)</script>}
+wordt nu gerenderd als platte tekst (\texttt{\&lt;script\&gt;...}) i.p.v.
+uitgevoerd; \texttt{mvn clean install} groen, geen regressie. Zie
+\texttt{06-mitigatie-en-validatie/06.md} \S2 voor het volledige voor/na-overzicht.
+
+\textbf{Restpunt.} De CI-CodeQL-herscan die alert \#1 op \texttt{state: fixed}
+zet moet nog als bewijsartefact worden toegevoegd (zelfde patroon als B-005).
 
 \subsection{B-005 --- Log injection (CWE-117): gemitigeerd en geverifieerd (CQL1, F1)}
 \label{sec:b005}
@@ -1476,10 +1487,17 @@ Basic-Auth in de \texttt{AuthorizationFilter}, niet via DIGEST --- de exploitvoo
 \chapter{Traceability Matrix}
 \label{app:traceability}
 
-Deze bijlage koppelt vijf NEN-7510:2024-2 controls aan een traceerbaar
-bewijsartefact (repository-instelling, CI-workflow, commit of scan-output),
-conform de Sprint-4-vereiste van minimaal drie controls. De onderhouden
-bronversie van deze matrix staat in de repository:
+Deze bijlage koppelt \textbf{veertien} NEN-7510:2024-2 controls aan een
+traceerbaar bewijsartefact (repository-instelling, CI-workflow, commit of
+scan-output), conform de Sprint-4-vereiste van minimaal drie controls. De
+eerste zes rijen dekken de controls uit het Normenkader
+(\S\ref{sec:normenkader}) die als \emph{geïmplementeerd} zijn getraceerd;
+\textbf{A.8.9} en \textbf{A.8.24} --- de resterende twee controls uit het
+Normenkader --- zijn daar als \emph{gap} getraceerd (nog niet geïmplementeerd,
+zie B-001 resp.\ de gap-analyse \S3.4 in \texttt{01.md}). De overige rijen
+(A.8.29 en de Sprint-3-hardeningmaatregelen) zijn aanvullende controls die
+buiten het oorspronkelijke Normenkader om zijn geïmplementeerd en getest. De
+onderhouden bronversie van deze matrix staat in de repository:
 \texttt{docs/security/traceability-matrix.md}. Sectieverwijzingen
 (\S) verwijzen naar de onderliggende documentatie in \texttt{docs/security/}.
 
