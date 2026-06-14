@@ -172,17 +172,109 @@
 \section{Overall Status}
 \label{sec:overall-status}
 
-% TODO
+De OpenMRS REST Webservices Module (v3.2.0) is beoordeeld tegen
+NEN-7510:2024-2 Deel 2, met als kern de zeven controls uit het Normenkader
+(\S\ref{sec:normenkader}: A.8.3, A.8.5, A.8.8, A.8.9, A.8.15, A.8.24, A.8.25)
+plus zeven aanvullende controls die tijdens de audit zelf zijn
+geïmplementeerd en getest (Bijlage~\ref{app:traceability}, 14 controls
+totaal, elk met een traceerbaar bewijsartefact). De audit combineert
+gap-analyse, CIA/BIV- en risicoanalyse, STRIDE-threatmodelling, SAST
+(CodeQL) en SCA (Dependabot/OSV-Scanner/Snyk) met een penetratietest
+(F1--F9, Bijlage~\ref{app:traceability} A.8.29).
+
+Van de vijf uitgewerkte bevindingen (B-001 t/m B-005, \S\ref{sec:bevindingen})
+zijn er \textbf{twee volledig gemitigeerd en geverifieerd} (B-004 ---
+reflected XSS; B-005 --- log injection) en is \textbf{één deels gemitigeerd}
+(B-002: de CWE-302 fall-through in \texttt{AuthorizationFilter} is gefixt, de
+onderliggende sessie-fixatie CWE-384 staat nog open). De twee resterende
+bevindingen --- B-001 (ongeauthenticeerde uitlezing van alle
+systeemconfiguratie, risicoscore 20, hoogste van de analyse) en B-003 (geen
+brute-force-bescherming op authenticatie) --- zijn \textbf{nog open} en
+vormen de hoogste prioriteit.
+
+\textbf{Eindoordeel per control:} A.8.5 (Authenticatie) en A.8.9
+(Configuratiebeheer) zijn \rood{onvoldoende}; A.8.3 (Toegangsbeveiliging) en
+A.8.24 (Cryptografie) zijn \amber{gedeeltelijk}; A.8.15 (Logging) is
+\amber{gedeeltelijk gemitigeerd} (auth-logging is op orde, resource-level
+audit trail ontbreekt nog); A.8.8 (Kwetsbaarhedenbeheer) en A.8.25 (Veilige
+ontwikkelcyclus) zijn \groen{geïmplementeerd}, evenals de zeven in Sprint 3
+toegevoegde controls (least-privilege database, Host-validatie,
+supply-chain-signing, secure coding en OTAP-scheiding).
 
 \section{Top Risico's}
 \label{sec:top-risicos}
 
-% TODO --- tabel: bevinding-ID, omschrijving in managementtaal, ernst, status
+{\small
+\begin{tabularx}{\textwidth}{@{}l X l l@{}}
+    \toprule
+    \textbf{ID} & \textbf{Omschrijving (managementtaal)} & \textbf{Ernst} & \textbf{Status} \\
+    \midrule
+    B-001 & Iedereen kan --- zonder in te loggen --- alle systeeminstellingen
+            opvragen, mogelijk inclusief opgeslagen wachtwoorden en de
+            beveiligingsconfiguratie zelf. & \rood{20 --- Hoog} &
+            \rood{Open --- prio 1} \\
+    \addlinespace
+    B-002 & Een aanvaller die een sessie-ID ``plant'' kan na een succesvolle
+            login van een slachtoffer die sessie overnemen (sessie-fixatie). &
+            \rood{15 --- Hoog} & \amber{Deels gemitigeerd} \\
+    \addlinespace
+    B-003 & Inlogpogingen worden niet beperkt: wachtwoorden raden
+            (brute force/credential stuffing) is onbeperkt mogelijk. &
+            \rood{Hoog} & \rood{Open --- prio 3} \\
+    \addlinespace
+    B-004 & Een gemanipuleerde link kon kwaadaardige code laten uitvoeren in de
+            browser van een ingelogde beheerder (XSS). & \amber{12 --- Midden} &
+            \groen{Gemitigeerd} \\
+    \addlinespace
+    B-005 & Logregels konden door een aanvaller worden vervalst
+            (log-injectie), wat forensisch onderzoek kan misleiden. &
+            \amber{12 --- Midden} & \groen{Gemitigeerd \& geverifieerd} \\
+    \bottomrule
+\end{tabularx}
+}
 
 \section{Geprioriteerde Roadmap}
 \label{sec:roadmap}
 
-% TODO --- tabel: prioriteit (Nu / Deze sprint / Later), actie, termijn
+{\small
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+    \toprule
+    \textbf{Prioriteit} & \textbf{Actie} & \textbf{Termijn} \\
+    \midrule
+    \textbf{Nu} & B-001: \texttt{settings.form/search} achter de
+                  \texttt{AuthorizationFilter}-keten plaatsen en een
+                  privilege-check afdwingen (of verwijderen indien zonder
+                  productiefunctie). & Direct \\
+    \addlinespace
+    \textbf{Nu} & B-003: rate-limiting/account-lockout invoeren op de
+                  authenticatie-keten, met \texttt{ACCESS\_BLOCKED}-logging
+                  bij overschrijding. & Direct \\
+    \addlinespace
+    \textbf{Deze sprint} & B-002: sessie-ID regenereren na login
+                  (\texttt{session.invalidate()} + nieuwe sessie); daarna
+                  pentest-hervalidatie van de B-002/B-004-keten. & 1 sprint \\
+    \addlinespace
+    \textbf{Deze sprint} & SBOM-quickwins doorvoeren: \texttt{snakeyaml}
+                  convergeren naar 2.x, \texttt{spring-web} naar 5.3.34
+                  (03.md \S7). & 1 sprint \\
+    \addlinespace
+    \textbf{Deze sprint} & CodeQL-herscan als bewijsartefact toevoegen voor
+                  B-004 (alert \#1 $\to$ \texttt{fixed}), analoog aan B-005. & 1 sprint \\
+    \addlinespace
+    \textbf{Later} & A.8.24: TLS-afdwinging op deployment-niveau documenteren
+                  en verifiëren (reverse proxy/servlet-container). & Roadmap \\
+    \addlinespace
+    \textbf{Later} & Declaratieve autorisatie (Spring Security) ter vervanging
+                  van het best-effort \texttt{AuthorizationFilter}. & Roadmap \\
+    \addlinespace
+    \textbf{Later} & A.8.2/A.8.3: prod-runtime-switch naar het DML-only
+                  database-account container-verifiëren. & Roadmap \\
+    \addlinespace
+    \textbf{Later} & Majeure SCA-patches (Spring~6, \texttt{jackson-databind}
+                  2.x) gefaseerd inplannen (03.md \S6). & Roadmap \\
+    \bottomrule
+\end{tabularx}
+}
 
 \newpage
 
