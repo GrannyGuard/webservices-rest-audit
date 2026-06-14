@@ -1099,7 +1099,43 @@ detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus: negen
 \chapter{Dependabot Alerts Log}
 \label{app:dependabot}
 
-% TODO
+GitHub Dependabot vormt de primaire kwetsbaarhedenstream van de module: het matcht
+de afhankelijkheden uit \texttt{pom.xml} continu tegen de GitHub Advisory Database
+en opent automatisch een alert per kwetsbare component (NEN-7510:2024-2 A.8.8, zie
+Bijlage~\ref{app:traceability}). Onderstaand overzicht toont de openstaande alerts;
+op het moment van deze opname waren dat er \textbf{292}. Dat is hoger dan de
+\textbf{264} uit Hoofdstuk~\ref{ch:sbom}: de stream is \emph{live} en groeit naarmate
+nieuwe advisories verschijnen --- het cijfer in de hoofdtekst is de bevroren
+audit-momentopname, geen eindtotaal. Na deduplicatie herleiden deze ruwe alerts zich
+tot 75 unieke CVE's (\S\ref{sec:top-dependencies}).
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/bijlage-dependabots.png}{0.95}
+    \caption{Dependabot-alertoverzicht in de GitHub Security-tab (\emph{292 Open}):
+             o.a.\ de SnakeYAML-deserialisatie-RCE, Spring Framework path traversal,
+             RCE in de H2 Console en Apache Struts input-validatie. Elke regel toont
+             de severity, het betrokken package en de branch.}
+    \label{fig:dependabot-overview}
+\end{figure}
+
+\noindent Het detail van één alert illustreert de informatie waarop het
+patch-/suppress-/accept-besluit (\S\ref{sec:contextuele-risico}) berust: het
+package, de \emph{affected}- versus \emph{patched}-versie, het transitieve
+dependency-pad en de impactbeschrijving.
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/high-vul-dependabot-alert.png}{0.85}
+    \caption{Detail van de H2 Console JNDI-RCE (\texttt{com.h2database:h2}, affected
+             \texttt{< 2.0.206}). Het dependency-pad toont dat H2 \emph{transitief}
+             via \texttt{org.openmrs.test:openmrs-test} binnenkomt --- en dus
+             uitsluitend in \texttt{test}-scope draait. Precies daarom zakt deze
+             CVSS-9.8-bevinding in de contextuele weging
+             (\S\ref{sec:contextuele-risico}) naar de onderkant van de backlog: de
+             component bereikt het productie-artefact aantoonbaar niet.}
+    \label{fig:dependabot-detail}
+\end{figure}
 
 \chapter{CycloneDX SBOM JSON}
 \label{app:sbom}
