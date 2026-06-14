@@ -269,9 +269,13 @@ De volgende onderdelen zijn expliciet buiten scope gehouden:
     \item \textbf{Fysieke beveiliging en organisatorische maatregelen} ---
           personeelsbeleid, toegangspassen en fysieke serverruimtes zijn
           niet beoordeeld.
-    \item \textbf{Penetratietests op productie} --- vanwege het ontbreken
-          van een geautoriseerde testomgeving zijn pentests beperkt tot
-          statische analyse en proof-of-concept op de eigen fork.
+    \item \textbf{Penetratietests op productie} --- de penetratietest
+          (ZAP-scan + handmatige tests, bevindingen F1--F9, zie
+          Bijlage~\ref{app:traceability} A.8.29 en
+          \texttt{05-penetration-tests/PentestReport-OpenMRS.md}) is
+          uitsluitend uitgevoerd op de eigen development/test-fork; een
+          geautoriseerde test tegen een productie(-achtige) omgeving viel
+          buiten de scope van deze audit.
 \end{itemize}
 
 \section{Normenkader}
