@@ -53,6 +53,16 @@
 \newcommand{\geel}[1]{\textcolor{ragYellow}{\textbf{#1}}}
 \newcommand{\groen}[1]{\textcolor{ragGreen}{\textbf{#1}}}
 
+% Toon een afbeelding als die bestaat, anders een zichtbare placeholder-box,
+% zodat het document blijft compileren terwijl screenshots nog ontbreken.
+% Gebruik: \auditfig{pad/naar/bestand.png}{breedtefactor}  (bv. 0.85)
+\newcommand{\auditfig}[2]{%
+    \IfFileExists{#1}%
+        {\includegraphics[width=#2\linewidth]{#1}}%
+        {\fbox{\parbox[c][3.5cm][c]{#2\linewidth}{\centering\ttfamily\small
+            [\,afbeelding ontbreekt nog\,]\\[0.4em]#1}}}%
+}
+
 % ── Hoofdstuktitel: "1 — Titel" met rode HR ──────────────────────────────────
 \usepackage{titlesec}
 \titleformat{\chapter}[block]
@@ -901,7 +911,190 @@ interpreteren. Het advies prioriteert dan ook \textbf{vijf non-breaking quick-wi
 \chapter{CodeQL SARIF-output}
 \label{app:codeql}
 
-% TODO
+% ── BENODIGDE AFBEELDINGEN ───────────────────────────────────────────────────
+% Plaats de volgende bestanden in een submap  images/  naast main.tex:
+%   images/codeql-run.png            -> screenshot Actions-run "Analyze Java (java)"
+%   images/codeql-alerts-open.png    -> Security-tab, OPEN code-scanning alerts
+%                                       (bron: docs/security/04-code-review/Images/bijlage-codeql-alerts-open.png)
+%   images/codeql-alerts-closed.png  -> Security-tab, GESLOTEN/FIXED alerts (9 log-injection)
+%                                       (bron: docs/security/04-code-review/Images/bijlage-codeql-alerts-closed.png)
+% ─────────────────────────────────────────────────────────────────────────────
+
+\textbf{SARIF} (\emph{Static Analysis Results Interchange Format}) is het
+machine-leesbare JSON-formaat waarin CodeQL zijn bevindingen rapporteert. De
+workflow \texttt{.github/workflows/codeql.yml} draait de query-suite
+\texttt{security-extended} (zie de onderbouwing in ADR-001) bij elke push en PR
+op \texttt{main}, en uploadt het SARIF-resultaat in de stap \emph{Perform CodeQL
+Analysis} \emph{rechtstreeks} naar de GitHub code-scanning-backend (de
+Security-tab). Het bestand wordt dus niet als losse Actions-artefact bewaard,
+maar is wel volledig herleidbaar.
+
+Vanwege de omvang (honderden \texttt{results}- en \texttt{rules}-objecten) is het
+SARIF-bestand niet integraal in dit rapport opgenomen. Het is op twee manieren
+herleidbaar:
+
+\begin{itemize}
+    \item \textbf{In de Security-tab:} GitHub $\to$ Security $\to$ Code scanning,
+          gefilterd op \texttt{category: /language:java}
+          (\url{https://github.com/GrannyGuard/webservices-rest-audit/security/code-scanning}).
+    \item \textbf{Reproduceerbaar als SARIF via de API:} het ruwe SARIF van een
+          specifieke analyse (hier: commit \texttt{e476489}, run
+          \texttt{27280969725}, 2026-06-10) is op te halen met:
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
+# 1) zoek de analysis-id van de gewenste commit
+gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/analyses \
+  --jq '.[] | select(.commit_sha|startswith("e476489")) | {id, category, created_at}'
+
+# 2) download het ruwe SARIF van die analyse
+gh api -H "Accept: application/sarif+json" \
+  repos/GrannyGuard/webservices-rest-audit/code-scanning/analyses/<id> \
+  > codeql-e476489.sarif
+\end{lstlisting}
+\end{itemize}
+
+\section*{A.1\quad Uitvoering in de pipeline}
+
+De CodeQL-scan is een verplichte status check op \texttt{main} (zie
+\S\ref{app:traceability}, A.8.25). Onderstaande Actions-run toont een geslaagde
+analyse van de Java-module (\emph{Initialize CodeQL} $\to$ \emph{Build with
+Maven} $\to$ \emph{Perform CodeQL Analysis}); de laatste stap voert de upload
+naar de Security-tab uit.
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/succesful-codecql-run.png}{0.85}
+    \caption{Geslaagde CodeQL-workflow ``Analyze Java (java)'' in GitHub
+             Actions --- query-suite \texttt{security-extended}, build via Maven
+             (JDK 8), looptijd $\sim$3m30s.}
+    \label{fig:codeql-run}
+\end{figure}
+
+\section*{A.2\quad Representatief SARIF-fragment}
+
+Onderstaand fragment toont de structuur van het SARIF-bestand: de
+\texttt{tool.driver}-metadata met één query-definitie (\texttt{rules}) en één
+bijbehorende bevinding (\texttt{results}) --- hier de \texttt{java/xss}-finding
+(bevinding F2). De overige query-definities en bevindingen volgen hetzelfde
+stramien.
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQL",
+          "organization": "GitHub",
+          "semanticVersion": "2.18.4",
+          "rules": [
+            {
+              "id": "java/xss",
+              "name": "java/xss",
+              "shortDescription": { "text": "Cross-site scripting" },
+              "defaultConfiguration": { "level": "error" },
+              "properties": {
+                "tags": [ "security", "external/cwe/cwe-079" ],
+                "security-severity": "6.1"
+              }
+            }
+            // ... overige security-extended query-definities ...
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "java/xss",
+          "level": "error",
+          "message": {
+            "text": "Cross-site scripting vulnerability due to a user-provided value."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "omod/.../web/controller/SwaggerDocController.java"
+                },
+                "region": { "startLine": 27, "startColumn": 12, "endColumn": 47 }
+              }
+            }
+          ],
+          "partialFingerprints": { "primaryLocationLineHash": "a1b2c3d4e5f6:1" }
+        }
+        // ... overige results (user-controlled-bypass, log-injection, ...) ...
+      ]
+    }
+  ]
+}
+\end{lstlisting}
+
+\section*{A.3\quad Reproduceerbare alert-export}
+
+De SARIF-bevindingen verschijnen als \emph{code scanning alerts}. Onderstaande
+\texttt{gh}-commando's reproduceren de bewijslijst machine-leesbaar, gescheiden
+van de SCA/Snyk-dependency-alerts (die in Hoofdstuk~\ref{ch:sbom} thuishoren):
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
+# Alle open CodeQL code-niveau security-bevindingen (F2-F6):
+gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate \
+  -q '.[] | select(.rule.id|startswith("java/")) | select(.state=="open")
+      | select(.rule.security_severity_level!=null)
+      | {n:.number, rule:.rule.id, sev:.rule.security_severity_level,
+         loc:(.most_recent_instance.location.path+":"
+              +(.most_recent_instance.location.start_line|tostring))}'
+
+# De 4 gedismiste "false positive"-alerts (F1-restpunt), incl. reden:
+gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate \
+  -q '.[] | select(.rule.id=="java/log-injection") | select(.state=="dismissed")
+      | {n:.number, reason:.dismissed_reason, comment:.dismissed_comment}'
+\end{lstlisting}
+
+\noindent\textbf{Momentopname} (scan \texttt{e476489}, 2026-06-10) --- de zeven
+resterende open security-alerts na het sluiten van de negen
+\texttt{java/log-injection}-bevindingen (zie B-005, \S\ref{sec:b005}):
+
+\vspace{0.4em}
+{\small
+\begin{tabular}{@{}r l l l c@{}}
+\toprule
+\textbf{\#} & \textbf{Rule} & \textbf{Sev} & \textbf{Locatie} & \textbf{Bev.} \\
+\midrule
+1   & \texttt{java/xss}                   & high   & \texttt{SwaggerDocController.java:27}     & F2 \\
+908 & \texttt{java/user-controlled-bypass}& high   & \texttt{AuthorizationFilter.java:113}     & F3 \\
+4   & \texttt{java/sensitive-log}         & high   & \texttt{LayoutTemplateProvider.java:124}  & F4 \\
+5   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:172}          & F5 \\
+6   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:183}          & F5 \\
+2   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & F6 \\
+3   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & F6 \\
+\bottomrule
+\end{tabular}
+}
+
+\section*{A.4\quad Visuele bewijslast --- GitHub Security-tab}
+
+De Security-tab vóór en ná de log-injection-mitigatie (B-005). De gesloten
+alerts (\texttt{state: fixed}) tonen de kwantitatief afgesloten
+detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus: negen
+\texttt{java/log-injection}-bevindingen van open naar nul.
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/bijlage-codeql-alerts-open.png}{0.95}
+    \caption{Open code-scanning alerts in de Security-tab (na de switch naar
+             \texttt{security-extended}: de zeven resterende
+             code-niveau-bevindingen uit A.3).}
+    \label{fig:codeql-open}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/bijlage-codeql-alerts-closed.png}{0.95}
+    \caption{Gesloten alerts: de negen \texttt{java/log-injection}-bevindingen
+             op \texttt{state: fixed} na commit \texttt{831dafb} ---
+             bewijs van B-005 (\S\ref{sec:b005}).}
+    \label{fig:codeql-closed}
+\end{figure}
 
 \chapter{Dependabot Alerts Log}
 \label{app:dependabot}
@@ -955,7 +1148,36 @@ Onderstaand fragment toont de structuur (metadata + één component); de overige
 \chapter{PR-overzicht en Review-commentaar}
 \label{app:pr}
 
-% TODO
+Elke wijziging aan \texttt{main} verloopt via een pull request die zowel
+\textbf{automatisch} als \textbf{handmatig} wordt beoordeeld voordat hij gemerged
+mag worden (NEN-7510:2024-2 A.8.25, zie Bijlage~\ref{app:traceability}).
+Onderstaande PR-tijdlijn toont beide lagen in één beeld:
+
+\begin{itemize}
+    \item \textbf{Automatisch} --- de bots \texttt{github-advanced-security}
+          (CodeQL code scanning) en \texttt{sonarqubecloud} plaatsen hun
+          analyseresultaat rechtstreeks als PR-commentaar; de
+          SonarCloud-\emph{quality gate} (\emph{``Quality Gate passed''}) en de
+          vier geslaagde status checks zijn een harde merge-voorwaarde.
+    \item \textbf{Handmatig} --- een tweede teamlid wordt als reviewer
+          aangewezen, beoordeelt de diff en geeft expliciet akkoord
+          (\emph{``approved these changes''}) vóór de merge. De onderliggende
+          commits zijn bovendien \emph{Verified} (ondertekend).
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/PR-review.png}{0.7}
+    \caption{Voorbeeld van een gereviewde pull request: de geautomatiseerde
+             analyse van GitHub Advanced Security (CodeQL) en SonarCloud naast de
+             handmatige goedkeuring en merge door een tweede reviewer --- zowel
+             machinale als menselijke controle in één keten.}
+    \label{fig:pr-review}
+\end{figure}
+
+De volledige geschiedenis van alle pull requests --- open én gesloten, met de
+bijbehorende review-commentaren en status checks --- is in te zien op:
+\url{https://github.com/GrannyGuard/webservices-rest-audit/pulls}
 
 \chapter{Risicomatrix en Bow-tie Diagrammen}
 \label{app:risicomatrix}
@@ -965,7 +1187,23 @@ Onderstaand fragment toont de structuur (metadata + één component); de overige
 \chapter{Screenshots Code Review Bevindingen}
 \label{app:screenshots}
 
-% TODO
+Naast CodeQL (Bijlage~\ref{app:codeql}) draait \textbf{SonarCloud} als tweede
+SAST-tool. Het is ingericht als verplichte \emph{quality gate}: een pull request
+waarvan de gate faalt, kan niet worden gemerged zonder een expliciet
+gedocumenteerde afweging (zie \texttt{04-code-review/04.md} \S1). Onderstaand
+dashboard toont de stand op de \texttt{main}-branch.
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/bijlage-sonarcloud-security.png}{0.95}
+    \caption{SonarCloud-dashboard van de module: de quality gate staat op
+             \emph{Failed} (3 condities niet gehaald), met een
+             \emph{Security Rating E} en twee openstaande security-issues
+             (50\,\% Blocker, 50\,\% High). Dit dashboard onderbouwt de
+             SonarQube-bevindingen (de SQ-reeks) uit de risicomatrix
+             (\S\ref{sec:risicomatrix}).}
+    \label{fig:sonarcloud}
+\end{figure}
 
 \chapter{Snyk-rapport}
 \label{app:snyk}
