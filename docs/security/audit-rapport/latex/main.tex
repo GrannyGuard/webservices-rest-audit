@@ -994,16 +994,79 @@ interpreteren. Het advies prioriteert dan ook \textbf{vijf non-breaking quick-wi
 \section{Antwoord op de Auditvraag}
 \label{sec:auditvraag}
 
-% TODO --- voldoet de OpenMRS-module aan de relevante NEN-7510:2024-2 controls
-%          en CRA-verplichtingen?
+De auditvraag was of de OpenMRS REST Webservices Module (v3.2.0) voldoet aan
+de relevante NEN-7510:2024-2 controls en aan de CRA-verplichtingen voor
+open-source componenten in de toeleveringsketen.
+
+\textbf{NEN-7510:2024-2.} Van de zeven controls uit het Normenkader
+(\S\ref{sec:normenkader}) voldoet de module aan twee (A.8.8, A.8.25), is er
+bij drie sprake van gedeeltelijke compliance (A.8.3, A.8.15, A.8.24) en
+schiet de module bij twee tekort (A.8.5, A.8.9) --- zie
+\S\ref{sec:overall-status} voor het overzicht en
+Bijlage~\ref{app:traceability} voor de onderliggende bewijsvoering. De twee
+tekortkomingen zijn direct gekoppeld aan de twee nog openstaande bevindingen
+B-001 (risicoscore 20, hoogste van de analyse) en B-003. Daarnaast zijn
+tijdens deze audit zeven \emph{aanvullende} controls geïmplementeerd en
+getest (least-privilege database, Swagger/Host-validatie,
+supply-chain-signing, secure coding, OTAP-scheiding en beveiligingstests) die
+niet in het oorspronkelijke Normenkader stonden maar wel uit de
+risicoanalyse volgden.
+
+\textbf{CRA.} De CycloneDX-SBOM (238 componenten, Bijlage~\ref{app:sbom}) en
+de gekruisvalideerde SCA-keten (Dependabot + OSV-Scanner + Snyk, 75 unieke
+CVE's, \S\ref{sec:top-dependencies}) geven de toeleveringsketen een
+machine-leesbare, traceerbare inventarisatie --- een kernvereiste van de CRA.
+De contextuele risicoanalyse (\S\ref{sec:contextuele-risico}) onderbouwt per
+kwetsbaarheid een patch-/suppress-/accept-besluit; twee non-breaking
+quick-win-patches (\texttt{snakeyaml}, \texttt{spring-web}) staan nog open.
+De nieuwe signed-release-workflow (cosign keyless-signing + SLSA-provenance,
+Bijlage~\ref{app:traceability} A.5.23/A.8.32) levert daarnaast verifieerbare
+build-provenance, wat de CRA-conforme transparantie van de supply chain
+verder versterkt.
+
+\textbf{Samenvattend:} de module is op dit moment \rood{niet volledig
+compliant} met NEN-7510:2024-2, primair door B-001 (configuratiebeheer,
+A.8.9, score 20) en de authenticatie-gaps (A.8.5: B-002 deels open, B-003
+volledig open). De CRA-gerelateerde eisen aan supply-chain-transparantie
+worden grotendeels ondersteund door de SBOM/SCA/signing-keten die tijdens
+deze audit is opgezet en geverifieerd. Met de in
+\S\ref{sec:roadmap} geprioriteerde roadmap is volledige compliance op de
+geauditeerde controls binnen 1--2 sprints realistisch.
 
 \section{Geprioriteerde Aanbevelingen}
 \label{sec:aanbevelingen}
 
-% TODO --- tabel: prioriteit, criterium, actie
-%          Nu | hoge/kritieke bevinding open | direct oplossen
-%          Deze sprint | gemiddelde bevinding | inplannen
-%          Later | lage bevinding | security roadmap
+De aanbevelingen uit \S\ref{sec:roadmap} zijn geprioriteerd volgens de
+volgende criteria, afgeleid uit de risicocriteria in \texttt{01.md}
+\S2.3:
+
+{\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+    \toprule
+    \textbf{Prioriteit} & \textbf{Criterium} & \textbf{Actie} \\
+    \midrule
+    \textbf{Nu} & Kritieke of hoge bevinding nog volledig open
+                  (risicoscore $\geq 15$): B-001 (20), B-003 (Hoog). &
+                  Direct oplossen, vóór de volgende release; geen
+                  productie-uitrol met deze bevindingen open. \\
+    \addlinespace
+    \textbf{Deze sprint} & Gemiddelde bevinding, of een hoge bevinding die al
+                  deels gemitigeerd is: B-002 (CWE-302 gefixt, CWE-384 open),
+                  SBOM-quickwins, CodeQL-herscan-artefact voor B-004. &
+                  Inplannen in de lopende/volgende sprint; bij B-002 incl.\
+                  pentest-hervalidatie van de B-002/B-004-keten. \\
+    \addlinespace
+    \textbf{Later} & Lage bevinding of structurele/architecturale verbetering
+                  zonder direct exploiteerbaar risico: A.8.24
+                  (TLS-afdwinging op deploymentniveau), declaratieve
+                  autorisatie (Spring Security), prod-runtime-switch
+                  container-verifiëren, majeure SCA-upgrades (Spring~6,
+                  \texttt{jackson-databind}~2.x). &
+                  Opnemen in de security-roadmap voor de volgende
+                  sprints/kwartalen; geen blokkade voor de huidige release. \\
+    \bottomrule
+\end{tabularx}
+}
 
 \newpage
 
