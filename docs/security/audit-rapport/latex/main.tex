@@ -1244,7 +1244,76 @@ dashboard toont de stand op de \texttt{main}-branch.
 \chapter{Snyk-rapport}
 \label{app:snyk}
 
-% TODO
+Snyk is de derde, onafhankelijke SCA-scanner naast Dependabot en OSV-Scanner. Het
+draait in de CI-job \texttt{.github/workflows/sbom.yml} (\texttt{snyk test} op elke
+\texttt{pom.xml}, plus \texttt{snyk monitor}, dat het hosted rapport op
+\texttt{app.snyk.io} synchroon houdt) en gebruikt een \emph{eigen}
+vulnerability-database. Daardoor vlagt Snyk bevindingen die de GitHub Advisory
+Database --- en dus Dependabot --- nog niet kent: de 36 aanvullende, unieke CVE's
+uit \S\ref{sec:top-dependencies}.
+
+\paragraph{Momentopname.} De screenshots in deze en de voorgaande bijlagen zijn op
+\emph{verschillende momenten} in het project gemaakt. Elk is daarmee een
+\emph{point-in-time}-bewijs van de toenmalige stand; niet elke getoonde bevinding
+is op het moment van inleveren al gemitigeerd, en de aantallen kunnen per bijlage
+verschillen (vergelijk Dependabot 264 vs.\ 292, Bijlage~\ref{app:dependabot}). De
+bijlagen documenteren dus het \emph{verloop} van de scanresultaten, geen enkele
+eindtoestand.
+
+\section*{G.1\quad Hosted dashboard}
+
+Het Snyk-dashboard scant de vier Maven-manifesten van de module afzonderlijk; de
+geaggregeerde telling is \textbf{21 Critical, 199 High, 120 Medium en 38 Low}. Dit
+zijn \emph{ruwe} issue-tellingen per manifest --- de drie deel-poms tonen nagenoeg
+identieke aantallen omdat ze grotendeels dezelfde dependency-set delen. Het in
+\S\ref{sec:top-dependencies} genoemde aantal van \emph{36 unieke aanvullende} CVE's
+is de gededupliceerde, gekruisvalideerde waarde, niet deze ruwe som.
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/snyk-dashboard.png}{0.98}
+    \caption{Snyk Open Source-dashboard (\texttt{app.snyk.io}) voor
+             \texttt{GrannyGuard/webservices-rest-audit}: vier gescande
+             \texttt{pom.xml}-manifesten met geaggregeerd 21 Critical, 199 High,
+             120 Medium en 38 Low issues.}
+    \label{fig:snyk-dashboard}
+\end{figure}
+
+\section*{G.2\quad Voorbeeld: kritieke authenticatie-bypass in Apache Tomcat}
+
+Onderstaand detail toont een van de kritieke bevindingen: \textbf{CVE-2026-43512}
+(\texttt{CWE-287} Improper Authentication, \textbf{CVSS 9.1}) in
+\texttt{org.apache.tomcat:catalina 6.0.53}. Wanneer DIGEST-authenticatie is
+geconfigureerd, authenticeert de server een aanvaller die een willekeurige,
+onbekende gebruikersnaam opgeeft alsnog --- een volledige authenticatie-bypass. De
+component komt \emph{transitief} binnen via \texttt{org.apache.tomcat:jasper 6.0.53}
+(de JSP-engine die \texttt{webservices.rest-omod-common} meebundelt). Veelzeggend:
+NVD heeft deze CVE nog niet geanalyseerd, terwijl Snyk's eigen database hem al
+vlagt --- precies de meerwaarde van de derde scanner.
+
+\begin{figure}[h]
+    \centering
+    \auditfig{../../04-code-review/Images/snyk-specific.png}{0.98}
+    \caption{Detail van CVE-2026-43512 in \texttt{org.apache.tomcat:catalina 6.0.53}
+             (CVSS 9.1, Critical; Snyk-ID
+             \texttt{SNYK-JAVA-ORGAPACHETOMCAT-16691234}). Snyk meldt
+             \emph{``no remediation path available''}: er is geen schone versie-bump.}
+    \label{fig:snyk-tomcat}
+\end{figure}
+
+\paragraph{Advies.} De oplossing is inderdaad een nieuwere dependency-versie ---
+Tomcat is gepatcht in \texttt{catalina 9.0.118}, \texttt{10.1.55} en
+\texttt{11.0.22}. De module draait echter nog op de Tomcat~6-lijn (6.0.53), die
+sinds eind 2016 \emph{end-of-life} is, en Snyk meldt expliciet \emph{``no remediation
+path available''}: een directe \texttt{<dependencyManagement>}-override is geen
+schone drop-in, omdat de sprong van Tomcat~6 naar~9+ meerdere \emph{major}-versies
+overspant (gewijzigde Servlet-API; vanaf Tomcat~10 bovendien de namespace-wissel
+\texttt{javax}~$\rightarrow$~\texttt{jakarta}). Dit is dus geen quick-win maar een
+geplande upgrade, vergelijkbaar met de \texttt{spring-web}~6-migratie uit
+\S\ref{sec:contextuele-risico}. Contextueel verzachtend: de module authenticeert via
+Basic-Auth in de \texttt{AuthorizationFilter}, niet via DIGEST --- de exploitvoorwaarde
+(geconfigureerde DIGEST-auth) is in de standaardconfiguratie afwezig, en Snyk meldt
+\emph{``no known exploit''}. Het blijft niettemin een kritieke, in te plannen upgrade.
 
 \chapter{Traceability Matrix}
 \label{app:traceability}
