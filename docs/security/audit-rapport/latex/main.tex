@@ -1218,7 +1218,165 @@ bijbehorende review-commentaren en status checks --- is in te zien op:
 \chapter{Risicomatrix en Bow-tie Diagrammen}
 \label{app:risicomatrix}
 
-% TODO
+Deze bijlage bevat de \emph{volledige} risico-evaluatie waarvan Hoofdstuk~\ref{ch:bevindingen}
+alleen de top (score $\geq 12$) toonde: alle twintig gescoorde risico's
+(\S\ref{app:matrix-full}) plus de twee bow-tie-analyses voor de hoogst scorende
+aanvalsketens SQ1 en CD1 (\S\ref{app:bowtie-sq1}--\ref{app:bowtie-cd1}). De
+score-grid en de classificatiedrempels (Kans $\times$ Impact, 1--5) staan in
+\S\ref{sec:risicomatrix}. Bronversie: \texttt{01-security-audit/01.md} \S4.2--4.3
+en \texttt{02-secure-pipelines/02.md} \S7.2.
+
+\section*{E.1\quad Volledige risicomatrix (20 risico's)}
+\label{app:matrix-full}
+
+De risico's komen uit vier bronnen: \textbf{SQ} (SonarQube), \textbf{CD} (CI/CD),
+\textbf{CQL} (CodeQL) en \textbf{AT} (threat model). Score $=$ Kans $\times$ Impact.
+
+{\small
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+    >{\raggedright\arraybackslash}p{1.0cm}
+    >{\raggedright\arraybackslash}p{6.0cm}
+    >{\centering\arraybackslash}p{0.5cm}
+    >{\centering\arraybackslash}p{0.5cm}
+    >{\centering\arraybackslash}p{1.1cm}
+    >{\raggedright\arraybackslash}p{1.7cm}
+    >{\raggedright\arraybackslash}p{2.2cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Omschrijving} & \textbf{K} & \textbf{I} & \textbf{Score} &
+\textbf{Klasse} & \textbf{KJ} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Omschrijving} & \textbf{K} & \textbf{I} & \textbf{Score} &
+\textbf{Klasse} & \textbf{KJ} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{7}{r}{\emph{vervolgt op volgende pagina}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\textbf{SQ1}  & Kwetsbare sessie-validatie (session fixation)        & 3 & 5 & \rood{15}             & \rood{Hoog}        & KJ3, KJ1, KJ2 \\
+\textbf{SQ2}  & Onvolledige switch-statements (zoeklogica)           & 4 & 4 & \rood{16}             & \rood{Hoog}        & KJ2 \\
+\textbf{SQ3}  & Foute testassertions (verbergen bugs)               & 5 & 3 & \rood{15}             & \rood{Hoog}        & KJ2 \\
+\textbf{SQ4}  & Niet-serializeerbaar validatie-veld                 & 3 & 3 & \amber{9}             & \amber{Midden}     & KJ5 \\
+\textbf{SQ5}  & Extreem hoge cognitieve complexiteit                & 5 & 2 & \amber{10}            & \amber{Midden}     & KJ5 \\
+\textbf{SQ6}  & Lege methoden zonder verklaring                     & 4 & 2 & \geel{8}              & \geel{Laag-Mid.}   & --- \\
+\textbf{SQ7}  & Ongeauth.\ disclosure global properties             & 4 & 5 & \rood{20}             & \rood{Hoog}        & KJ7, KJ4, KJ1--3 \\
+\textbf{SQ8}  & Reflected XSS in Swagger debug-endpoint             & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ3 \\
+\textbf{SQ9}  & Host-header injectie in Swagger-spec                & 3 & 3 & \amber{9}             & \amber{Midden}     & KJ3 \\
+\textbf{CD1}  & Supply chain attack (dependency)                    & 3 & 5 & \rood{15}             & \rood{Hoog}        & KJ7, KJ1, KJ2 \\
+\textbf{CD2}  & Lekkage van secrets                                 & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ7, KJ3 \\
+\textbf{CD3}  & Ongeauth.\ toegang repository/pipeline              & 2 & 5 & \amber{10}            & \amber{Midden}     & KJ7 \\
+\textbf{CD4}  & Foutieve beveiligingsconfiguratie                   & 3 & 3 & \amber{9}             & \amber{Midden}     & KJ7 \\
+\textbf{CD5}  & Uitval CI/CD-omgeving                               & 4 & 2 & \geel{8}              & \geel{Laag-Mid.}   & KJ5 \\
+\textbf{CD6}  & Malafide code contributor                           & 2 & 5 & \amber{10}$^\triangle$ & \amber{Midden}    & KJ7, KJ1, KJ2 \\
+\textbf{CQL1} & Log injection (CWE-117) via REST-params             & 4 & 3 & \amber{12}            & \amber{Midden}     & KJ6 \\
+\textbf{AT1}  & Onbeveiligde API-docs als reconnaissance            & 5 & 2 & \amber{10}            & \amber{Midden}     & KJ1, KJ2 \\
+\textbf{AT2}  & Bulk data-exfiltratie via REST API                  & 3 & 5 & \rood{15}             & \rood{Hoog}        & KJ1, KJ2 \\
+\textbf{AT3}  & Credential-aanvallen via wachtwoordherstel          & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ3, KJ1, KJ2 \\
+\textbf{AT4}  & Gecompromitteerde derde-partij-integratie           & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ1, KJ2, KJ3 \\
+\end{longtable}
+}
+
+\noindent\small $^\triangle$ Midden-score (9--12) die de vertrouwelijkheid of
+integriteit van KJ1/KJ2/KJ3 raakt met score $\geq 10$ $\to$ conform de
+risicobereidheid (\S\ref{sec:risicomatrix}) geclassificeerd als \emph{onacceptabel}.
+SQ7 overschrijdt die drempel al op eigen score (20). Van de twintig risico's vallen
+er achttien in Midden of hoger; elf zijn onacceptabel (zes \rood{Hoog} plus vijf
+$^\triangle$-gemarkeerde Midden-risico's).\normalsize
+
+% ── Herbruikbare opmaak voor de bow-tie-tabellen ─────────────────────────────
+\newcommand{\topevent}[1]{%
+    {\setlength{\fboxsep}{6pt}%
+     \colorbox{avansRed}{\parbox{2.5cm}{\centering\color{white}\small
+        \textbf{TOP-EVENT}\\[4pt]#1}}}}
+
+\section*{E.2\quad Bow-tie SQ1 --- Sessie-overname (score 15)}
+\label{app:bowtie-sq1}
+
+SQ2 scoort nominaal hoger (16), maar is een code-kwaliteitsprobleem zonder concrete
+aanvalsketen. \textbf{SQ1} is gekozen omdat het een exploiteerbare keten kent
+(sessie-spoofing via \texttt{getRequestedSessionId()} in
+\texttt{AuthorizationFilter.java}) én de meeste, hoogst geclassificeerde kroonjuwelen
+raakt (KJ3, KJ1, KJ2). De preventieve en reactieve barrières corresponderen met
+prioriteit 2, 3 en 6 van het geprioriteerd advies.
+
+{\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}
+    >{\raggedright\arraybackslash}X
+    >{\centering\arraybackslash}m{3.0cm}
+    >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Oorzaken \& preventieve barrières} & \textbf{Kritieke gebeurtenis} &
+\textbf{Reactieve barrières \& gevolgen} \\
+\midrule
+\textbf{Oorzaken}\newline
+\textbullet\ Sessie-ID niet ververst na login (session fixation)\newline
+\textbullet\ \texttt{getRequestedSessionId()} accepteert client-sessie-ID zonder server-side validatie\newline
+\textbullet\ Geen rate-limiting $\to$ sessie-ID's brute-forcebaar\newline
+\textbullet\ Geen sessie-timeout / inactiviteitsdetectie\par\smallskip
+\textbf{Preventieve barrières}\newline
+\textbullet\ Sessie-ID regenereren bij login (\texttt{session.invalidate()} + nieuwe sessie)\newline
+\textbullet\ Server-side sessie-validatie tegen register van actieve sessies\newline
+\textbullet\ Rate-limiting / brute-force-bescherming op auth-endpoints (prio 3)\newline
+\textbullet\ CodeQL/SAST-scan op sessiebeheer (actief in pipeline)
+&
+\topevent{Aanvaller neemt een actieve sessie over $\to$ toegang tot KJ1, KJ2, KJ3}
+&
+\textbf{Reactieve barrières}\newline
+\textbullet\ Auth-logging op INFO/WARN met remote IP + endpoint $\to$ detecteert afwijkend sessiegebruik (prio 2)\newline
+\textbullet\ Forceren van logout / sessie-invalidatie bij anomalie\newline
+\textbullet\ Incident-response + AVG-meldplicht (art.\ 33/34)\par\smallskip
+\textbf{Gevolgen}\newline
+\textbullet\ Datalek bijzondere persoonsgegevens (AVG art.\ 9) --- meldplicht + boete AP\newline
+\textbullet\ Manipulatie van medische gegevens --- risico patiëntveiligheid\newline
+\textbullet\ Reputatieschade / verlies van vertrouwen \\
+\bottomrule
+\end{tabularx}
+}
+
+\section*{E.3\quad Bow-tie CD1 --- Supply chain attack (score 15)}
+\label{app:bowtie-cd1}
+
+CD1 is het hoogst scorende CI/CD-risico en raakt dezelfde kroonjuwelen als SQ1
+(KJ1, KJ2), maar via de \emph{toeleveringsketen} in plaats van de sessielaag. Beide
+bow-ties samen dekken de twee hoogst scorende aanvalsroutes van het systeem.
+
+{\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}
+    >{\raggedright\arraybackslash}X
+    >{\centering\arraybackslash}m{3.0cm}
+    >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Oorzaken \& preventieve barrières} & \textbf{Kritieke gebeurtenis} &
+\textbf{Reactieve barrières \& gevolgen} \\
+\midrule
+\textbf{Oorzaken}\newline
+\textbullet\ Gehackte maintainer van een legitieme package\newline
+\textbullet\ Typo-squatting (vergelijkbare pakketnaam)\newline
+\textbullet\ Compromise van een public registry\par\smallskip
+\textbf{Preventieve barrières}\newline
+\textbullet\ SCA-scans met OSV-Scanner\newline
+\textbullet\ Genereren \& controleren van SBOM's (CycloneDX)\newline
+\textbullet\ Pinnen van versies via SHA-hashes (GitHub Actions-stappen)
+&
+\topevent{Malafide dependency bereikt en draait in de CI/CD-pipeline}
+&
+\textbf{Reactieve barrières}\newline
+\textbullet\ Pipeline stopt automatisch bij detectie kwetsbaarheid\newline
+\textbullet\ Least privilege / geïsoleerde kortlevende runners\newline
+\textbullet\ Monitoren \& incident response\par\smallskip
+\textbf{Gevolgen}\newline
+\textbullet\ Code-executie op dev/build-omgeving\newline
+\textbullet\ Exfiltratie van codebase en secrets\newline
+\textbullet\ Besmette releases naar eindgebruikers \\
+\bottomrule
+\end{tabularx}
+}
 
 \chapter{Screenshots Code Review Bevindingen}
 \label{app:screenshots}
