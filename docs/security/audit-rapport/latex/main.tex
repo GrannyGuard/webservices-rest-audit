@@ -615,8 +615,10 @@ en de correctieve maatregelen ná het top-event.
 \label{sec:bevindingen}
 
 Hieronder zijn vijf bevindingen uitgewerkt, geselecteerd op risicoscore en op
-spreiding over de geauditeerde controls. Vier staan nog open (B-001 t/m B-004);
-B-005 toont een afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
+spreiding over de geauditeerde controls. Twee staan nog volledig open (B-001,
+B-003), B-002 is deels gemitigeerd (de CWE-302 fall-through is gefixt, de
+sessie-fixatie CWE-384 staat nog open), en B-004 en B-005 zijn gemitigeerd ---
+B-005 toont een volledig afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
 Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
 
 \subsection{B-001 --- Ongeauthenticeerde uitlezing van alle systeemconfiguratie (SQ7)}
@@ -1282,7 +1284,9 @@ tot 75 unieke CVE's (\S\ref{sec:top-dependencies}).
 \begin{figure}[h]
     \centering
     \auditfig{../../04-code-review/Images/bijlage-dependabots.png}{0.95}
-    \caption{Dependabot-alertoverzicht in de GitHub Security-tab (\emph{292 Open}):
+    \caption{Dependabot-alertoverzicht in de GitHub Security-tab (\emph{292 Open}
+             op het moment van de screenshot; de bevroren audit-momentopname in de
+             hoofdtekst is 264 --- zie de toelichting hierboven):
              o.a.\ de SnakeYAML-deserialisatie-RCE, Spring Framework path traversal,
              RCE in de H2 Console en Apache Struts input-validatie. Elke regel toont
              de severity, het betrokken package en de branch.}
