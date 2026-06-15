@@ -57,10 +57,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        #Added test.failure.ignore = true because we are using older OpenMRS version that makes it fail always.
+        # `verify` runs the full test suite as a real quality gate: a failing test now
+        # fails this job (and skips the Sonar analysis) instead of being silently
+        # ignored. The suite is green on the pinned openmrs.version 2.8.3 (1951 tests,
+        # 0 failures — verified locally and in CI run 27516867118). JaCoCo XML is
+        # auto-detected from target/site/jacoco/jacoco.xml (jacoco:report runs in verify).
         run: >
           mvn -B -ntp verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dmaven.test.failure.ignore=true
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.organization=grannyguard
           -Dsonar.projectKey=GrannyGuard_webservices-rest-audit

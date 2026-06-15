@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.openmrs.GlobalProperty;
+import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -41,19 +42,26 @@ public class SettingsFormController {
 
 	/**
 	 * Returns global properties matching a search prefix for the settings autocomplete.
-	 * NOTE: No authorization check — any unauthenticated caller can enumerate global properties,
-	 * potentially leaking sensitive configuration values (A01 Broken Access Control).
+	 * MITIGATED (B-001): Added authentication + privilege check (commit in response to audit finding).
+	 * Only authenticated users with "Manage RESTWS" privilege can enumerate global properties.
 	 *
-	 * @param prefix the property prefix to search for (user-supplied, concatenated without parameterization)
+	 * @param prefix the property prefix to search for
 	 * @return list of matching global property names and values as a JSON-like response
 	 */
 	@RequestMapping(value = "/search", method = RequestMethod.GET)
 	@org.springframework.web.bind.annotation.ResponseBody
 	public String searchProperties(@org.springframework.web.bind.annotation.RequestParam(value = "prefix", defaultValue = "") String prefix) {
-		// Missing auth: no Context.isAuthenticated() check; any HTTP client can call this endpoint
+		// B-001 mitigation: require authentication + privilege to access configuration
+		if (!Context.isAuthenticated()) {
+			throw new APIAuthenticationException("Not authenticated: cannot access global properties.");
+		}
+		if (!Context.hasPrivilege(RestConstants.PRIV_MANAGE_RESTWS)) {
+			throw new APIAuthenticationException("Privilege '" + RestConstants.PRIV_MANAGE_RESTWS
+			        + "' required to access global properties.");
+		}
+
 		StringBuilder result = new StringBuilder("[");
 		for (GlobalProperty gp : Context.getAdministrationService().getGlobalPropertiesByPrefix(prefix)) {
-			// Returns property names AND values — may expose passwords, API keys, and other secrets stored as global properties
 			result.append("{\"property\":\"").append(gp.getProperty())
 			      .append("\",\"value\":\"").append(gp.getPropertyValue()).append("\"},");
 		}
