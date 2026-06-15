@@ -269,9 +269,11 @@ De volgende onderdelen zijn expliciet buiten scope gehouden:
     \item \textbf{Fysieke beveiliging en organisatorische maatregelen} ---
           personeelsbeleid, toegangspassen en fysieke serverruimtes zijn
           niet beoordeeld.
-    \item \textbf{Penetratietests op productie} --- vanwege het ontbreken
-          van een geautoriseerde testomgeving zijn pentests beperkt tot
-          statische analyse en proof-of-concept op de eigen fork.
+    \item \textbf{Penetratietests op productie} --- er is geen geautoriseerde
+          productieomgeving beschikbaar; de uitgevoerde penetratietests zijn
+          daarom beperkt tot de eigen test-/dev-omgeving (fork) en zijn
+          afzonderlijk vastgelegd in
+          \texttt{docs/security/05-penetration-tests/PentestReport-OpenMRS.md}.
 \end{itemize}
 
 \section{Normenkader}
@@ -521,7 +523,10 @@ en de correctieve maatregelen ná het top-event.
 Hieronder zijn vijf bevindingen uitgewerkt, geselecteerd op risicoscore en op
 spreiding over de geauditeerde controls. Vier staan nog open (B-001 t/m B-004);
 B-005 toont een afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
-Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
+Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel). De
+\texttt{CR-x}-verwijzingen koppelen elke bevinding aan de bijbehorende code-review-bevinding
+in \texttt{04-code-review/04.md}; deze nummering staat los van de \texttt{F-xx}-bevindingen
+uit het afzonderlijke penetratietestrapport.
 
 \subsection{B-001 --- Ongeauthenticeerde uitlezing van alle systeemconfiguratie (SQ7)}
 \label{sec:b001}
@@ -559,7 +564,7 @@ met KJ1/KJ2/KJ3 maken dit onacceptabel.
 plaatsen en een privilege-check (\texttt{Context.hasPrivilege}) afdwingen, of ---
 indien de zoekfunctie geen productiefunctie heeft --- verwijderen.
 
-\subsection{B-002 --- Sessie-fixatie en best-effort toegangsfilter (SQ1, F3/F7)}
+\subsection{B-002 --- Sessie-fixatie en best-effort toegangsfilter (SQ1, CR-3/CR-7)}
 \label{sec:b002}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
@@ -592,7 +597,7 @@ XSS steelt de sessiecookie, waarna de niet-verversde sessie wordt overgenomen.
 + nieuwe sessie); \texttt{return} toevoegen na de 401; op termijn declaratieve
 autorisatie (Spring Security) in plaats van het best-effort filter.
 
-\subsection{B-003 --- Ontbrekende brute-force-bescherming op authenticatie (F8)}
+\subsection{B-003 --- Ontbrekende brute-force-bescherming op authenticatie (CR-8)}
 \label{sec:b003}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
@@ -623,7 +628,7 @@ account-lockout als minimumvereiste.
 authenticatie-keten (bv.\ exponentiële back-off per bron-IP/gebruiker), met een
 \texttt{ACCESS\_BLOCKED}-logregel bij overschrijding.
 
-\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2)}
+\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, CR-2)}
 \label{sec:b004}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
@@ -654,7 +659,7 @@ KJ1/KJ2. Geen voorafgaande toegang vereist.
 \texttt{HtmlUtils.htmlEscape}) of het debug-endpoint verwijderen --- het heeft geen
 productiefunctie.
 
-\subsection{B-005 --- Log injection (CWE-117): gemitigeerd en geverifieerd (CQL1, F1)}
+\subsection{B-005 --- Log injection (CWE-117): gemitigeerd en geverifieerd (CQL1, CR-1)}
 \label{sec:b005}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
@@ -974,7 +979,7 @@ naar de Security-tab uit.
 Onderstaand fragment toont de structuur van het SARIF-bestand: de
 \texttt{tool.driver}-metadata met één query-definitie (\texttt{rules}) en één
 bijbehorende bevinding (\texttt{results}) --- hier de \texttt{java/xss}-finding
-(bevinding F2). De overige query-definities en bevindingen volgen hetzelfde
+(bevinding CR-2). De overige query-definities en bevindingen volgen hetzelfde
 stramien.
 
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
@@ -1036,7 +1041,7 @@ De SARIF-bevindingen verschijnen als \emph{code scanning alerts}. Onderstaande
 van de SCA/Snyk-dependency-alerts (die in Hoofdstuk~\ref{ch:sbom} thuishoren):
 
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
-# Alle open CodeQL code-niveau security-bevindingen (F2-F6):
+# Alle open CodeQL code-niveau security-bevindingen (CR-2..CR-6):
 gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate \
   -q '.[] | select(.rule.id|startswith("java/")) | select(.state=="open")
       | select(.rule.security_severity_level!=null)
@@ -1044,7 +1049,7 @@ gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate 
          loc:(.most_recent_instance.location.path+":"
               +(.most_recent_instance.location.start_line|tostring))}'
 
-# De 4 gedismiste "false positive"-alerts (F1-restpunt), incl. reden:
+# De 4 gedismiste "false positive"-alerts (CR-1-restpunt), incl. reden:
 gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate \
   -q '.[] | select(.rule.id=="java/log-injection") | select(.state=="dismissed")
       | {n:.number, reason:.dismissed_reason, comment:.dismissed_comment}'
@@ -1060,13 +1065,13 @@ resterende open security-alerts na het sluiten van de negen
 \toprule
 \textbf{\#} & \textbf{Rule} & \textbf{Sev} & \textbf{Locatie} & \textbf{Bev.} \\
 \midrule
-1   & \texttt{java/xss}                   & high   & \texttt{SwaggerDocController.java:27}     & F2 \\
-908 & \texttt{java/user-controlled-bypass}& high   & \texttt{AuthorizationFilter.java:113}     & F3 \\
-4   & \texttt{java/sensitive-log}         & high   & \texttt{LayoutTemplateProvider.java:124}  & F4 \\
-5   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:172}          & F5 \\
-6   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:183}          & F5 \\
-2   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & F6 \\
-3   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & F6 \\
+1   & \texttt{java/xss}                   & high   & \texttt{SwaggerDocController.java:27}     & CR-2 \\
+908 & \texttt{java/user-controlled-bypass}& high   & \texttt{AuthorizationFilter.java:113}     & CR-3 \\
+4   & \texttt{java/sensitive-log}         & high   & \texttt{LayoutTemplateProvider.java:124}  & CR-4 \\
+5   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:172}          & CR-5 \\
+6   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:183}          & CR-5 \\
+2   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & CR-6 \\
+3   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & CR-6 \\
 \bottomrule
 \end{tabular}
 }
@@ -1476,12 +1481,13 @@ Basic-Auth in de \texttt{AuthorizationFilter}, niet via DIGEST --- de exploitvoo
 \chapter{Traceability Matrix}
 \label{app:traceability}
 
-Deze bijlage koppelt vijf NEN-7510:2024-2 controls aan een traceerbaar
+Deze bijlage koppelt tien NEN-7510:2024-2 controls aan een traceerbaar
 bewijsartefact (repository-instelling, CI-workflow, commit of scan-output),
-conform de Sprint-4-vereiste van minimaal drie controls. De onderhouden
+ruim boven de Sprint-4-vereiste van minimaal drie controls. De onderhouden
 bronversie van deze matrix staat in de repository:
-\texttt{docs/security/traceability-matrix.md}. Sectieverwijzingen
-(\S) verwijzen naar de onderliggende documentatie in \texttt{docs/security/}.
+\texttt{docs/security/traceability-matrix.md}; deze bijlage volgt die bron.
+Sectieverwijzingen (\S) verwijzen naar de onderliggende documentatie in
+\texttt{docs/security/}.
 
 {\small
 \begin{longtable}{@{}
@@ -1569,6 +1575,48 @@ GitHub Ruleset \emph{main protection}
 (\texttt{required\_approving\_review\_count: 1}; required status check
 \emph{Analyze Java (java)}); \texttt{02.md} \S4.1 en \S8. &
 Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.2 / A.8.3} Least privilege (database) &
+Twee-account-DB-model: een privileged migratie-account (Liquibase/DDL) gescheiden
+van een DML-only runtime-account (\texttt{SELECT/INSERT/UPDATE/DELETE}, kan nooit
+\texttt{DROP}). &
+\texttt{docker/db-init/10-runtime-least-privilege.sh},
+\texttt{docker-compose.yml}; hardening checklist \S2. &
+PoC-mechanisme; prod-runtime-switch = deploy-stap \\
+\addlinespace
+
+\textbf{A.8.20 / A.8.26} Host-validatie (Swagger) &
+OpenAPI-spec reflecteert \texttt{Host}/\texttt{Scheme} niet langer ongevalideerd:
+Host-allow-list + scheme-sanitisatie (SQ9-fix); Swagger-endpoints uitschakelbaar
+(SQ8-blootstelling). &
+\texttt{RestUtil.resolveSwaggerHost()} / \texttt{sanitizeScheme()}; unit tests
+\texttt{SwaggerHardeningRestUtilTest} (8/8 groen); hardening checklist \S1, \S10. &
+Geïmplementeerd + getest (SQ9); SQ8-encoding open \\
+\addlinespace
+
+\textbf{A.5.23 / A.8.32} Supply chain / change management &
+Verifieerbare releases: keyless cosign-signing + SLSA build-provenance +
+CycloneDX-SBOM naast de \texttt{.omod}; alle CI-actions SHA-pinned. &
+\texttt{.github/workflows/release-sign.yml}; hardening checklist \S8, \S9. &
+Geïmplementeerd (workflow) \\
+\addlinespace
+
+\textbf{A.8.28} Veilig coderen &
+Server-side validatie i.p.v.\ client-side: Swagger Host-allow-list +
+scheme-sanitisatie (SQ9) en centrale CWE-117 log-injectie-neutralisatie
+(\texttt{RestUtil.sanitizeForLog()}, CQL1). &
+\texttt{RestUtil.java}; tests \texttt{SwaggerHardeningRestUtilTest} (8/8) +
+\texttt{RestUtilTest}; fix commit \texttt{831dafb}. &
+Geïmplementeerd + getest \\
+\addlinespace
+
+\textbf{A.8.31} Scheiding ontwikkel-/test-/prod-omgevingen &
+Aparte compose-overrides per omgeving + GitHub Environments (dev/test/prod) met
+gescheiden secrets; prod publiceert de DB niet en faalt fast op ontbrekende
+secrets. &
+\texttt{docker/\{dev,test,prod\}/docker-compose.yml}; \texttt{02.md} \S2. &
+Geïmplementeerd \\
 
 \end{longtable}
 }
@@ -1582,8 +1630,9 @@ Geïmplementeerd \\
     \item A.8.8 aanvullen met PR en hernieuwde scanresultaten zodra de twee
           quick-win-patches (\texttt{snakeyaml} naar 2.0,
           \texttt{spring-web} naar 5.3.34) zijn doorgevoerd.
-    \item Control A.8.29 (beveiligingstests) toevoegen zodra de
-          penetratietests zijn uitgevoerd.
+    \item Control A.8.29 (beveiligingstests) in de traceability matrix
+          opnemen met het afzonderlijke penetratietestrapport
+          (\texttt{05-penetration-tests/}) als bewijsartefact.
 \end{itemize}
 
 \end{document}
