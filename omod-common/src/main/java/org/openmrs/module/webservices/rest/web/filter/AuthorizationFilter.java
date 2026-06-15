@@ -68,8 +68,8 @@ public class AuthorizationFilter implements Filter {
 		// check the IP address first.  If its not valid, return a 403
 		if (!RestUtil.isIpAllowed(request.getRemoteAddr())) {
 			String uri = request instanceof HttpServletRequest ? ((HttpServletRequest) request).getRequestURI() : "-";
-			// GrannyGuard patch
-			log.warn("ACCESS_BLOCKED ip=[{}] uri=[{}]", request.getRemoteAddr(), uri);
+			// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (the request URI is user-controlled)
+			log.warn("ACCESS_BLOCKED ip=[{}] uri=[{}]", request.getRemoteAddr(), RestUtil.sanitizeForLog(uri));
 			HttpServletResponse httpresponse = (HttpServletResponse) response;
 			httpresponse.sendError(HttpServletResponse.SC_FORBIDDEN,
 			    "IP address '" + request.getRemoteAddr() + "' is not authorized");
@@ -80,12 +80,15 @@ public class AuthorizationFilter implements Filter {
 		if (request instanceof HttpServletRequest) {
 			HttpServletRequest httpRequest = (HttpServletRequest) request;
 			if (httpRequest.getRequestedSessionId() != null && !httpRequest.isRequestedSessionIdValid()) {
-				// GrannyGuard patch
-				log.warn("SESSION_TIMEOUT ip=[{}] uri=[{}]", httpRequest.getRemoteAddr(), httpRequest.getRequestURI());
+				// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (the request URI is user-controlled)
+				log.warn("SESSION_TIMEOUT ip=[{}] uri=[{}]", httpRequest.getRemoteAddr(),
+				    RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
 				HttpServletResponse httpResponse = (HttpServletResponse) response;
 				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session timed out");
-				// CWE-302 (alert #908) — stop the chain after a timed-out session instead of
-				// falling through to chain.doFilter() with a 401 already committed.
+				// CWE-302 (defense-in-depth, found in code review) — stop the chain after a
+				// timed-out session instead of falling through to chain.doFilter() with a 401
+				// already committed. Distinct from CodeQL #908 (the optional Basic-Auth branch
+				// below); see docs/security/06-mitigatie-en-validatie/06.md section 3b.
 				return;
 			}
 			
@@ -114,16 +117,18 @@ public class AuthorizationFilter implements Filter {
 							String[] userAndPass = decoded.split(":");
 							attemptedUser = userAndPass[0];
 							Context.authenticate(userAndPass[0], userAndPass[1]);
-							// GrannyGuard patch
+							// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (username + URI are user-controlled)
 							log.info("AUTH_SUCCESS user=[{}] ip=[{}] uri=[{}]",
-							    attemptedUser, httpRequest.getRemoteAddr(), httpRequest.getRequestURI());
+							    RestUtil.sanitizeForLog(attemptedUser), httpRequest.getRemoteAddr(),
+							    RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
 						}
 						catch (Exception ex) {
 							// This filter never stops execution. If the user failed to
 							// authenticate, that will be caught later.
-							// GrannyGuard patch
+							// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (username, URI, exception msg are user-controlled)
 							log.warn("AUTH_FAILURE user=[{}] ip=[{}] uri=[{}] reason=[{}]",
-							    attemptedUser, httpRequest.getRemoteAddr(), httpRequest.getRequestURI(), ex.getMessage());
+							    RestUtil.sanitizeForLog(attemptedUser), httpRequest.getRemoteAddr(),
+							    RestUtil.sanitizeForLog(httpRequest.getRequestURI()), RestUtil.sanitizeForLog(ex.getMessage()));
 						}
 					}
 				}

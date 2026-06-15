@@ -2,7 +2,7 @@
 
 Dit document is de Sprint 3-deliverable voor issue #63 ("Attack Surface Mapping").
 Het bouwt voort op het STRIDE-threat-model in
-[`../01.md` §3.5](../01.md#35-threat-model--c4-architectuur--stride-analyse) en op de
+[`../01.md` §3.7](../01.md#37-threat-model--c4-architectuur--stride-analyse) en op de
 endpoint-inventarisatie in
 [`../../05-penetration-tests/endpoints.md`](../../05-penetration-tests/endpoints.md).
 Volgens het begrippenkader is de **attack surface** *"de optelsom van alle punten
@@ -16,7 +16,7 @@ configuratie) — inclusief impliciet vertrouwde elementen ('trust boundaries')"
 De module exposeert HTTP-endpoints via **drie verschillende URL-prefixen**, die
 **niet** dezelfde beveiligingslaag doorlopen. Dit onderscheid is de kern van deze
 mapping en is in Sprint 3 ontdekt via de STRIDE-analyse (TM-S4, TM-I2, TM-T2 —
-zie §3.5.4 in het hoofddocument).
+zie §3.7.4 in het hoofddocument).
 
 | Categorie | URL-prefix | Loopt door `AuthorizationFilter` (TB1)? | Component (C4) |
 |---|---|:---:|---|
@@ -88,7 +88,7 @@ volledig op "je bent ingelogd" zonder te toetsen *welke* rol/privilege vereist i
 | `/ws/rest/v1/loggedinusers` | GET | ❌ Geen expliciete check gevonden | 🟠 **Midden** — lekt informatie over actieve gebruikers (KJ4) |
 | `/ws/rest/v1/implementationid` | GET, POST | ❌ Geen expliciete check gevonden op POST | 🟡 Laag-Midden — wijzigen van implementation-ID is een integriteitsrisico, lage directe impact |
 
-> **Conclusie categorie B:** TM-E3 (uit §3.5.3) wordt door deze inventarisatie
+> **Conclusie categorie B:** TM-E3 (uit §3.7.3) wordt door deze inventarisatie
 > **bevestigd**: meerdere administratieve Version-Specific Controllers voeren geen
 > eigen privilege-check uit. Dit is een **systemisch patroon** (gap A.8.3, prio 11
 > in §5.1: declaratieve access control), niet een eenmalige bug — vandaar de
@@ -127,9 +127,9 @@ van deze sprint en is toegevoegd als TB6 (zie §5).
 
 ---
 
-## 5. Bijgewerkte trust boundaries (uitbreiding op §3.5.2)
+## 5. Bijgewerkte trust boundaries (uitbreiding op §3.7.2)
 
-Naast de in §3.5.2 beschreven TB1–TB5 introduceert deze attack-surface-analyse:
+Naast de in §3.7.2 beschreven TB1–TB5 introduceert deze attack-surface-analyse:
 
 - **TB6 — Servlet-filterketen vs. controller-registratie:** de grens tussen
   endpoints die via `<url-pattern>/ws/rest/*</url-pattern>` door
@@ -193,7 +193,7 @@ reductiemaatregelen die uit deze mapping volgen.
 
 ## 8. OWASP-koppeling van de attack surface
 
-De STRIDE-tabellen in [`../01.md` §3.5.3](../01.md#353-stride-threatanalyse) mappen
+De STRIDE-tabellen in [`../01.md` §3.7.3](../01.md#373-stride-threatanalyse) mappen
 **per threat** op OWASP. Onderstaande tabel geeft het **omgekeerde overzicht** dat
 hoort bij een attack-surface-analyse: per OWASP-categorie welke ingang(en) van deze
 module geraakt worden. Primaire referentie is de

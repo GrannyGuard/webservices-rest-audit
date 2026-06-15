@@ -1,7 +1,7 @@
 # Hardening Checklist — `webservices.rest`
 
 Deze checklist is de Sprint 3-aanvulling op het STRIDE-threat-model
-([`../01.md` §3.5](../01.md#35-threat-model--c4-architectuur--stride-analyse)) en de
+([`../01.md` §3.7](../01.md#37-threat-model--c4-architectuur--stride-analyse)) en de
 [`attack-surface.md`](attack-surface.md) (issue #63, WS05 "Secure Coding & Privacy by
 Design"). Het doel is **attack-surface-reductie**: niet elke kwetsbaarheid los
 oplossen, maar het aantal en de impact van mogelijke ingangen structureel beperken.
@@ -94,7 +94,7 @@ de `webservices.rest.allowedips` global property, maar:
      vertrouwde, geconfigureerde reverse-proxy-IP — anders blijft `getRemoteAddr()`
      leidend.
 - **NEN-7510:** A.8.3, A.8.20 (Netwerkbeveiliging).
-- **Koppeling:** TM-S3 (§3.5.3), prio "te verifiëren in #63" — nu expliciet
+- **Koppeling:** TM-S3 (§3.7.3), prio "te verifiëren in #63" — nu expliciet
   geconcretiseerd tot bovenstaande twee acties.
 
 ---
@@ -160,7 +160,7 @@ andere geheimen (alleen username, IP, URI, foutreden).
   verplaatsen of de productie-drempel op `INFO` te zetten indien het audit trail
   (NEN-7510 A.8.15) deze events vereist.
 - **NEN-7510:** A.8.15 (Logging).
-- **Koppeling:** TM-R2/TM-R3 (§3.5.3) — reeds gemitigeerd.
+- **Koppeling:** TM-R2/TM-R3 (§3.7.3) — reeds gemitigeerd.
 
 ---
 
@@ -257,7 +257,7 @@ Eerder was slechts `snyk/actions/setup` SHA-gepind.
   `SwaggerHardeningRestUtilTest` (`resolveSwaggerHost*`, `sanitizeScheme*`).
 - **NEN-7510:** A.8.20 (Netwerkbeveiliging), A.8.26 (Application security
   requirements).
-- **Koppeling:** **SQ9 / TM-S4** (§3.5.3, §3.5.4) — prioriteit 9 in §5.1 van het
+- **Koppeling:** **SQ9 / TM-S4** (§3.7.3, §3.7.4) — prioriteit 9 in §5.1 van het
   hoofddocument; nu gemitigeerd.
 
 ---
@@ -266,7 +266,7 @@ Eerder was slechts `snyk/actions/setup` SHA-gepind.
 
 **Status: ✅ Dit document.**
 
-Deze checklist wordt vanuit [`../01.md` §3.5.4](../01.md#35-threat-model--c4-architectuur--stride-analyse)
+Deze checklist wordt vanuit [`../01.md` §3.7.4](../01.md#37-threat-model--c4-architectuur--stride-analyse)
 en [`attack-surface.md`](attack-surface.md) gelinkt, en moet worden bijgewerkt
 zodra:
 
