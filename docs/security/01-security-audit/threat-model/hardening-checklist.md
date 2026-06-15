@@ -31,10 +31,10 @@ behouden; in productie op `false` te zetten). Bij `false` retourneren zowel
   `ENABLE_SWAGGER_DOCS_GLOBAL_PROPERTY_NAME` in `RestConstants.java`. Unit tests:
   `SwaggerHardeningRestUtilTest`.
 - **NEN-7510:** A.8.3 (Toegangsbeveiliging) — least functionality.
-- **Koppeling:** vermindert de productie-blootstelling van SQ8/SQ9 (TM-T2, TM-S4); de
-  onderliggende XSS-output-encoding-fix voor SQ8 blijft een aparte code-review-actie.
-- **Restpunt:** `SettingsFormController` (SQ7) is **niet** door deze vlag gedekt en
-  blijft de hoogste open prioriteit (§7 attack surface).
+- **Koppeling:** vermindert de productie-blootstelling van SQ8/SQ9 (TM-T2, TM-S4).
+  SQ8 (XSS output-encoding) is bewust **niet** gemitigeerd op code-niveau — het endpoint
+  retourneert 404 bij uitgeschakelde Swagger en is daarmee niet functioneel valideerbaar
+  via pentest. De configuratie-gating via deze vlag is de gekozen productie-maatregel.
 
 ---
 
