@@ -1264,7 +1264,7 @@ naar de Security-tab uit.
 Onderstaand fragment toont de structuur van het SARIF-bestand: de
 \texttt{tool.driver}-metadata met één query-definitie (\texttt{rules}) en één
 bijbehorende bevinding (\texttt{results}) --- hier de \texttt{java/xss}-finding
-(bevinding F2). De overige query-definities en bevindingen volgen hetzelfde
+(bevinding CR-2). De overige query-definities en bevindingen volgen hetzelfde
 stramien.
 
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
@@ -1326,7 +1326,7 @@ De SARIF-bevindingen verschijnen als \emph{code scanning alerts}. Onderstaande
 van de SCA/Snyk-dependency-alerts (die in Hoofdstuk~\ref{ch:sbom} thuishoren):
 
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
-# Alle open CodeQL code-niveau security-bevindingen (F2-F6):
+# Alle open CodeQL code-niveau security-bevindingen (CR-2..CR-6):
 gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate \
   -q '.[] | select(.rule.id|startswith("java/")) | select(.state=="open")
       | select(.rule.security_severity_level!=null)
@@ -1334,7 +1334,7 @@ gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate 
          loc:(.most_recent_instance.location.path+":"
               +(.most_recent_instance.location.start_line|tostring))}'
 
-# De 4 gedismiste "false positive"-alerts (F1-restpunt), incl. reden:
+# De 4 gedismiste "false positive"-alerts (CR-1-restpunt), incl. reden:
 gh api repos/GrannyGuard/webservices-rest-audit/code-scanning/alerts --paginate \
   -q '.[] | select(.rule.id=="java/log-injection") | select(.state=="dismissed")
       | {n:.number, reason:.dismissed_reason, comment:.dismissed_comment}'
@@ -1350,13 +1350,13 @@ resterende open security-alerts na het sluiten van de negen
 \toprule
 \textbf{\#} & \textbf{Rule} & \textbf{Sev} & \textbf{Locatie} & \textbf{Bev.} \\
 \midrule
-1   & \texttt{java/xss}                   & high   & \texttt{SwaggerDocController.java:27}     & F2 \\
-908 & \texttt{java/user-controlled-bypass}& high   & \texttt{AuthorizationFilter.java:113}     & F3 \\
-4   & \texttt{java/sensitive-log}         & high   & \texttt{LayoutTemplateProvider.java:124}  & F4 \\
-5   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:172}          & F5 \\
-6   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:183}          & F5 \\
-2   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & F6 \\
-3   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & F6 \\
+1   & \texttt{java/xss}                   & high   & \texttt{SwaggerDocController.java:27}     & CR-2 \\
+908 & \texttt{java/user-controlled-bypass}& high   & \texttt{AuthorizationFilter.java:113}     & CR-3 \\
+4   & \texttt{java/sensitive-log}         & high   & \texttt{LayoutTemplateProvider.java:124}  & CR-4 \\
+5   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:172}          & CR-5 \\
+6   & \texttt{java/tainted-arithmetic}    & high   & \texttt{RequestContext.java:183}          & CR-5 \\
+2   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & CR-6 \\
+3   & \texttt{java/overly-large-range}    & medium & \texttt{ServerLogActionWrapper.java:70}   & CR-6 \\
 \bottomrule
 \end{tabular}
 }
