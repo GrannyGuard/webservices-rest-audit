@@ -85,8 +85,10 @@ public class AuthorizationFilter implements Filter {
 				    RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
 				HttpServletResponse httpResponse = (HttpServletResponse) response;
 				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session timed out");
-				// CWE-302 (alert #908) — stop the chain after a timed-out session instead of
-				// falling through to chain.doFilter() with a 401 already committed.
+				// CWE-302 (defense-in-depth, found in code review) — stop the chain after a
+				// timed-out session instead of falling through to chain.doFilter() with a 401
+				// already committed. Distinct from CodeQL #908 (the optional Basic-Auth branch
+				// below); see docs/security/06-mitigatie-en-validatie/06.md section 3b.
 				return;
 			}
 			
