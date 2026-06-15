@@ -800,9 +800,12 @@ kwantitatief en reproduceerbaar afgesloten.
 
 \textbf{Restpunt.} Dezelfde herschrijving introduceerde 4 \emph{nieuwe}
 \texttt{java/log-injection}-alerts (\texttt{AuthorizationFilter.java:72/84/115/122}),
-op 2026-06-08 als \emph{``false positive''} gedismissed \emph{zonder} onderbouwing.
-Audit-observatie: deze classificatie moet nog worden vastgelegd (escapet de
-productie-logconfiguratie newlines?) of alsnog gesanitized worden.
+aanvankelijk als \emph{``false positive''} gedismissed \emph{zonder} onderbouwing.
+Omdat die classificatie afhing van de (in deze module afwezige) log-appender-config
+en dus niet aantoonbaar was, zijn de user-controlled waarden (request-URI,
+\texttt{attemptedUser}, exception-message) alsnog via
+\texttt{RestUtil.sanitizeForLog()} gesanitized; de alerts sluiten op de
+eerstvolgende CodeQL-herscan (bewijsartefact nog toe te voegen).
 
 \newpage
 
