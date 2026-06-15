@@ -25,6 +25,12 @@ jobs:
   build-sign-attest:
     name: Build, sign & attest
     runs-on: ubuntu-latest
+    # OTAP "Productie"-gate: this job produces the production-bound (signed) artifact, so
+    # it runs in the `prod` GitHub Environment. That enforces the documented four-eyes
+    # approval (required reviewers DanielvG-IT / BaasW — NEN-7510 A.8.3) and restricts
+    # the run to protected branches before any release artifact is signed/published.
+    # See docs/security/02-secure-pipelines/02.md §2.
+    environment: prod
     timeout-minutes: 30
     permissions:
       contents: write       # attach signed assets to the GitHub Release

@@ -2,7 +2,7 @@
 
 Dit document is de Sprint 3-deliverable voor issue #63 ("Attack Surface Mapping").
 Het bouwt voort op het STRIDE-threat-model in
-[`../01.md` §3.5](../01.md#35-threat-model--c4-architectuur--stride-analyse) en op de
+[`../01.md` §3.7](../01.md#37-threat-model--c4-architectuur--stride-analyse) en op de
 endpoint-inventarisatie in
 [`../../05-penetration-tests/endpoints.md`](../../05-penetration-tests/endpoints.md).
 Volgens het begrippenkader is de **attack surface** *"de optelsom van alle punten
@@ -16,7 +16,7 @@ configuratie) — inclusief impliciet vertrouwde elementen ('trust boundaries')"
 De module exposeert HTTP-endpoints via **drie verschillende URL-prefixen**, die
 **niet** dezelfde beveiligingslaag doorlopen. Dit onderscheid is de kern van deze
 mapping en is in Sprint 3 ontdekt via de STRIDE-analyse (TM-S4, TM-I2, TM-T2 —
-zie §3.5.4 in het hoofddocument).
+zie §3.7.4 in het hoofddocument).
 
 | Categorie | URL-prefix | Loopt door `AuthorizationFilter` (TB1)? | Component (C4) |
 |---|---|:---:|---|
@@ -88,7 +88,7 @@ volledig op "je bent ingelogd" zonder te toetsen *welke* rol/privilege vereist i
 | `/ws/rest/v1/loggedinusers` | GET | ❌ Geen expliciete check gevonden | 🟠 **Midden** — lekt informatie over actieve gebruikers (KJ4) |
 | `/ws/rest/v1/implementationid` | GET, POST | ❌ Geen expliciete check gevonden op POST | 🟡 Laag-Midden — wijzigen van implementation-ID is een integriteitsrisico, lage directe impact |
 
-> **Conclusie categorie B:** TM-E3 (uit §3.5.3) wordt door deze inventarisatie
+> **Conclusie categorie B:** TM-E3 (uit §3.7.3) wordt door deze inventarisatie
 > **bevestigd**: meerdere administratieve Version-Specific Controllers voeren geen
 > eigen privilege-check uit. Dit is een **systemisch patroon** (gap A.8.3, prio 11
 > in §5.1: declaratieve access control), niet een eenmalige bug — vandaar de
@@ -104,18 +104,15 @@ voortkomen. **Geen van deze endpoints loopt door `AuthorizationFilter`.**
 
 | Endpoint | Methode | Auth? | Bevinding | Risicoscore |
 |---|---|:---:|---|:---:|
-| `GET /module/webservices/rest/settings.form/search?prefix=` | GET | ❌ Geen | **SQ7** — retourneert alle global properties (naam+waarde) incl. mogelijke secrets en `REST_ALLOWED_IPS` | 🔴 **20** |
-| `POST /module/webservices/rest/settings.form` | POST | ❌ Geen (Spring MVC form-binding) | Niet apart gescoord, maar zelfde blootstelling: het admin-instellingenformulier (incl. `REST_ALLOWED_IPS`, `MAX_RESULTS_*`) is bereikbaar zonder login | ⚠️ Te beoordelen — zie aanbeveling §5 hieronder |
-| `GET /module/webservices/rest/apiDocs/debug?tag=` | GET | ❌ Geen | **SQ8** — reflected XSS, `tag`-parameter ongesanitized in HTML | 🟠 **12** |
-| `GET /module/webservices/rest/apiDocs` | GET | ❌ Geen | Swagger-UI HTML-pagina; an sich publieke documentatie maar bevestigt dat de hele `/apiDocs`-boom buiten TB1 valt | — |
+| `GET /module/webservices/rest/apiDocs/debug?tag=` | GET | ❌ Geen | **SQ8** — reflected XSS, `tag`-parameter ongesanitized in HTML; bewust niet gemitigeerd op code-niveau (endpoint retourneert 404 bij uitgeschakelde Swagger) | 🟠 **12** |
+| `GET /module/webservices/rest/apiDocs` | GET | ❌ Geen | Swagger-UI HTML-pagina; bevestigt dat de hele `/apiDocs`-boom buiten TB1 valt; uitschakelbaar via `enableSwaggerDocs` | — |
 | `GET /module/webservices/rest/swagger.json` | GET | ❌ Geen | **SQ9** — Host-/Scheme-headers ongevalideerd in gepubliceerde OpenAPI-spec | 🟠 **9** |
 
-> **Sprint 3-mitigaties (categorie C):** de Swagger-UI en OpenAPI-spec
+> **Mitigaties (categorie C):** de Swagger-UI en OpenAPI-spec
 > (`/apiDocs[/debug]`, `/swagger.json`) zijn nu uitschakelbaar via
-> `webservices.rest.enableSwaggerDocs` (hardening checklist §1) en SQ9 (Host-/Scheme-
-> reflectie) is gemitigeerd met een Host-allow-list + scheme-sanitisatie (§10). De
-> XSS-output-encoding van SQ8 en de **autorisatie op `settings.form` (SQ7 — hoogste
-> prioriteit)** blijven open.
+> `webservices.rest.enableSwaggerDocs` (hardening checklist §1) en **SQ9** (Host-/Scheme-
+> reflectie) is gemitigeerd met een Host-allow-list + scheme-sanitisatie (§10).
+> **SQ8** (XSS) blijft open op code-niveau — bewust niet gemitigeerd, zie §3.7.4.
 
 **Implicit trust (categorie C):** de aanwezigheid van `AuthorizationFilter` op
 `/ws/rest/*` wekt de indruk dat *"alle REST-endpoints van deze module"*
@@ -127,9 +124,9 @@ van deze sprint en is toegevoegd als TB6 (zie §5).
 
 ---
 
-## 5. Bijgewerkte trust boundaries (uitbreiding op §3.5.2)
+## 5. Bijgewerkte trust boundaries (uitbreiding op §3.7.2)
 
-Naast de in §3.5.2 beschreven TB1–TB5 introduceert deze attack-surface-analyse:
+Naast de in §3.7.2 beschreven TB1–TB5 introduceert deze attack-surface-analyse:
 
 - **TB6 — Servlet-filterketen vs. controller-registratie:** de grens tussen
   endpoints die via `<url-pattern>/ws/rest/*</url-pattern>` door
@@ -179,12 +176,10 @@ door modules van derden worden geregistreerd). Dit betekent:
 
 | Ingang | Categorie | Risico | Vervolgactie (§5.1 in hoofddocument) |
 |---|---|---|---|
-| `GET /module/webservices/rest/settings.form/search` | C | 🔴 20 (SQ7) | Prioriteit 1 — auth toevoegen of verwijderen |
-| `GET /ws/rest/v1/session/diag` | B | 🔴 15 (gap A.8.3) | Prioriteit 4 — beveiligen of verwijderen |
-| `GET /module/webservices/rest/apiDocs/debug` | C | 🟠 12 (SQ8) | 🟡 Deels — endpoint nu uitschakelbaar (§1 checklist); output-encoding nog open |
+| `GET /ws/rest/v1/session/diag` | B | 🔴 15 (gap A.8.3) | Prioriteit 3 — beveiligen of verwijderen |
+| `GET /module/webservices/rest/apiDocs/debug` | C | 🟠 12 (SQ8) | ❌ Open — bewust niet gemitigeerd op code-niveau; endpoint uitschakelbaar via configuratie (§1 checklist) |
 | `GET /module/webservices/rest/swagger.json` | C | 🟠 9 (SQ9) | ✅ Gemitigeerd — Host-allow-list + scheme-sanitisatie (§10 checklist) |
-| `/ws/rest/v1/cleardbcache`, `/searchindexupdate`, `/loggedinusers`, `/implementationid`, `/hl7` (POST) | B | 🟠 Midden (TM-E3) | Onderdeel van prioriteit 11 — declaratieve access control |
-| `POST /module/webservices/rest/settings.form` | C | ⚠️ Te beoordelen | Zie hardening checklist — categorie C structureel beveiligen |
+| `/ws/rest/v1/cleardbcache`, `/searchindexupdate`, `/loggedinusers`, `/implementationid`, `/hl7` (POST) | B | 🟠 Midden (TM-E3) | Onderdeel van prioriteit 10 — declaratieve access control |
 
 Zie [`hardening-checklist.md`](hardening-checklist.md) voor de concrete
 reductiemaatregelen die uit deze mapping volgen.
@@ -193,7 +188,7 @@ reductiemaatregelen die uit deze mapping volgen.
 
 ## 8. OWASP-koppeling van de attack surface
 
-De STRIDE-tabellen in [`../01.md` §3.5.3](../01.md#353-stride-threatanalyse) mappen
+De STRIDE-tabellen in [`../01.md` §3.7.3](../01.md#373-stride-threatanalyse) mappen
 **per threat** op OWASP. Onderstaande tabel geeft het **omgekeerde overzicht** dat
 hoort bij een attack-surface-analyse: per OWASP-categorie welke ingang(en) van deze
 module geraakt worden. Primaire referentie is de
@@ -220,7 +215,7 @@ gekoppeld aan de [OWASP Top 10:2021](https://owasp.org/Top10/) (`Ax:2021`).
 | **API5 — Broken Function Level Authorization** | Cat. A Resource Framework + Cat. B admin-controllers | TM-E1, TM-E3 | ❌ open / 🟡 |
 | **API6 — Unrestricted Access to Sensitive Business Flows** | Cat. A bulk-patiëntendpoints | AT2 | ❌ open |
 | **API7 — Server Side Request Forgery** | — geen server-side fetch van client-aangeleverde URL's aangetroffen | — | n.v.t. |
-| **API8 — Security Misconfiguration** | Cat. C (buiten filterketen, TB6) + `/settings.form/search` | **SQ7** (TM-I2), TM-S3 | SQ7 ❌; Swagger-gating ✅ |
+| **API8 — Security Misconfiguration** | Cat. C (buiten filterketen, TB6) | TM-S3; **SQ8** (XSS in debug-endpoint) | Swagger-gating ✅; SQ8 code-fix ❌ open (bewust) |
 | **API9 — Improper Inventory Management** | Cat. C Swagger-UI + OpenAPI-spec | AT1, **SQ9** (TM-S4) | ✅ gemitigeerd (gating §1 + host-allow-list §10) |
 | **API10 — Unsafe Consumption of APIs** | Cat. D andere OpenMRS-modules | §6 | ⚠️ impliciet vertrouwd |
 
@@ -232,5 +227,6 @@ gekoppeld aan de [OWASP Top 10:2021](https://owasp.org/Top10/) (`Ax:2021`).
 **Conclusie:** de attack surface raakt **8 van de 10** OWASP API-categorieën. De zwaarst
 geraakte cluster is **API8/API9** (Security Misconfiguration + Improper Inventory
 Management) — exact de categorie C-endpoints buiten `AuthorizationFilter` (TB6). De
-Sprint 3-mitigaties (Swagger-gating + Host-header-allow-list) verlagen API9 van "open"
-naar "gemitigeerd"; API8 (SQ7) blijft de hoogste open prioriteit (§7).
+mitigaties (Swagger-gating + Host-header-allow-list) verlagen API9 van "open" naar
+"gemitigeerd". API8 (SQ8 — XSS) blijft open op code-niveau; de productie-blootstelling
+is afgedekt door configuratie-gating (Swagger uitgeschakeld).
