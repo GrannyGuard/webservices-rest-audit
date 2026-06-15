@@ -756,10 +756,10 @@ gebruikersnamen geldig zijn zonder ooit in te loggen.
 
 \textbf{Bewijs.} Pentest F-02 (11--12 juni 2026); beide methoden bevestigd:
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
-# Methode A — directe API-enumeratie (met auth)
+# Methode A -- directe API-enumeratie (met auth)
 GET /openmrs/ws/rest/v1/user  -> lijst alle accounts incl. "admin"
 
-# Methode B — lockout side-channel (zonder auth)
+# Methode B -- lockout side-channel (zonder auth)
 doctor  -> geen lockout (gebruiker bestaat niet)
 admin   -> lockout actief na 7 pogingen (gebruiker bestaat)
 \end{lstlisting}
