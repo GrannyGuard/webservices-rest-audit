@@ -31,7 +31,7 @@ public abstract class ServerLogActionWrapper {
 	 * Compiled once and reused for every log line (previously recompiled per line).
 	 */
 	private static final Pattern LOG_LINE_PATTERN = Pattern
-	        .compile("(INFO|ERROR|WARN|DEBUG)\\s.*?[-].*?\\s((?:[A-z][A-z].+))\\s[|](.*?)[|]\\s([\\s\\S]*)");
+	        .compile("(INFO|ERROR|WARN|DEBUG)\\s.*?[-].*?\\s((?:[A-Za-z][A-Za-z].+))\\s[|](.*?)[|]\\s([\\s\\S]*)");
 
 	public List<String[]> serverLog;
 	
