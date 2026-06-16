@@ -43,7 +43,7 @@ jobs:
       - name: Run zizmor
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uvx zizmor --format sarif . > zizmor-results.sarif
+        run: uvx --no-build zizmor --format sarif . > zizmor-results.sarif
         continue-on-error: true   # don't fail CI before we upload results
 
       - name: Upload SARIF to GitHub Security tab
