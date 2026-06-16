@@ -24,6 +24,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 /**
  * Tests for the {@link RestUtil} class.
@@ -226,6 +227,33 @@ public class RestUtilTest extends BaseModuleWebContextSensitiveTest {
 
 		LinkedHashMap errorResponseMap = (LinkedHashMap) returnObject.get("error");
 		Assert.assertEquals("", errorResponseMap.get("detail"));
+	}
+
+	// ── CWE-190 / NEN-7510 A.8.26 — integer overflow in pagination params ──────────
+
+	@Test(expected = IllegalArgumentException.class)
+	public void getRequestContext_limitOverflowsInt_shouldThrowIllegalArgumentException() throws Exception {
+		// CWE-190: 2147483648 (Integer.MAX_VALUE + 1) must be rejected rather than
+		// silently falling back to default and returning HTTP 200 with 50 results
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addParameter("limit", "2147483648");
+		RestUtil.getRequestContext(request, new MockHttpServletResponse());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void getRequestContext_startIndexOverflowsInt_shouldThrowIllegalArgumentException() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addParameter("startIndex", "9999999999");
+		RestUtil.getRequestContext(request, new MockHttpServletResponse());
+	}
+
+	@Test
+	public void getRequestContext_limitAtMaxAbsolute_shouldNotThrow() throws Exception {
+		// boundary: limit=100 (== MAX_RESULTS_ABSOLUTE) must be accepted
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addParameter("limit", "100");
+		RequestContext ctx = RestUtil.getRequestContext(request, new MockHttpServletResponse());
+		Assert.assertEquals(Integer.valueOf(100), ctx.getLimit());
 	}
 
 	@Test

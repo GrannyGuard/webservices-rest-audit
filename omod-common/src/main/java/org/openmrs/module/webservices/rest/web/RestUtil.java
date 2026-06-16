@@ -512,17 +512,25 @@ public class RestUtil implements GlobalPropertyListener {
 	 */
 	private static Integer getIntegerParam(HttpServletRequest request, String param) {
 		String paramString = request.getParameter(param);
-		
+
 		if (paramString != null) {
 			try {
-				return new Integer(paramString);// return the valid value
+				// CWE-190 / NEN-7510 A.8.26: parse as long first so that values that overflow
+				// the int range (e.g. 2147483648) are caught here instead of silently becoming
+				// null and bypassing the >0 and absolute-limit guards in setLimit().
+				long longValue = Long.parseLong(paramString);
+				if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+					throw new IllegalArgumentException(
+					    "Parameter '" + param + "' value overflows integer range: " + sanitizeForLog(paramString));
+				}
+				return (int) longValue;
 			}
 			catch (NumberFormatException e) {
 				log.debug("unable to parse '" + param + "' parameter into a valid integer: "
 				        + sanitizeForLog(paramString));
 			}
 		}
-		
+
 		return null;
 	}
 	
