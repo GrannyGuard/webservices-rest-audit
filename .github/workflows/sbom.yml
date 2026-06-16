@@ -23,13 +23,15 @@ concurrency:
 
 permissions:
   contents: read
-  security-events: write   # upload SARIF to GitHub Security tab
 
 jobs:
   sbom-sca:
     name: Generate SBOM & Scan for Vulnerabilities
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to GitHub Security tab
 
     steps:
       - name: Checkout repository

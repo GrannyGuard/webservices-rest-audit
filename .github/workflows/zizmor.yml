@@ -1,0 +1,62 @@
+name: Zizmor - GitHub Actions Security Scan
+
+# NEN-7510:2024-2 A.8.31 / "Secure pipelines" — static analysis of this repo's
+# own GitHub Actions workflow files with zizmor (https://docs.zizmor.sh/).
+# Findings are uploaded to the Security tab (SARIF) and kept as a CI artifact
+# as audit evidence that the CI/CD configuration itself is scanned.
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zizmor-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zizmor:
+    name: Scan workflows with zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to GitHub Security tab
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
+
+      # GH_TOKEN enables zizmor's "online" audits (e.g. checking that pinned
+      # actions resolve to the expected ref). The default workflow token with
+      # contents:read is sufficient.
+      - name: Run zizmor
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uvx --no-build zizmor==1.25.2 --format sarif . > zizmor-results.sarif
+        continue-on-error: true   # don't fail CI before we upload results
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
+        if: always()
+        with:
+          sarif_file: zizmor-results.sarif
+          category: zizmor
+
+      - name: Upload results as artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        if: always()
+        with:
+          name: zizmor-results
+          path: zizmor-results.sarif
+          retention-days: 90

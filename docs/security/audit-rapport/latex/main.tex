@@ -713,8 +713,9 @@ wordt de sessie niet geïnvalideerd (CWE-384, nog open). De afzonderlijke CWE-30
 fall-through --- de ontbrekende \texttt{return} na de \texttt{sendError(401)} bij een
 verlopen sessie, waardoor de keten dóórliep naar \texttt{chain.doFilter()} --- is
 inmiddels \groen{gefixt} (er staat nu een \texttt{return} op \texttt{:92}). De
-CodeQL-melding \texttt{java/user-controlled-bypass} (alert \#908) op de optionele
-Basic-Auth-tak is na onderzoek als geaccepteerd risico (false positive)
+CodeQL-melding \texttt{java/user-controlled-bypass} op de optionele
+Basic-Auth-tak (oorspronkelijk alert \#908, na de \texttt{return}-fix verschoven
+naar \#913 op \texttt{:119}) is na onderzoek als geaccepteerd risico (false positive)
 geclassificeerd --- zie \texttt{06-mitigatie-en-validatie/06.md} \S3b.
 
 \textbf{Impact.} Sessie-overname geeft een aanvaller volledige toegang tot
