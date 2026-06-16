@@ -138,14 +138,13 @@ public class EncounterSearchHandler1_9 implements SearchHandler {
 
 	private List<Encounter> getEncountersForObs(Iterator<Obs> obsIterator) {
 		List<Encounter> encounters = new ArrayList<Encounter>();
-		Encounter currEncounter;
 		while (obsIterator.hasNext()) {
-			currEncounter = obsIterator.next().getEncounter();
-			if (!this.containsEncounter(encounters, currEncounter)) {
+			Encounter currEncounter = obsIterator.next().getEncounter();
+			if (currEncounter != null && !this.containsEncounter(encounters, currEncounter)) {
 				encounters.add(currEncounter);
 			}
 		}
-		
+
 		return encounters;
 	}
 	
