@@ -183,6 +183,22 @@ public class AuthorizationFilterRateLimitTest extends BaseModuleWebContextSensit
 		Assert.assertNotEquals("Rate limit for IP_C must not block IP_D", 429, responseD.getStatus());
 	}
 
+	// ── CWE-204 Methode B — uniform AUTH_FAILURE log (no lockout side-channel) ──
+
+	@Test
+	public void doFilter_failedAuth_logsAuthFailureWithoutReason() throws Exception {
+		Context.logout();
+		MockHttpServletRequest req = invalidRequest(IP_A);
+		appender.events.clear();
+		filter.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+		boolean hasAuthFailure = appender.events.stream().anyMatch(e ->
+		    e.getMessage().getFormattedMessage().contains("AUTH_FAILURE"));
+		boolean hasReason = appender.events.stream().anyMatch(e ->
+		    e.getMessage().getFormattedMessage().contains("reason="));
+		Assert.assertTrue("AUTH_FAILURE must be logged for failed authentication", hasAuthFailure);
+		Assert.assertFalse("AUTH_FAILURE must NOT contain reason= to avoid lockout side-channel (CWE-204)", hasReason);
+	}
+
 	// ── counter cleared on success ────────────────────────────────────────────
 
 	@Test

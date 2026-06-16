@@ -178,10 +178,13 @@ public class AuthorizationFilter implements Filter {
 							recordFailedAttempt(remoteIp);
 							// This filter never stops execution. If the user failed to
 							// authenticate, that will be caught later.
-							// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (username, URI, exception msg are user-controlled)
-							log.warn("AUTH_FAILURE user=[{}] ip=[{}] uri=[{}] reason=[{}]",
+							// CWE-204 / NEN-7510 A.8.15: reason omitted — including ex.getMessage() creates a lockout
+							// side-channel (existing accounts log "Invalid number of connection attempts" after
+							// lockout; non-existing accounts always log "Invalid username and/or password").
+							// Uniform log entry prevents user-enumeration via log observation.
+							log.warn("AUTH_FAILURE user=[{}] ip=[{}] uri=[{}]",
 							    RestUtil.sanitizeForLog(attemptedUser), httpRequest.getRemoteAddr(),
-							    RestUtil.sanitizeForLog(httpRequest.getRequestURI()), RestUtil.sanitizeForLog(ex.getMessage()));
+							    RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
 						}
 					}
 				}
