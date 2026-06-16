@@ -83,6 +83,10 @@
 	
 	<!-- Filters -->
     <filter>
+		<filter-name>REST Web Service Security Headers</filter-name>
+		<filter-class>org.openmrs.module.webservices.rest.web.filter.SecurityHeadersFilter</filter-class>
+	</filter>
+    <filter>
 		<filter-name>REST Web Service SameSite Cookie</filter-name>
 		<filter-class>org.openmrs.module.webservices.rest.web.filter.SameSiteCookieFilter</filter-class>
 	</filter>
@@ -103,6 +107,10 @@
         <filter-class>org.openmrs.web.filter.GZIPFilter</filter-class>
     </filter>
     
+    <filter-mapping>
+		<filter-name>REST Web Service Security Headers</filter-name>
+		<url-pattern>/ws/rest/*</url-pattern>
+	</filter-mapping>
     <filter-mapping>
 		<filter-name>REST Web Service SameSite Cookie</filter-name>
 		<url-pattern>/ws/rest/*</url-pattern>
