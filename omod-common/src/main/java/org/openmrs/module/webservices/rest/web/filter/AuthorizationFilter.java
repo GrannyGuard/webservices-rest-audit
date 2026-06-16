@@ -21,6 +21,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
@@ -169,6 +170,14 @@ public class AuthorizationFilter implements Filter {
 							attemptedUser = userAndPass[0];
 							Context.authenticate(userAndPass[0], userAndPass[1]);
 							clearFailedAttempts(remoteIp);
+							// CWE-384 / NEN-7510 A.8.5: invalidate any pre-existing session and
+							// issue a fresh one so an attacker who injected a known JSESSIONID
+							// before login cannot reuse it after authentication succeeds.
+							HttpSession existingSession = httpRequest.getSession(false);
+							if (existingSession != null) {
+								existingSession.invalidate();
+							}
+							httpRequest.getSession(true);
 							// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (username + URI are user-controlled)
 							log.info("AUTH_SUCCESS user=[{}] ip=[{}] uri=[{}]",
 							    RestUtil.sanitizeForLog(attemptedUser), httpRequest.getRemoteAddr(),
