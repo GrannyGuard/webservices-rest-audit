@@ -27,6 +27,7 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import javax.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -217,28 +218,27 @@ public class AuthorizationFilterLoggingTest extends BaseModuleWebContextSensitiv
 
 	// ── session timeout ───────────────────────────────────────────────────────
 
-	@Test
-	public void doFilter_expiredSession_logsSessionTimeoutAtWarnLevel() throws Exception {
+	// An expired session is now detected from server-side state: a JSESSIONID cookie is present
+	// (the client referenced a session) but the container has no live session for it
+	// (getSession(false) == null on a fresh MockHttpServletRequest). No requested-session-id used.
+	private MockHttpServletRequest expiredSessionRequest() {
 		MockHttpServletRequest req = new MockHttpServletRequest();
 		req.setRemoteAddr(TEST_IP);
 		req.setRequestURI(TEST_URI);
-		req.setRequestedSessionId("expired-session-id");
-		req.setRequestedSessionIdValid(false);
+		req.setCookies(new Cookie("JSESSIONID", "expired-session-id"));
+		return req;
+	}
 
-		filter.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+	@Test
+	public void doFilter_expiredSession_logsSessionTimeoutAtWarnLevel() throws Exception {
+		filter.doFilter(expiredSessionRequest(), new MockHttpServletResponse(), new MockFilterChain());
 
 		Assert.assertTrue("Expected WARN log entry with SESSION_TIMEOUT", hasLog(Level.WARN, "SESSION_TIMEOUT"));
 	}
 
 	@Test
 	public void doFilter_expiredSession_logsRemoteIp() throws Exception {
-		MockHttpServletRequest req = new MockHttpServletRequest();
-		req.setRemoteAddr(TEST_IP);
-		req.setRequestURI(TEST_URI);
-		req.setRequestedSessionId("expired-session-id");
-		req.setRequestedSessionIdValid(false);
-
-		filter.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+		filter.doFilter(expiredSessionRequest(), new MockHttpServletResponse(), new MockFilterChain());
 
 		Assert.assertTrue("Remote IP must appear in SESSION_TIMEOUT log entry", hasLog(Level.WARN, TEST_IP));
 	}

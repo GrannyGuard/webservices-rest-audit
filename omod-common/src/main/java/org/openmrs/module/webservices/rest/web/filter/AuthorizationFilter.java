@@ -18,6 +18,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -79,7 +80,11 @@ public class AuthorizationFilter implements Filter {
 		// skip if the session has timed out, we're already authenticated, or it's not an HTTP request
 		if (request instanceof HttpServletRequest) {
 			HttpServletRequest httpRequest = (HttpServletRequest) request;
-			if (httpRequest.getRequestedSessionId() != null && !httpRequest.isRequestedSessionIdValid()) {
+			// GrannyGuard patch — derive "session timed out" from server-side state instead of the
+			// client-controlled getRequestedSessionId()/isRequestedSessionIdValid() pair (Sonar
+			// security hotspot: forgeable session id, CWE-384). The id value is never trusted; we
+			// only act on the absence of a live container session for a request that carried one.
+			if (hasStaleSessionCookie(httpRequest)) {
 				// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (the request URI is user-controlled)
 				log.warn("SESSION_TIMEOUT ip=[{}] uri=[{}]", httpRequest.getRemoteAddr(),
 				    RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
@@ -137,5 +142,33 @@ public class AuthorizationFilter implements Filter {
 		
 		// continue with the filter chain (unless IP is not allowed)
 		chain.doFilter(request, response);
+	}
+
+	/**
+	 * Detects a timed-out (or invalidated) session without trusting the client-supplied session id.
+	 * A request references a session only if it carries a {@code JSESSIONID} cookie; that session is
+	 * considered stale when the container no longer has a live session for the request
+	 * ({@link HttpServletRequest#getSession(boolean) getSession(false)} returns {@code null}). The
+	 * cookie value itself is never used for any authentication or session lookup, so this cannot be
+	 * abused for session fixation (CWE-384).
+	 *
+	 * @param httpRequest the incoming request
+	 * @return {@code true} if the request presents a session cookie but has no valid server session
+	 */
+	private boolean hasStaleSessionCookie(HttpServletRequest httpRequest) {
+		if (httpRequest.getSession(false) != null) {
+			// a live server session exists — nothing has timed out
+			return false;
+		}
+		Cookie[] cookies = httpRequest.getCookies();
+		if (cookies == null) {
+			return false;
+		}
+		for (Cookie cookie : cookies) {
+			if ("JSESSIONID".equalsIgnoreCase(cookie.getName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
