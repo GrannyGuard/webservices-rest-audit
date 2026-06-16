@@ -173,18 +173,21 @@ public class RestUtilTest extends BaseModuleWebContextSensitiveTest {
 	}
 	
 	/**
+	 * CWE-209 / NEN-7510 A.8.15: code and detail must always be empty — never expose
+	 * class names, line numbers, or stack traces in API responses.
+	 *
 	 * @see RestUtil#wrapErrorResponse(Exception,String)
-	 * @verifies set stack trace code if available
 	 */
 	@Test
-	public void wrapErrorResponse_shouldSetStackTraceCodeAndDetailIfAvailable() throws Exception {
+	public void wrapErrorResponse_shouldNeverExposeClassNameOrLineNumberInCode() throws Exception {
 		Exception apiException = new APIException("exceptionmessage");
 		apiException.setStackTrace(new StackTraceElement[] { new StackTraceElement("org.mypackage.myclassname", "methodName", "fileName", 149) });
 
 		SimpleObject returnObject = RestUtil.wrapErrorResponse(apiException, "wraperrorresponsemessage");
 
 		LinkedHashMap errorResponseMap = (LinkedHashMap) returnObject.get("error");
-		Assert.assertEquals("org.mypackage.myclassname:149", errorResponseMap.get("code"));
+		Assert.assertEquals("", errorResponseMap.get("code"));
+		Assert.assertEquals("", errorResponseMap.get("detail"));
 	}
 	
 	/**
@@ -203,14 +206,16 @@ public class RestUtilTest extends BaseModuleWebContextSensitiveTest {
 		Assert.assertEquals("", errorResponseMap.get("detail"));
 	}
 	@Test
-	public void wrapErrorResponse_shouldSetStackTraceDetailsIfGlobalPropEnabled() throws Exception {
+	public void wrapErrorResponse_shouldNeverExposeStackTraceEvenWhenGlobalPropEnabled() throws Exception {
+		// CWE-209 / NEN-7510 A.8.15: enableStackTraceDetails global property is intentionally
+		// ignored — stack traces must never appear in API responses regardless of configuration
 		Context.getAdministrationService().saveGlobalProperty(
-				new GlobalProperty(RestConstants.ENABLE_STACK_TRACE_DETAILS_GLOBAL_PROPERTY_NAME, "true"));
+		    new GlobalProperty(RestConstants.ENABLE_STACK_TRACE_DETAILS_GLOBAL_PROPERTY_NAME, "true"));
 		Exception ex = new Exception("exceptionmessage");
 		SimpleObject returnObject = RestUtil.wrapErrorResponse(ex, "wraperrorresponsemessage");
 
 		LinkedHashMap errorResponseMap = (LinkedHashMap) returnObject.get("error");
-		Assert.assertNotEquals("", errorResponseMap.get("detail"));
+		Assert.assertEquals("", errorResponseMap.get("detail"));
 	}
 	@Test
 	public void wrapErrorResponse_shouldSetNoStackTraceDetailsIfGlobalPropDisabled() throws Exception {
