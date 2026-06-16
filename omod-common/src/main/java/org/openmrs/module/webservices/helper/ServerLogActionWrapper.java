@@ -24,14 +24,19 @@ import java.util.regex.Pattern;
 public abstract class ServerLogActionWrapper {
 
 	/**
-	 * Pre-compiled log-line parser. The trailing message is captured with a single linear,
-	 * non-backtracking group ({@code [\s\S]*}) instead of the original nested
-	 * {@code (.*\n*)+}, which was vulnerable to polynomial-runtime backtracking / ReDoS
-	 * (CWE-1333) on crafted multi-line log content reachable via the server-log endpoint.
-	 * Compiled once and reused for every log line (previously recompiled per line).
+	 * Pre-compiled log-line parser for lines of the form
+	 * {@code LEVEL - logger |timestamp| message}.
+	 * <p>
+	 * Every quantifier is linear and non-overlapping: the pipe-delimited fields use the negated
+	 * class {@code [^|]} (which cannot cross a {@code |}) and the trailing message uses a single
+	 * {@code [\s\S]*} group. This removes the catastrophic/polynomial backtracking (ReDoS,
+	 * CWE-1333) of the original {@code .*?[-].*?\s(...).+ ... (.*\n*)+} pattern, in which several
+	 * unbounded {@code .*?}/{@code .+} groups could match the same input in many ways. The range is
+	 * also {@code [A-Za-z]} (was the overly permissive {@code [A-z]}, CWE-20). Compiled once and
+	 * reused for every log line (previously recompiled per line).
 	 */
 	private static final Pattern LOG_LINE_PATTERN = Pattern
-	        .compile("(INFO|ERROR|WARN|DEBUG)\\s.*?[-].*?\\s((?:[A-Za-z][A-Za-z].+))\\s[|](.*?)[|]\\s([\\s\\S]*)");
+	        .compile("(INFO|ERROR|WARN|DEBUG)\\s+-\\s+([A-Za-z][^|]*?)\\s*\\|([^|]*)\\|\\s*([\\s\\S]*)");
 
 	public List<String[]> serverLog;
 	
