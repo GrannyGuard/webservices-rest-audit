@@ -26,19 +26,20 @@ GitHub API (`gh api repos/.../code-scanning/alerts`, gegroepeerd op `rule.id` en
 (`security` vs. niet), **niet via `rule.severity`**. Severity is geen bruikbare proxy:
 binnen de 723 quality-findings zitten ook 4 alerts met severity `error`
 (`reference-equality-of-boxed-types` ×2, `unused-container` ×1, `sleep-with-lock-held`
-×1) — qua severity-badge identiek aan de echte security-findings. Een aanpak die op
+×1), qua severity-badge niet te onderscheiden van de echte security-findings. Een aanpak die op
 severity zou filteren (bv. "alleen Error/Warning tonen") zou deze 4 quality-issues
 dus ten onrechte als security-relevant blijven tonen, en zou tegelijk de `warning`-
-severity security-findings (`tainted-arithmetic`, `overly-large-range`, `sensitive-log`
-— 4 van de 16) niet onderscheiden van de `warning`-severity quality-ruis. Vandaar dat
+severity security-findings (`tainted-arithmetic`, `overly-large-range`, `sensitive-log`, samen 4 van de 16)
+niet weten te scheiden van de `warning`-severity quality-ruis. Vandaar dat
 de oplossing op **query-suite-niveau** moet: welke queries draaien, niet welke severity
 getoond wordt.
 
 Deze ruis heeft drie gevolgen:
 
-1. De Security-tab is praktisch onbruikbaar als triage-bron voor echte kwetsbaarheden —
-   precies het instrument dat NEN-7510 A.8.15 (traceerbaarheid) en de
-   "Security code review & kwetsbaarheden"-rubriek (auditrapport) als bewijs verwacht.
+1. De Security-tab wordt zo praktisch onbruikbaar als triage-bron voor echte
+   kwetsbaarheden, terwijl dat nu juist het instrument is dat NEN-7510 A.8.15
+   (traceerbaarheid) en de "Security code review & kwetsbaarheden"-rubriek
+   (auditrapport) als bewijs verwachten.
 2. Onderhoudbaarheidsmetrieken (complexiteit, duplicatie, code smells) horen thuis bij
    de **maintainability**-toolchain (SonarCloud, zie §5.2 van
    [secure pipelines](./02.md#5-sast-tooling)), niet bij de SAST-security-scan. Door
@@ -55,8 +56,8 @@ We scopen de CodeQL-workflow naar `queries: security-extended`
 ([`.github/workflows/codeql.yml:55`](../../../.github/workflows/codeql.yml)).
 
 `security-extended` behoudt en verbreedt de security/CWE-georiënteerde queries
-(inclusief de queries die de 16 echte bevindingen opleveren — `user-controlled-bypass`,
-`xss`, `log-injection`, `tainted-arithmetic`, `sensitive-log`, `overly-large-range`),
+(inclusief de queries achter de 16 echte bevindingen: `user-controlled-bypass`,
+`xss`, `log-injection`, `tainted-arithmetic`, `sensitive-log` en `overly-large-range`),
 maar laat de pure stijl/quality-queries weg.
 
 Onderhoudbaarheidsmetrieken (complexity, duplicatie, code smells, coverage) blijven de
@@ -79,28 +80,28 @@ en een eigen quality gate levert.
 
 - We verliezen de quality-queries uit `security-and-quality` (bv. boxed-type-vergelijkingen,
   collection-misuse-patronen). Dit is acceptabel omdat SonarCloud (§5.2) deze klasse van
-  bevindingen al dekt vanuit het maintainability-perspectief — maar dit moet wel kloppen:
+  bevindingen al dekt vanuit het maintainability-perspectief. Dat moet dan wel kloppen:
   zolang SonarCloud's quality gate nog niet als required status check op `main` staat
   (zie [secure pipelines §5.2](./02.md#52-sonarcloud--sast--maintainability--quality-gate)),
   is er een tijdelijk gat in quality-coverage totdat dat is opgelost.
 - Bestaande open CodeQL-alerts die uitsluitend door `-quality`-queries zijn gegenereerd
-  sluiten niet bij het mergen van deze configuratiewijziging zelf — pas bij de
+  sluiten nog niet als je deze configuratiewijziging zelf mergt. Pas bij de
   **eerstvolgende CodeQL-scan op `main`** (push of weekly schedule) herproduceert
   CodeQL die queries niet meer, en sluit GitHub de bijbehorende alerts automatisch.
   ✅ Inmiddels gevalideerd: na de scan op commit `e476489` (2026-06-10) zijn 733 van de
-  739 quality-alerts automatisch op `fixed` gezet — zie Validatie hieronder.
+  739 quality-alerts automatisch op `fixed` gezet; zie Validatie hieronder.
 
 ## Alternatieven overwogen
 
 1. **Suite behouden, filteren op severity (Error/Warning) in de Security-tab-UI.**
-   Verworpen: zoals hierboven aangetoond is severity geen betrouwbare scheidslijn — 4
-   quality-findings hebben severity `error` en 4 security-findings hebben severity
+   Verworpen: severity is geen betrouwbare scheidslijn, zoals hierboven al bleek. Vier
+   quality-findings hebben severity `error` en vier security-findings severity
    `warning`. Een severity-filter zou dus zowel quality-ruis doorlaten als echte
    security-findings verbergen.
 2. **Alle `-quality`-only alerts in bulk dismissen ("won't fix" / "used in tests").**
    Verworpen: dit is een eenmalige opschoning van symptomen, geen structurele
-   oplossing — elke nieuwe scan zou de 723 quality-findings opnieuw genereren en
-   moeten worden afgewezen.
+   oplossing. Elke nieuwe scan zou de 723 quality-findings gewoon opnieuw genereren,
+   waarna ze opnieuw afgewezen moeten worden.
 3. **Custom query-configuratie met `query-filters` (CodeQL config-bestand) op
    basis van CWE/tags.** Functioneel gelijkwaardig aan optie voor `security-extended`,
    maar vereist een apart `codeql-config.yml` en onderhoud van een eigen

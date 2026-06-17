@@ -8,17 +8,17 @@ oplossen, maar het aantal en de impact van mogelijke ingangen structureel beperk
 
 Elke regel volgt het format:
 
-> **Maatregel** — Status (huidige situatie) — NEN-7510 control — Koppeling naar
-> threat model / risicomatrix
+> **Maatregel**, status (huidige situatie), NEN-7510-control, en de koppeling naar
+> het threat model / de risicomatrix.
 
 ---
 
 ## 1. Onnodige features uitschakelen
 
-**Status: ✅ Geïmplementeerd — Swagger/OpenAPI-endpoints zijn nu uitschakelbaar.**
+**Status: ✅ Geïmplementeerd. Swagger/OpenAPI-endpoints zijn nu uitschakelbaar.**
 
-De Swagger-UI en de OpenAPI-spec (`SwaggerDocController`, `SwaggerSpecificationController`
-— categorie C) zijn nu conditioneel gemaakt op een nieuwe global property
+De Swagger-UI en de OpenAPI-spec (`SwaggerDocController`, `SwaggerSpecificationController`,
+categorie C) zijn nu conditioneel gemaakt op een nieuwe global property
 `webservices.rest.enableSwaggerDocs` (default `true` om bestaand gedrag/pentests te
 behouden; in productie op `false` te zetten). Bij `false` retourneren zowel
 `/module/webservices/rest/apiDocs[/debug]` als `/swagger.json` **HTTP 404**.
@@ -30,17 +30,17 @@ behouden; in productie op `false` te zetten). Bij `false` retourneren zowel
   [`config.xml`](../../../../omod/src/main/resources/config.xml), constant
   `ENABLE_SWAGGER_DOCS_GLOBAL_PROPERTY_NAME` in `RestConstants.java`. Unit tests:
   `SwaggerHardeningRestUtilTest`.
-- **NEN-7510:** A.8.3 (Toegangsbeveiliging) — least functionality.
+- **NEN-7510:** A.8.3 (Toegangsbeveiliging), least functionality.
 - **Koppeling:** vermindert de productie-blootstelling van SQ8/SQ9 (TM-T2, TM-S4).
-  SQ8 (XSS output-encoding) is bewust **niet** gemitigeerd op code-niveau — het endpoint
-  retourneert 404 bij uitgeschakelde Swagger en is daarmee niet functioneel valideerbaar
+  SQ8 (XSS output-encoding) is bewust **niet** gemitigeerd op code-niveau. Het endpoint
+  retourneert 404 zodra Swagger uitstaat en is daarmee niet functioneel valideerbaar
   via pentest. De configuratie-gating via deze vlag is de gekozen productie-maatregel.
 
 ---
 
 ## 2. Least-privilege databasegebruiker (kan nooit `DROP`)
 
-**Status: ✅ Mechanisme geïmplementeerd — twee-account-model voorzien.**
+**Status: ✅ Mechanisme geïmplementeerd. Twee-account-model voorzien.**
 
 De applicatie verbond voorheen uitsluitend met `MYSQL_USER`/`DB_USER`, dat via het
 standaard MariaDB-imagegedrag **volledige rechten (incl. `DROP`, `ALTER`, `GRANT`) op
@@ -48,9 +48,9 @@ de eigen database** krijgt. De `openmrs/openmrs-core`-image gebruikt dat ene acc
 zowel voor Liquibase (DDL bij opstarten) als voor runtime-verkeer; daarom is een
 twee-account-model geïntroduceerd:
 
-- **`DB_USER`** — migratie/admin-account (volledige rechten), uitsluitend voor
+- **`DB_USER`**: migratie/admin-account (volledige rechten), uitsluitend voor
   schema-creatie en Liquibase-upgrades op deploy-moment.
-- **`DB_APP_USER`** (`openmrs_app`) — runtime-account met **alleen
+- **`DB_APP_USER`** (`openmrs_app`): runtime-account met **alleen
   `SELECT, INSERT, UPDATE, DELETE`** op de database; kan nooit `DROP`/`ALTER`/
   `CREATE`/`GRANT`.
 
@@ -63,29 +63,29 @@ twee-account-model geïntroduceerd:
   database user".
 - **NEN-7510:** A.8.3 (least privilege), A.8.2 (Privileged access rights).
 - **Koppeling:** beperkt de **impact** van elke SQL-injectie- of
-  privilege-escalatieketen (TM-E2, SQ7) — zelfs bij applicatielaag-DB-toegang kan de
+  privilege-escalatieketen (TM-E2, SQ7): zelfs met applicatielaag-DB-toegang kan de
   runtime-gebruiker geen tabellen droppen of het schema wijzigen (mitigeert mede
   CD1/CD6 supply-chain-impact, §4.4).
 - **Restpunt:** de productie-`openmrs`-connectie staat bij eerste deploy nog op
   `DB_USER` (Liquibase heeft DDL nodig); de documented steady-state-switch naar
   `DB_APP_USER` is een operationele deploy-stap (niet container-geverifieerd in deze
-  omgeving — Docker-daemon was niet beschikbaar).
+  omgeving; de Docker-daemon was niet beschikbaar).
 
 ---
 
 ## 3. Minimaliseer geëxposeerde endpoints (IP-whitelisting)
 
-**Status: 🟡 Gedeeltelijk — bestaand mechanisme dekt niet alle endpoints.**
+**Status: 🟡 Gedeeltelijk. Het bestaande mechanisme dekt niet alle endpoints.**
 
 `AuthorizationFilter` past `RestUtil.isIpAllowed(request.getRemoteAddr())` toe via
 de `webservices.rest.allowedips` global property, maar:
 
 - dit geldt **alleen** voor `/ws/rest/*` (categorieën A en B in
-  [`attack-surface.md`](attack-surface.md)) — categorie C (`/module/webservices/rest/*`)
+  [`attack-surface.md`](attack-surface.md)); categorie C (`/module/webservices/rest/*`)
   valt hier volledig buiten (TB6, nieuw geïdentificeerd in §5 van
   `attack-surface.md`);
 - achter een reverse proxy bevat `getRemoteAddr()` het proxy-IP, niet het
-  client-IP (TM-S3, TB4) — de allow-list filtert dan effectief niets.
+  client-IP (TM-S3, TB4), waardoor de allow-list dan effectief niets filtert.
 
 - **Aanbeveling:**
   1. Pas dezelfde IP-allow-list-logica toe op categorie C, of verwijder/relocate
@@ -94,30 +94,30 @@ de `webservices.rest.allowedips` global property, maar:
      vertrouwde, geconfigureerde reverse-proxy-IP — anders blijft `getRemoteAddr()`
      leidend.
 - **NEN-7510:** A.8.3, A.8.20 (Netwerkbeveiliging).
-- **Koppeling:** TM-S3 (§3.7.3), prio "te verifiëren in #63" — nu expliciet
-  geconcretiseerd tot bovenstaande twee acties.
+- **Koppeling:** TM-S3 (§3.7.3), prio "te verifiëren in #63", nu concreet
+  gemaakt met de twee acties hierboven.
 
 ---
 
 ## 4. Nooit client-side validatie (server-side enforcement)
 
-**Status: ✅ Grotendeels in lijn — Resource Framework valideert server-side.**
+**Status: ✅ Grotendeels in lijn. Het Resource Framework valideert server-side.**
 
 De Resource Framework (categorie A) voert validatie uit via
-`Validator`-implementaties en `BaseDelegatingResource` vóór persistence — er is geen
-afhankelijkheid van client-side checks voor de kern-resources.
+`Validator`-implementaties en `BaseDelegatingResource` vóór persistence; voor de
+kern-resources is er geen afhankelijkheid van client-side checks.
 
 - **Uitzondering:** `SettingsFormController.GlobalPropertiesModel.validate()` bevat
   meerdere `// TODO validate legal uri prefix` /
   `// TODO validate legal comma-separated IPv4 or IPv6 addresses`-commentaren
-  (regels 138, 140) — de `REST_ALLOWED_IPS`-waarde (gebruikt door §3 hierboven!)
-  wordt dus **niet** server-side gevalideerd op formaat.
+  (regels 138, 140). De `REST_ALLOWED_IPS`-waarde (gebruikt door §3 hierboven!)
+  wordt dus **niet** server-side op formaat gevalideerd.
 - **Aanbeveling:** implementeer de twee openstaande TODO's in
-  `SettingsFormController.GlobalPropertiesModel.validate()` — een ongeldige
+  `SettingsFormController.GlobalPropertiesModel.validate()`; een ongeldige
   `REST_ALLOWED_IPS`-waarde kan de IP-allow-list (maatregel §3) onbedoeld
   uitschakelen.
 - **NEN-7510:** A.8.28 (Secure coding).
-- **Koppeling:** indirect aan TM-S3/TB4 — een kapotte allow-list-configuratie
+- **Koppeling:** indirect aan TM-S3/TB4; een kapotte allow-list-configuratie
   ondermijnt maatregel §3.
 
 ---
@@ -133,7 +133,7 @@ global property `webservices.rest.enableStackTraceDetails` op `"true"` staat
 
 - **Restpunt:** ongeacht deze instelling wordt altijd
   `map.put("code", stackTraceElement.getClassName() + ":" + stackTraceElement.getLineNumber())`
-  teruggegeven (regel 856) — dit lekt de **interne klassenaam en regelnummer** van
+  teruggegeven (regel 856). Dat lekt de **interne klassenaam en het regelnummer** van
   waar de exceptie optrad, ook in productie.
 - **Aanbeveling:** maak ook het `code`-veld afhankelijk van
   `enableStackTraceDetails`, of vervang het door een generieke foutcode
@@ -156,11 +156,11 @@ andere geheimen (alleen username, IP, URI, foutreden).
 - **Aanbeveling:** controleer bij de productie-`log4j2`/`logback`-configuratie dat
   het root- of pakket-niveau voor `org.openmrs.module.webservices.rest` op `WARN`
   staat (niet `DEBUG`/`INFO`), zodat `AUTH_SUCCESS`/`AUTH_LOGOUT` (op `INFO`) in
-  productie niet onnodig veel volume genereren — overweeg deze naar `WARN` te
-  verplaatsen of de productie-drempel op `INFO` te zetten indien het audit trail
-  (NEN-7510 A.8.15) deze events vereist.
+  productie niet onnodig veel volume genereren. Overweeg ze naar `WARN` te
+  verplaatsen, of zet de productie-drempel op `INFO` als het audit trail
+  (NEN-7510 A.8.15) deze events nodig heeft.
 - **NEN-7510:** A.8.15 (Logging).
-- **Koppeling:** TM-R2/TM-R3 (§3.7.3) — reeds gemitigeerd.
+- **Koppeling:** TM-R2/TM-R3 (§3.7.3), reeds gemitigeerd.
 
 ---
 
@@ -169,34 +169,34 @@ andere geheimen (alleen username, IP, URI, foutreden).
 **Status: ⚠️ Buiten codebase-scope, wel een OTAP/deployment-actiepunt.**
 
 Geen verwijzingen naar `admin123` zijn aangetroffen in de module-broncode of
-configuratie van dit project — het standaardwachtwoord is een eigenschap van de
-**OpenMRS-platform-seeddata**, niet van deze module.
+configuratie van dit project. Het standaardwachtwoord hoort bij de
+**OpenMRS-platform-seeddata**, niet bij deze module.
 
 - **Aanbeveling:** documenteer in de OTAP-omgevingsdocumentatie (Sprint 1,
   README "hoe omgevingen zijn ingericht") dat het `admin`-account in elke
   omgeving (test én productie) bij eerste deploy een uniek, gegenereerd wachtwoord
-  krijgt — niet het OpenMRS-default `Admin123`. Voeg dit toe als
+  krijgt, niet het OpenMRS-default `Admin123`. Voeg dit toe als
   post-deploy-controlepunt in de CI/CD-pipeline (bv. een check die faalt als het
   default-wachtwoord nog werkt).
-- **NEN-7510:** A.8.5 (Authenticatie) — "wijzig standaardwachtwoorden vóór
+- **NEN-7510:** A.8.5 (Authenticatie): "wijzig standaardwachtwoorden vóór
   productiegebruik".
 - **Koppeling:** versterkt SQ1/TM-S1/TM-S2 (sessie-fixatie en brute-force op
-  Basic Auth) — een gecompromitteerd `admin`-account via een default-wachtwoord
+  Basic Auth): een gecompromitteerd `admin`-account via een default-wachtwoord
   maakt elke andere mitigatie irrelevant.
 
 ---
 
 ## 8. Signed artifacts
 
-**Status: ✅ Geïmplementeerd — keyless cosign-signing + SLSA-provenance + SBOM.**
+**Status: ✅ Geïmplementeerd. Keyless cosign-signing + SLSA-provenance + SBOM.**
 
 Een release-workflow signeert de gebouwde `.omod` keyless (Sigstore/OIDC, géén
 langlevende sleutels), maakt een SLSA build-provenance-attestatie en genereert een
 CycloneDX-SBOM, en publiceert alle drie naast het `.omod`-bestand.
 
 - **Geïmplementeerd in:**
-  [`.github/workflows/release-sign.yml`](../../../../.github/workflows/release-sign.yml)
-  — `cosign sign-blob` (detached `.sig` + certificaat),
+  [`.github/workflows/release-sign.yml`](../../../../.github/workflows/release-sign.yml):
+  `cosign sign-blob` (detached `.sig` + certificaat),
   `actions/attest-build-provenance` (verifieerbaar met `gh attestation verify`), en
   `cyclonedx-maven-plugin` voor de SBOM. Assets worden bij een gepubliceerde Release
   aangehangen, of als workflow-artefact gepubliceerd bij handmatige runs.
@@ -205,7 +205,7 @@ CycloneDX-SBOM, en publiceert alle drie naast het `.omod`-bestand.
   https://token.actions.githubusercontent.com ...` (zie commentaar in de workflow).
 - **NEN-7510:** A.8.32 (Change management) / A.5.23 (Supply chain security),
   CRA-conformiteit (zie [`begrippenkader.md`](../../../00-project-context/begrippenkader.md)).
-- **Koppeling:** CD1 (Supply Chain Attack, §4.4) — signed artifacts geven
+- **Koppeling:** CD1 (Supply Chain Attack, §4.4). Signed artifacts geven
   downstream-gebruikers een verifieerbare garantie dat het `.omod`-bestand
   ongewijzigd uit déze pipeline komt.
 
@@ -213,7 +213,7 @@ CycloneDX-SBOM, en publiceert alle drie naast het `.omod`-bestand.
 
 ## 9. Pinned versies / git hashes voor CI/CD-acties
 
-**Status: ✅ Geïmplementeerd — alle third-party actions zijn SHA-pinned.**
+**Status: ✅ Geïmplementeerd. Alle third-party actions zijn SHA-pinned.**
 
 Alle `uses:`-referenties in `codeql.yml`, `sbom.yml`, `sonarcloud-coverage.yml` en de
 nieuwe `release-sign.yml` zijn gepind op hun volledige commit-SHA met de versie als
@@ -223,20 +223,20 @@ Eerder was slechts `snyk/actions/setup` SHA-gepind.
 - **Geïmplementeerd in:** alle vier workflows in
   [`.github/workflows/`](../../../../.github/workflows/). Versie-tags zoals `@v6` zijn
   muteerbaar door de upstream-maintainer (of een aanvaller die hun account
-  compromitteert) — een SHA is dat niet.
+  compromitteert); een SHA is dat niet.
 - **NEN-7510:** A.5.23 (Supply chain security), A.8.32.
 - **Onderhoud:** bij het verhogen van een action-versie moet de SHA opnieuw worden
   geresolved (`git ls-remote --tags <repo> <tag>`), bij voorkeur via Dependabot's
   `github-actions`-ecosystem dat SHA-pins automatisch bijwerkt.
-- **Koppeling:** CD1/CD6 (Supply Chain Attack, §4.4) — sluit direct aan bij de
-  bestaande SBOM/SCA-mitigaties; SonarCloud signaleerde dit patroon al eerder
+- **Koppeling:** CD1/CD6 (Supply Chain Attack, §4.4); sluit direct aan bij de
+  bestaande SBOM/SCA-mitigaties. SonarCloud signaleerde dit patroon al eerder
   (vandaar "zoals SonarQube ook zei").
 
 ---
 
 ## 10. OpenAPI-specificatie alleen naar specifieke ALLOWED hosts
 
-**Status: ✅ Geïmplementeerd — Host-allow-list + scheme-sanitisatie (SQ9-fix).**
+**Status: ✅ Geïmplementeerd. Host-allow-list + scheme-sanitisatie (SQ9-fix).**
 
 `SwaggerSpecificationController.getSwaggerSpecification()` nam de client-aangeleverde
 `Host`- en `X-Forwarded-Proto`-headers voorheen **ongevalideerd** over in het
@@ -257,7 +257,7 @@ Eerder was slechts `snyk/actions/setup` SHA-gepind.
   `SwaggerHardeningRestUtilTest` (`resolveSwaggerHost*`, `sanitizeScheme*`).
 - **NEN-7510:** A.8.20 (Netwerkbeveiliging), A.8.26 (Application security
   requirements).
-- **Koppeling:** **SQ9 / TM-S4** (§3.7.3, §3.7.4) — prioriteit 9 in §5.1 van het
+- **Koppeling:** **SQ9 / TM-S4** (§3.7.3, §3.7.4), prioriteit 9 in §5.1 van het
   hoofddocument; nu gemitigeerd.
 
 ---
@@ -273,8 +273,8 @@ zodra:
 - een van de bovenstaande maatregelen wordt geïmplementeerd (status ❌/🟡 → ✅,
   met verwijzing naar de PR/commit als bewijsartefact voor de
   traceability matrix in Sprint 4);
-- het threat model wijzigt (nieuwe componenten/endpoints in de C4-diagrammen)
-  — controleer dan of nieuwe endpoints categorie A, B of C raken (zie
+- het threat model wijzigt (nieuwe componenten/endpoints in de C4-diagrammen):
+  controleer dan of nieuwe endpoints categorie A, B of C raken (zie
   `attack-surface.md` §1) en of deze checklist nieuwe items nodig heeft.
 
 ---
