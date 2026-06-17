@@ -31,6 +31,7 @@ import org.openmrs.api.ConceptNameType;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.representation.CustomRepresentation;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
+import org.openmrs.module.webservices.rest.web.response.ConversionException;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 
 public class ConversionUtilTest extends BaseModuleWebContextSensitiveTest {
@@ -312,6 +313,30 @@ public class ConversionUtilTest extends BaseModuleWebContextSensitiveTest {
 		ConversionUtil.getTypeVariableClass(Temp.class, null);
 	}
 	
+	/**
+	 * Guards against reflection injection: a user-controlled property name must be a well-formed
+	 * JavaBean property path before it is resolved reflectively (SonarCloud java:S6549).
+	 *
+	 * @see ConversionUtil#getPropertyWithRepresentation(Object, String, Representation)
+	 * @verifies resolve a well-formed property name
+	 */
+	@Test
+	public void getPropertyWithRepresentation_shouldResolveWellFormedPropertyName() throws Exception {
+		NamedBean bean = new NamedBean();
+		bean.setName("hello");
+		Object value = ConversionUtil.getPropertyWithRepresentation(bean, "name", Representation.DEFAULT);
+		assertEquals("hello", value);
+	}
+
+	/**
+	 * @see ConversionUtil#getPropertyWithRepresentation(Object, String, Representation)
+	 * @verifies reject a property name containing reflection-injection characters
+	 */
+	@Test(expected = ConversionException.class)
+	public void getPropertyWithRepresentation_shouldRejectIllegalPropertyName() throws Exception {
+		ConversionUtil.getPropertyWithRepresentation(new Temp(), "class.classLoader.resource", Representation.DEFAULT);
+	}
+
 	public abstract class BaseGenericType<T> {
 		
 		private T value;
@@ -359,6 +384,19 @@ public class ConversionUtilTest extends BaseModuleWebContextSensitiveTest {
 	}
 	
 	public class Temp {}
+
+	public static class NamedBean {
+
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
 	
 	public class ChildGenericType_Int extends BaseGenericType<Integer> {}
 	
