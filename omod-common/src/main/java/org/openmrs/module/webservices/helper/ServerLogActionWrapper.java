@@ -27,16 +27,19 @@ public abstract class ServerLogActionWrapper {
 	 * Pre-compiled log-line parser for lines of the form
 	 * {@code LEVEL - logger |timestamp| message}.
 	 * <p>
-	 * Every quantifier is linear and non-overlapping: the pipe-delimited fields use the negated
-	 * class {@code [^|]} (which cannot cross a {@code |}) and the trailing message uses a single
-	 * {@code [\s\S]*} group. This removes the catastrophic/polynomial backtracking (ReDoS,
-	 * CWE-1333) of the original {@code .*?[-].*?\s(...).+ ... (.*\n*)+} pattern, in which several
-	 * unbounded {@code .*?}/{@code .+} groups could match the same input in many ways. The range is
-	 * also {@code [A-Za-z]} (was the overly permissive {@code [A-z]}, CWE-20). Compiled once and
-	 * reused for every log line (previously recompiled per line).
+	 * Every quantifier is linear and non-overlapping, so the pattern cannot backtrack
+	 * catastrophically (ReDoS, CWE-1333): the two pipe-delimited fields are matched with a greedy
+	 * {@code [^|]*} that is hard-bounded by the next {@code |} (it can never cross one, so there is
+	 * no choice point to re-explore), and the trailing message is a single terminal {@code [\s\S]*}
+	 * group with nothing after it to force backtracking. Crucially, no two adjacent quantifiers
+	 * share a character: the previous {@code [^|]*?\s*} pair did ({@code \s} is a subset of
+	 * {@code [^|]}), which is what let both the original {@code (.*\n*)+} pattern and the first
+	 * rewrite run in polynomial time. The leading range is {@code [A-Za-z]} (was the overly
+	 * permissive {@code [A-z]}, CWE-20). Trailing whitespace on the logger field is stripped by the
+	 * caller. Compiled once and reused for every log line (previously recompiled per line).
 	 */
 	private static final Pattern LOG_LINE_PATTERN = Pattern
-	        .compile("(INFO|ERROR|WARN|DEBUG)\\s+-\\s+([A-Za-z][^|]*?)\\s*\\|([^|]*)\\|\\s*([\\s\\S]*)");
+	        .compile("(INFO|ERROR|WARN|DEBUG)\\s+-\\s+([A-Za-z][^|]*)\\|([^|]*)\\|\\s?([\\s\\S]*)");
 
 	public List<String[]> serverLog;
 	
@@ -84,7 +87,9 @@ public abstract class ServerLogActionWrapper {
 		if (matcher.find()) {
 			// If pattern matches to the message
 			logElements[0] = matcher.group(1);
-			logElements[1] = matcher.group(2);
+			// group(2) greedily includes any whitespace before the '|'; trim it here instead of in
+			// the regex (a trailing \s* in the pattern would overlap [^|]* and reintroduce ReDoS).
+			logElements[1] = matcher.group(2).trim();
 			logElements[2] = matcher.group(3);
 			logElements[3] = matcher.group(4);
 		}
