@@ -512,17 +512,25 @@ public class RestUtil implements GlobalPropertyListener {
 	 */
 	private static Integer getIntegerParam(HttpServletRequest request, String param) {
 		String paramString = request.getParameter(param);
-		
+
 		if (paramString != null) {
 			try {
-				return new Integer(paramString);// return the valid value
+				// CWE-190 / NEN-7510 A.8.26: parse as long first so that values that overflow
+				// the int range (e.g. 2147483648) are caught here instead of silently becoming
+				// null and bypassing the >0 and absolute-limit guards in setLimit().
+				long longValue = Long.parseLong(paramString);
+				if (longValue < Integer.MIN_VALUE || longValue > Integer.MAX_VALUE) {
+					throw new IllegalArgumentException(
+					    "Parameter '" + param + "' value overflows integer range: " + sanitizeForLog(paramString));
+				}
+				return (int) longValue;
 			}
 			catch (NumberFormatException e) {
 				log.debug("unable to parse '" + param + "' parameter into a valid integer: "
 				        + sanitizeForLog(paramString));
 			}
 		}
-		
+
 		return null;
 	}
 	
@@ -842,27 +850,11 @@ public class RestUtil implements GlobalPropertyListener {
 		} else {
 			map.put("message", "[" + message + "]");
 		}
-		StackTraceElement[] stackTraceElements = ex.getStackTrace();
-		if (stackTraceElements.length > 0) {
-			StackTraceElement stackTraceElement = ex.getStackTrace()[0];
-			String stackTraceDetailsEnabledGp = null;
-			try {
-				Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
-				stackTraceDetailsEnabledGp = getGlobalProperty(RestConstants.ENABLE_STACK_TRACE_DETAILS_GLOBAL_PROPERTY_NAME, "false");
-			}
-			finally {
-				Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
-			}
-			map.put("code", stackTraceElement.getClassName() + ":" + stackTraceElement.getLineNumber());
-			if ("true".equalsIgnoreCase(stackTraceDetailsEnabledGp)) {
-				map.put("detail", ExceptionUtils.getStackTrace(ex));
-			} else {
-				map.put("detail", "");
-			}
-		} else {
-			map.put("code", "");
-			map.put("detail", "");
-		}
+		// CWE-209 / NEN-7510 A.8.15: never expose class names, line numbers, or stack traces
+		// in API responses — internal details stay in server logs, not in client responses.
+		// The former enableStackTraceDetails global property is intentionally ignored here.
+		map.put("code", "");
+		map.put("detail", "");
 		map.put("rawMessage", ex.getMessage());
 		String translatedMessage = Context.getMessageSourceService().getMessage(ex.getMessage(), null, null, Context.getLocale());
 		map.put("translatedMessage", translatedMessage);
