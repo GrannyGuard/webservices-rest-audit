@@ -51,6 +51,6 @@ bewijsartefact bestaat — zie *Restpunten*.
   (F1–F9).
 - [ ] **A.8.24** (gap-analyse TM-I4 — HTTP Basic Auth zonder gegarandeerde TLS)
   staat nog open. Zodra gemitigeerd op deployment-niveau: rij toevoegen met bewijsartefact.
-- [ ] **SQ8 (XSS, A.8.28)** — code-fix bewust niet doorgevoerd (niet valideerbaar
+- [ ] **SQ8 (XSS, A.8.28)**: code-fix bewust niet doorgevoerd (niet valideerbaar
   via pentest). Productie-blootstelling afgedekt door configuratie-gating.
   Kan worden geclosed wanneer het debug-endpoint definitief wordt verwijderd.

@@ -48,9 +48,9 @@ de eigen database** krijgt. De `openmrs/openmrs-core`-image gebruikt dat ene acc
 zowel voor Liquibase (DDL bij opstarten) als voor runtime-verkeer; daarom is een
 twee-account-model geïntroduceerd:
 
-- **`DB_USER`** — migratie/admin-account (volledige rechten), uitsluitend voor
+- **`DB_USER`**: migratie/admin-account (volledige rechten), uitsluitend voor
   schema-creatie en Liquibase-upgrades op deploy-moment.
-- **`DB_APP_USER`** (`openmrs_app`) — runtime-account met **alleen
+- **`DB_APP_USER`** (`openmrs_app`): runtime-account met **alleen
   `SELECT, INSERT, UPDATE, DELETE`** op de database; kan nooit `DROP`/`ALTER`/
   `CREATE`/`GRANT`.
 
