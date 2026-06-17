@@ -52,6 +52,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
 
 import static org.openmrs.module.webservices.rest.web.representation.Representation.DEFAULT;
 import static org.openmrs.module.webservices.rest.web.representation.Representation.FULL;
@@ -62,7 +63,36 @@ public class ConversionUtil {
 	static final Log log = LogFactory.getLog(ConversionUtil.class);
 	
 	public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-	
+
+	/**
+	 * Allowlist for a single segment of a JavaBean property path: an identifier, optionally
+	 * followed by an indexed (<code>[0]</code>) or mapped (<code>(key)</code>) accessor as
+	 * supported by Commons BeanUtils. A dotted path is validated segment-by-segment (see
+	 * {@link #isSafePropertyName(String)}) rather than with a single nested regex, which keeps
+	 * the pattern simple and avoids deep recursive backtracking on large inputs.
+	 */
+	private static final Pattern SAFE_PROPERTY_SEGMENT = Pattern
+	        .compile("[a-zA-Z_$][a-zA-Z0-9_$]*(\\[\\d+\\]|\\([^()]*\\))?");
+
+	/**
+	 * Validates that {@code propertyName} is a well-formed JavaBean property path and does not
+	 * traverse {@code class}/{@code classLoader}, which is the canonical Commons BeanUtils
+	 * class-loader attack vector. Used to keep user-controlled request data from steering
+	 * reflective getter/method-name construction (SonarCloud java:S6549).
+	 */
+	private static boolean isSafePropertyName(String propertyName) {
+		if (propertyName == null || propertyName.isEmpty()) {
+			return false;
+		}
+		// -1 keeps trailing empty segments so paths like "name." or ".name" are rejected
+		for (String segment : propertyName.split("\\.", -1)) {
+			if ("class".equalsIgnoreCase(segment) || !SAFE_PROPERTY_SEGMENT.matcher(segment).matches()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	// This would better be a Map<Pair<Class, String>, Type> but adding the dependency for
 	//  org.apache.commons.lang3.tuple.Pair (through omrs-api) messed up other tests
 	private static final Map<String, Type> typeVariableMap = new ConcurrentHashMap<String, Type>();
@@ -351,6 +381,9 @@ public class ConversionUtil {
 	 */
 	public static Object getPropertyWithRepresentation(Object bean, String propertyName, Representation rep)
 	        throws ConversionException {
+		if (!isSafePropertyName(propertyName)) {
+			throw new ConversionException("Illegal property name: " + propertyName);
+		}
 		Object o;
 		try {
 			o = PropertyUtils.getProperty(bean, propertyName);
