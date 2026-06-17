@@ -7,7 +7,7 @@ endpoint-inventarisatie in
 [`../../05-penetration-tests/endpoints.md`](../../05-penetration-tests/endpoints.md).
 Volgens het begrippenkader is de **attack surface** *"de optelsom van alle punten
 waar een aanvaller een systeem kan benaderen of beïnvloeden (endpoints, interfaces,
-configuratie) — inclusief impliciet vertrouwde elementen ('trust boundaries')"*.
+configuratie), inclusief impliciet vertrouwde elementen ('trust boundaries')"*.
 
 ---
 
@@ -15,8 +15,8 @@ configuratie) — inclusief impliciet vertrouwde elementen ('trust boundaries')"
 
 De module exposeert HTTP-endpoints via **drie verschillende URL-prefixen**, die
 **niet** dezelfde beveiligingslaag doorlopen. Dit onderscheid is de kern van deze
-mapping en is in Sprint 3 ontdekt via de STRIDE-analyse (TM-S4, TM-I2, TM-T2 —
-zie §3.7.4 in het hoofddocument).
+mapping en kwam in Sprint 3 boven via de STRIDE-analyse (TM-S4, TM-I2, TM-T2; zie
+§3.7.4 in het hoofddocument).
 
 | Categorie | URL-prefix | Loopt door `AuthorizationFilter` (TB1)? | Component (C4) |
 |---|---|:---:|---|
@@ -30,7 +30,7 @@ zie §3.7.4 in het hoofddocument).
 > (`<url-pattern>/ws/rest/*</url-pattern>` voor `REST Web Service Authorization`,
 > `REST Web Service Content-Type`, `compressionFilter` en `shallowEtagHeaderFilter`).
 > Endpoints in categorie C krijgen dus **geen** IP-allowlisting, **geen** Basic
-> Auth-afdwinging en **geen** content-type-validatie — ze zijn zo "veilig" als de
+> Auth-afdwinging en **geen** content-type-validatie. Ze zijn zo "veilig" als de
 > controller-code zelf, zonder enig vangnet. Dit is exact de oorzaak van SQ7, SQ8
 > en SQ9.
 
@@ -55,14 +55,14 @@ surface:
   centrale, declaratieve enforcement (TM-E1). Nieuwe of door de community
   bijgedragen resources erven dus geen garanties.
 - **High risk binnen categorie A:**
-  - `/ws/rest/v1/user`, `/ws/rest/v1/role`, `/ws/rest/v1/privilege` — direct
+  - `/ws/rest/v1/user`, `/ws/rest/v1/role`, `/ws/rest/v1/privilege`: direct
     gekoppeld aan KJ3 (authenticatiegegevens); compromittering hier is een
     directe opmaat naar privilege-escalatie (TM-E2).
   - `/ws/rest/v1/patient*`, `/ws/rest/v1/person*`, `/ws/rest/v1/obs`,
-    `/ws/rest/v1/encounter*` — KJ1/KJ2 (bijzondere persoonsgegevens, AVG art. 9);
+    `/ws/rest/v1/encounter*`: KJ1/KJ2 (bijzondere persoonsgegevens, AVG art. 9);
     elke ongeautoriseerde toegang hier is een meldplichtig datalek.
   - `/ws/rest/v1/systemsetting`, `/ws/rest/v1/serverlog`,
-    `/ws/rest/v1/administrationlinks` — administratieve/diagnostische data
+    `/ws/rest/v1/administrationlinks`: administratieve/diagnostische data
     (KJ4, KJ7); zelfde risicocategorie als SQ7 maar **wél** achter
     `AuthorizationFilter`.
 
@@ -91,9 +91,9 @@ volledig op "je bent ingelogd" zonder te toetsen *welke* rol/privilege vereist i
 > **Conclusie categorie B:** TM-E3 (uit §3.7.3) wordt door deze inventarisatie
 > **bevestigd**: meerdere administratieve Version-Specific Controllers voeren geen
 > eigen privilege-check uit. Dit is een **systemisch patroon** (gap A.8.3, prio 11
-> in §5.1: declaratieve access control), niet een eenmalige bug — vandaar de
-> aanbeveling voor declaratieve, centrale autorisatie i.p.v. ad-hoc checks per
-> controller.
+> in §5.1: declaratieve access control), geen eenmalige bug. Vandaar de
+> aanbeveling voor declaratieve, centrale autorisatie in plaats van ad-hoc checks
+> per controller.
 
 ---
 
@@ -112,11 +112,11 @@ voortkomen. **Geen van deze endpoints loopt door `AuthorizationFilter`.**
 > (`/apiDocs[/debug]`, `/swagger.json`) zijn nu uitschakelbaar via
 > `webservices.rest.enableSwaggerDocs` (hardening checklist §1) en **SQ9** (Host-/Scheme-
 > reflectie) is gemitigeerd met een Host-allow-list + scheme-sanitisatie (§10).
-> **SQ8** (XSS) blijft open op code-niveau — bewust niet gemitigeerd, zie §3.7.4.
+> **SQ8** (XSS) blijft open op code-niveau, bewust niet gemitigeerd; zie §3.7.4.
 
 **Implicit trust (categorie C):** de aanwezigheid van `AuthorizationFilter` op
 `/ws/rest/*` wekt de indruk dat *"alle REST-endpoints van deze module"*
-beveiligd zijn. Categorie C toont dat dit **niet klopt** — elke nieuwe controller
+beveiligd zijn. Categorie C laat zien dat dit **niet klopt**: elke nieuwe controller
 die niet expliciet onder `/ws/rest/*` wordt geregistreerd, erft **geen enkele**
 beveiligingsmaatregel (geen IP-filter, geen auth, geen content-type-check, geen
 compressie-/ETag-afhandeling). Dit is de belangrijkste **trust-boundary-bevinding**
@@ -128,7 +128,7 @@ van deze sprint en is toegevoegd als TB6 (zie §5).
 
 Naast de in §3.7.2 beschreven TB1–TB5 introduceert deze attack-surface-analyse:
 
-- **TB6 — Servlet-filterketen vs. controller-registratie:** de grens tussen
+- **TB6, de servlet-filterketen versus controller-registratie:** de grens tussen
   endpoints die via `<url-pattern>/ws/rest/*</url-pattern>` door
   `AuthorizationFilter`/`ContentTypeFilter`/`compressionFilter` lopen (categorieën
   A & B), en endpoints die via `@RequestMapping("/module/webservices/rest/...")`
@@ -137,16 +137,16 @@ Naast de in §3.7.2 beschreven TB1–TB5 introduceert deze attack-surface-analys
   het toevoegen van nieuwe controllers. SQ7/SQ8/SQ9 bewijzen dat dit vertrouwen
   niet houdbaar is.
 
-**TB4 (reverse proxy / `isIpAllowed`)** — TM-S3 status-update na deze mapping: de
+**TB4 (reverse proxy / `isIpAllowed`)**, TM-S3 status-update na deze mapping: de
 IP allow-list (`RestUtil.isIpAllowed()`) wordt **alleen** toegepast op categorie A
 en B (via TB1). Categorie C is dus **dubbel** kwetsbaar: geen IP-filter **en** geen
 authenticatie. Bij het mitigeren van TB4 (bv. `X-Forwarded-For`-aware IP-resolutie)
-moet expliciet besloten worden of categorie C in dezelfde filterketen wordt
-opgenomen — de aanbeveling in de hardening checklist (§6) is om categorie C
+moet je expliciet besluiten of categorie C in dezelfde filterketen wordt
+opgenomen. De aanbeveling in de hardening checklist (§6) is om categorie C-
 endpoints óf te verwijderen, óf onder `/ws/rest/*` te laten vallen, óf zelf een
 equivalente check uit te voeren.
 
-**TM-E3 (Version-Specific Controllers)** — status-update: bevestigd in §3 hierboven;
+**TM-E3 (Version-Specific Controllers)**, status-update: bevestigd in §3 hierboven;
 `/cleardbcache`, `/searchindexupdate`, `/loggedinusers`, `/implementationid` en
 `/hl7` (POST) missen een privilege-check naast de basisauthenticatie van TB1.
 
@@ -163,10 +163,10 @@ door modules van derden worden geregistreerd). Dit betekent:
   kwaadwillende of slecht geschreven module-bijdrage kan zo:
   - een resource registreren die de switch-statement-zwakte (TM-T1/SQ2) erft;
   - een `SearchHandler` registreren zonder de privilege-checks die de
-    kernresources wél (deels) hebben — vergelijkbaar met TM-E1.
+    kernresources wél (deels) hebben, vergelijkbaar met TM-E1.
 - **Impliciet vertrouwd:** dat geïnstalleerde modules "vertrouwde code" zijn.
   NEN-7510 A.8.3 (least privilege) en de CI/CD supply-chain-mitigaties (CD1, §4.4)
-  zijn de enige barrières hiertegen — er is geen module-sandboxing op REST-niveau.
+  zijn de enige barrières hiertegen; module-sandboxing op REST-niveau bestaat niet.
 - Dit sluit aan bij de workshop-aanwijzing *"andere OpenMRS-modules die proberen
   onze module te misbruiken"* als expliciete attack surface.
 
@@ -199,7 +199,7 @@ gekoppeld aan de [OWASP Top 10:2021](https://owasp.org/Top10/) (`Ax:2021`).
 > **Bewust meerdere OWASP-edities (2021 + 2023 + 2025).** Dit onderzoek mapt findings
 > opzettelijk over drie OWASP-edities: de **Top 10:2021** (web-breed), de **API Security
 > Top 10:2023** (deze REST-module) en de **Top 10:2025**-conceptcategorieën (gebruikt in
-> het pentestrapport). De edities overlappen maar zijn niet identiek — eenzelfde finding
+> het pentestrapport). De edities overlappen maar zijn niet identiek: eenzelfde finding
 > kan onder verschillende categorienamen vallen. Dat is **geen inconsistentie maar
 > bredere dekking**: elke editie belicht een ander deel van het aanvalsoppervlak (bv.
 > "Improper Inventory Management" bestaat alléén in de API-editie, en de 2025-editie
@@ -226,7 +226,7 @@ gekoppeld aan de [OWASP Top 10:2021](https://owasp.org/Top10/) (`Ax:2021`).
 
 **Conclusie:** de attack surface raakt **8 van de 10** OWASP API-categorieën. De zwaarst
 geraakte cluster is **API8/API9** (Security Misconfiguration + Improper Inventory
-Management) — exact de categorie C-endpoints buiten `AuthorizationFilter` (TB6). De
+Management): precies de categorie C-endpoints buiten `AuthorizationFilter` (TB6). De
 mitigaties (Swagger-gating + Host-header-allow-list) verlagen API9 van "open" naar
-"gemitigeerd". API8 (SQ8 — XSS) blijft open op code-niveau; de productie-blootstelling
+"gemitigeerd". API8 (SQ8, XSS) blijft open op code-niveau; de productie-blootstelling
 is afgedekt door configuratie-gating (Swagger uitgeschakeld).
