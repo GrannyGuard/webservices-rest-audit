@@ -46,7 +46,7 @@ overige audit-documenten (`docs/security/`) wordt gebruikt.
 | **Risicobeheersing — de vier opties** | De vier manieren om met een geïdentificeerd risico om te gaan: **vermijden** (activiteit stopzetten), **verminderen** (mitigerende maatregelen treffen), **overdragen** (bv. verzekeren of uitbesteden), **accepteren** (bewust risico laten bestaan, onderbouwd binnen de risicobereidheid). |
 | **Bow-tie analyse** | Gestructureerde, visuele weergave van een risico: links de **oorzaken** met **preventieve barrières**, in het midden de **kritieke gebeurtenis** (top event), rechts de **gevolgen** met **reactieve/correctieve maatregelen**. Maakt in één oogopslag zichtbaar welke maatregelen een risico vóór en ná het optreden ervan beheersen. |
 | **Threat model / threat modelling** | Het systematisch identificeren van mogelijke dreigingen tegen een systeem, vaak ondersteund door architectuurdiagrammen (bv. C4-model) om aanvalsvectoren en vertrouwensgrenzen in kaart te brengen. |
-| **Attack surface** | De optelsom van alle punten waar een aanvaller een systeem kan benaderen of beïnvloeden (endpoints, interfaces, configuratie) — inclusief impliciet vertrouwde elementen ("trust boundaries"). |
+| **Attack surface** | De optelsom van alle punten waar een aanvaller een systeem kan benaderen of beïnvloeden (endpoints, interfaces, configuratie), inclusief impliciet vertrouwde elementen ("trust boundaries"). |
 
 ## 4. Scanning, testen & kwetsbaarheidsbeheer
 
@@ -71,4 +71,4 @@ overige audit-documenten (`docs/security/`) wordt gebruikt.
 ---
 
 *Opgesteld als onderdeel van WS01 (Wet- & regelgeving, NEN-7510, audit mindset).*
-*Termen zijn afgestemd op het gebruik in `docs/security/01-security-audit/01.md` en de overige audit-documenten — zie die documenten voor de toepassing op de `webservices.rest`-module.*
+*Termen zijn afgestemd op het gebruik in `docs/security/01-security-audit/01.md` en de overige audit-documenten; zie daar de toepassing op de `webservices.rest`-module.*
