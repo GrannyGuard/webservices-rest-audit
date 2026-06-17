@@ -65,15 +65,14 @@ public class ConversionUtil {
 	public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
 	/**
-	 * Allowlist for property names that may be resolved reflectively by
-	 * {@link #getPropertyWithRepresentation(Object, String, Representation)}. A name is a
-	 * dot-separated path of JavaBean-style identifiers, each segment optionally followed by an
-	 * indexed (<code>[0]</code>) or mapped (<code>(key)</code>) accessor as supported by Commons
-	 * BeanUtils. This breaks the taint flow from user-controlled request data into reflective
-	 * getter/method-name construction (SonarCloud java:S6549 / reflection injection).
+	 * Allowlist for a single segment of a JavaBean property path: an identifier, optionally
+	 * followed by an indexed (<code>[0]</code>) or mapped (<code>(key)</code>) accessor as
+	 * supported by Commons BeanUtils. A dotted path is validated segment-by-segment (see
+	 * {@link #isSafePropertyName(String)}) rather than with a single nested regex, which keeps
+	 * the pattern simple and avoids deep recursive backtracking on large inputs.
 	 */
-	private static final Pattern SAFE_PROPERTY_NAME = Pattern
-	        .compile("[a-zA-Z_$][a-zA-Z0-9_$]*(\\[\\d+\\]|\\([^()]*\\))?(\\.[a-zA-Z_$][a-zA-Z0-9_$]*(\\[\\d+\\]|\\([^()]*\\))?)*");
+	private static final Pattern SAFE_PROPERTY_SEGMENT = Pattern
+	        .compile("[a-zA-Z_$][a-zA-Z0-9_$]*(\\[\\d+\\]|\\([^()]*\\))?");
 
 	/**
 	 * Validates that {@code propertyName} is a well-formed JavaBean property path and does not
@@ -82,11 +81,12 @@ public class ConversionUtil {
 	 * reflective getter/method-name construction (SonarCloud java:S6549).
 	 */
 	private static boolean isSafePropertyName(String propertyName) {
-		if (propertyName == null || !SAFE_PROPERTY_NAME.matcher(propertyName).matches()) {
+		if (propertyName == null || propertyName.isEmpty()) {
 			return false;
 		}
-		for (String segment : propertyName.split("\\.")) {
-			if ("class".equalsIgnoreCase(segment)) {
+		// -1 keeps trailing empty segments so paths like "name." or ".name" are rejected
+		for (String segment : propertyName.split("\\.", -1)) {
+			if ("class".equalsIgnoreCase(segment) || !SAFE_PROPERTY_SEGMENT.matcher(segment).matches()) {
 				return false;
 			}
 		}
