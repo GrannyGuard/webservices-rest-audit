@@ -183,13 +183,12 @@ gap-analyse, CIA/BIV- en risicoanalyse, STRIDE-threatmodelling, SAST
 (F1--F9, Bijlage~\ref{app:traceability} A.8.29).
 
 Van de vijf uitgewerkte bevindingen (B-001 t/m B-005, \S\ref{sec:bevindingen})
-zijn er \textbf{twee volledig gemitigeerd en geverifieerd} (B-004 ---
-reflected XSS; B-005 --- log injection) en is \textbf{één deels gemitigeerd}
+zijn er \textbf{twee volledig gemitigeerd en geverifieerd} (B-004: reflected XSS; B-005: log injection) en is \textbf{één deels gemitigeerd}
 (B-002: de CWE-302 fall-through in \texttt{AuthorizationFilter} is gefixt, de
 onderliggende sessie-fixatie CWE-384 staat nog open). De twee resterende
-bevindingen --- B-001 (ongeauthenticeerde uitlezing van alle
+bevindingen zijn \textbf{nog open}: B-001 (ongeauthenticeerde uitlezing van alle
 systeemconfiguratie, risicoscore 20, hoogste van de analyse) en B-003 (geen
-brute-force-bescherming op authenticatie) --- zijn \textbf{nog open} en
+brute-force-bescherming op authenticatie) en
 vormen de hoogste prioriteit.
 
 \textbf{Eindoordeel per control:} A.8.5 (Authenticatie) en A.8.9
@@ -337,7 +336,7 @@ De scheiding tussen test- en productiedata is geborgd via GitHub Environments
 gate (vier-ogen, A.8.3) die de release-pipeline daadwerkelijk afdwingt
 (\texttt{environment: prod} in \texttt{release-sign.yml}), naast een
 protected-branch-policy. Secret- en protection-scheiding voor \texttt{test}/\texttt{dev}
-is nog een openstaand verbeterpunt --- zie
+is nog een openstaand verbeterpunt; zie
 \texttt{docs/security/02-secure-pipelines/02.md} \S2.
 
 \section{Buiten Scope}
@@ -346,24 +345,24 @@ is nog een openstaand verbeterpunt --- zie
 De volgende onderdelen zijn expliciet buiten scope gehouden:
 
 \begin{itemize}
-    \item \textbf{OpenMRS Core en andere modules} --- alleen de REST
+    \item \textbf{OpenMRS Core en andere modules}: alleen de REST
           Webservices Module zelf is geauditeerd; de onderliggende kern
           (authenticatie via \texttt{Context}, Hibernate-laag, MariaDB) is
           als vertrouwde component beschouwd tenzij de module er direct mee
           interacteert.
-    \item \textbf{Productieomgeving en live patiëntdata} --- er is geen
+    \item \textbf{Productieomgeving en live patiëntdata}: er is geen
           toegang tot een draaiend productiesysteem; alle tests zijn
           uitgevoerd op de development/test-branch zonder herleidbare
           patiëntgegevens.
-    \item \textbf{Infrastructuur en netwerkconfiguratie} --- TLS-configuratie,
+    \item \textbf{Infrastructuur en netwerkconfiguratie}: TLS-configuratie,
           reverse proxy, firewalls en serverbeheer vallen buiten de
           module-grens en zijn de verantwoordelijkheid van de deployende
           organisatie.
-    \item \textbf{Fysieke beveiliging en organisatorische maatregelen} ---
+    \item \textbf{Fysieke beveiliging en organisatorische maatregelen}:
           personeelsbeleid, toegangspassen en fysieke serverruimtes zijn
           niet beoordeeld.
     \item \textbf{Penetratietests op een live productiesysteem met echte
-          patiëntdata} --- er is geen toegang verkregen tot een productieomgeving.
+          patiëntdata}: er is geen toegang verkregen tot een productieomgeving.
           De penetratietest (ZAP-scan + handmatige tests, bevindingen F1--F9, zie
           \texttt{05-penetration-tests/PentestReport-OpenMRS.md} en
           Bijlage~\ref{app:pentest}) is wél uitgevoerd op een geïsoleerde
@@ -376,8 +375,7 @@ De volgende onderdelen zijn expliciet buiten scope gehouden:
 
 Het normenkader voor deze audit is NEN-7510:2024 Deel 2. De norm bevat
 aanzienlijk meer controls dan hier behandeld; de onderstaande zeven zijn
-geselecteerd op basis van de risico-analyse en de aard van de module ---
-een REST API die bijzondere medische persoonsgegevens verwerkt. Dit zijn
+geselecteerd op basis van de risico-analyse en de aard van de module: een REST API die bijzondere medische persoonsgegevens verwerkt. Dit zijn
 de gebieden waar de risico's het hoogst zijn en waar verbetering de
 grootste impact heeft.
 
@@ -431,22 +429,22 @@ De audit is uitgevoerd in vijf stappen, conform NEN-7510:2024-2 en de
 risicobeoordelingsaanpak van ISO/IEC 27005:
 
 \begin{enumerate}
-    \item \textbf{Gap-analyse} — per NEN-7510-control is de huidige staat van de
+    \item \textbf{Gap-analyse}: per NEN-7510-control is de huidige staat van de
           module beoordeeld op basis van broncode-analyse en configuratieonderzoek.
           Elke gap is geclassificeerd als \emph{aanwezig / gedeeltelijk / afwezig}
           en onderbouwd met concrete codereferenties.
-    \item \textbf{Risicoanalyse} — op basis van de gevonden gaps en een CIA/BIV-classificatie
+    \item \textbf{Risicoanalyse}: op basis van de gevonden gaps en een CIA/BIV-classificatie
           van de kroonjuwelen zijn risico's gescoord via \emph{Kans × Impact} (schaal 1--5).
           Voor de twee best exploiteerbare hoog-risico-aanvalsketens is een
           bow-tie-analyse uitgewerkt.
-    \item \textbf{Threat modelling} — de module is beschreven in C4-diagrammen (context,
+    \item \textbf{Threat modelling}: de module is beschreven in C4-diagrammen (context,
           container en component). Op basis daarvan is een STRIDE-analyse uitgevoerd en
           zijn trust boundaries vastgesteld. Gevonden threats zijn gemapt op de
           OWASP API Security Top 10:2025.
-    \item \textbf{Verificatie} — bevindingen zijn geverifieerd via SAST (CodeQL),
+    \item \textbf{Verificatie}: bevindingen zijn geverifieerd via SAST (CodeQL),
           SCA (Dependabot, OSV-Scanner, Snyk), logging-tests en een attack surface mapping.
           Gemitigeerde kwetsbaarheden zijn herbeoordeeld met dezelfde tooling.
-    \item \textbf{Penetratietest} — een doelgerichte test conform de OWASP Web Security
+    \item \textbf{Penetratietest}: een doelgerichte test conform de OWASP Web Security
           Testing Guide~v4.2 is uitgevoerd op een geïsoleerde VirtualBox-testomgeving
           (Kali Linux~2024, OpenMRS~2.8.7, Apache Tomcat~9.0.118). De test omvatte
           authenticatie, sessiebeheer, autorisatie, injectie en serverconfiguratie en
@@ -520,9 +518,9 @@ geweest tot een productiesysteem met echte patiëntdata.
 De risicoanalyse brengt de gevonden gaps, de CIA/BIV-classificatie van de
 kroonjuwelen en de STRIDE-dreigingsanalyse samen tot één gescoorde risicomatrix
 (\S\ref{sec:risicomatrix}). Daaruit volgen de zes uitgewerkte bevindingen
-(\S\ref{sec:bevindingen}). De volledige analyse --- de zeven gap-tabellen per
+(\S\ref{sec:bevindingen}). De volledige analyse (de zeven gap-tabellen per
 control, de C4-diagrammen, de STRIDE-tabel met vijftien threats en de twintig
-daaruit gescoorde risico's --- is vastgelegd in
+daaruit gescoorde risico's) is vastgelegd in
 \texttt{docs/security/01-security-audit/01.md}; dit rapport vult die matrix aan
 met drie empirisch bevestigde pentest-risico's tot drieëntwintig
 (\S\ref{sec:risicomatrix}).
@@ -566,7 +564,7 @@ Grenswaarden: $\geq 9$ niet acceptabel
 \end{minipage}
 
 \vspace{1em}
-De analyse leverde \textbf{tweeëntwintig gescoorde risico's} op uit vijf bronnen ---
+De analyse leverde \textbf{tweeëntwintig gescoorde risico's} op uit vijf bronnen:
 SonarQube (SQ), CI/CD (CD), CodeQL (CQL), het threat model (AT) en de
 penetratietest (PT). Twintig daarvan vallen in Midden of hoger; dertien zijn
 \emph{onacceptabel} (zes maal \rood{Hoog} plus zeven Midden-risico's die
@@ -646,8 +644,7 @@ top-event.
 Hieronder zijn vijf bevindingen uitgewerkt, geselecteerd op risicoscore en op
 spreiding over de geauditeerde controls. Twee staan nog volledig open (B-001,
 B-003), B-002 is deels gemitigeerd (de CWE-302 fall-through is gefixt, de
-sessie-fixatie CWE-384 staat nog open), en B-004 en B-005 zijn gemitigeerd ---
-B-005 toont een volledig afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
+sessie-fixatie CWE-384 staat nog open), en B-004 en B-005 zijn gemitigeerd; B-005 toont een volledig afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
 Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
 
 \subsection{B-001 --- Ontbrekende rate-limiting op authenticatie (PT1 / F-01)}
@@ -668,12 +665,12 @@ rate-limiting of throttling op netwerkniveau. OpenMRS bevat wel een
 dit geldt \emph{niet} voor niet-bestaande gebruikersnamen en biedt geen bescherming
 als het correcte wachtwoord vóór de lockout-drempel wordt gevonden.
 
-\textbf{Bewijs.} \texttt{AuthorizationFilter.java:113} ---
+\textbf{Bewijs.} \texttt{AuthorizationFilter.java:113}:
 \texttt{Context.authenticate(userAndPass[0], userAndPass[1])} wordt in een onbegrensde
 stroom aangeroepen; er is geen HTTP-niveau rate-limiter aanwezig. De penetratietest
 heeft dit empirisch bevestigd: de geldige admin-credentials (\texttt{admin:Admin123!})
 werden gevonden in \textbf{poging~6 van~84}, binnen \textbf{2~seconden}, met een
-simpel Python-script --- ruim vóór de account-lockout sloeg
+simpel Python-script, ruim vóór de account-lockout sloeg
 (zie Bijlage~\ref{app:pentest}, F-01). Daarnaast werd via timing-analyse bevestigd
 dat niet-bestaande accounts nooit geblokkeerd worden (50 opeenvolgende pogingen,
 nooit HTTP~429 of vertraging).
@@ -706,26 +703,26 @@ sessie-ID blijft na authenticatie geldig (session fixation, CWE-384). De filter 
 bovendien \emph{by design} best-effort --- het klassecommentaar stelt dat het filter
 \emph{``never stops execution''} en op de service-laag vertrouwt om alsnog te falen.
 
-\textbf{Bewijs.} \texttt{AuthorizationFilter.java:82} ---
+\textbf{Bewijs.} \texttt{AuthorizationFilter.java:82}:
 \texttt{getRequestedSessionId()} geeft het client-aangeleverde sessie-ID terug
-zonder server-side validatie; \texttt{:119} --- na \texttt{Context.authenticate()}
+zonder server-side validatie; \texttt{:119}: na \texttt{Context.authenticate()}
 wordt de sessie niet geïnvalideerd (CWE-384, nog open). De afzonderlijke CWE-302
-fall-through --- de ontbrekende \texttt{return} na de \texttt{sendError(401)} bij een
-verlopen sessie, waardoor de keten dóórliep naar \texttt{chain.doFilter()} --- is
+fall-through (de ontbrekende \texttt{return} na de \texttt{sendError(401)} bij een
+verlopen sessie, waardoor de keten dóórliep naar \texttt{chain.doFilter()}) is
 inmiddels \groen{gefixt} (er staat nu een \texttt{return} op \texttt{:92}). De
 CodeQL-melding \texttt{java/user-controlled-bypass} op de optionele
 Basic-Auth-tak (oorspronkelijk alert \#908, na de \texttt{return}-fix verschoven
 naar \#913 op \texttt{:119}) is na onderzoek als geaccepteerd risico (false positive)
-geclassificeerd --- zie \texttt{06-mitigatie-en-validatie/06.md} \S3b.
+geclassificeerd; zie \texttt{06-mitigatie-en-validatie/06.md} \S3b.
 
 \textbf{Impact.} Sessie-overname geeft een aanvaller volledige toegang tot
-patiëntdossiers (KJ1, KJ2) met de rechten van het slachtoffer --- een meldplichtig
+patiëntdossiers (KJ1, KJ2) met de rechten van het slachtoffer; dit is een meldplichtig
 datalek (AVG Art.~33). In combinatie met B-004 (XSS) ontstaat een complete keten:
 XSS steelt de sessiecookie, waarna de niet-verversde sessie wordt overgenomen.
 
 \textbf{Gedeeltelijke mitigatie.} De fall-through na sessietime-out
 (\texttt{return} ontbrak na \texttt{sendError(401)}, CWE-302) is hersteld
-in commit \texttt{06.md} §3 --- 12 geautomatiseerde filtertests slagen.
+in commit; 12 geautomatiseerde filtertests slagen.
 De sessie-fixatie (CWE-384) staat nog open.
 
 \textbf{Aanbeveling.} Sessie-ID regenereren na login (\texttt{session.invalidate()}
@@ -807,7 +804,7 @@ daaruit toegang tot KJ1/KJ2. Geen voorafgaande toegang vereist.
 
 \textbf{Mitigatie (twee lagen).} \texttt{tag} wordt nu HTML-geëncodeerd met
 \texttt{org.springframework.web.util.HtmlUtils.htmlEscape(...)} vóórdat het in
-de respons wordt geplaatst --- dit neutraliseert de \texttt{java/xss}-taintflow.
+de respons wordt geplaatst; dit neutraliseert de \texttt{java/xss}-taintflow.
 Als defense-in-depth is de hele \texttt{/apiDocs}-boom bovendien uitschakelbaar
 via de global property \texttt{webservices.rest.enableSwaggerDocs}: in productie
 (\texttt{false}) geeft het endpoint HTTP 404 en is de vector volledig weg.
@@ -819,7 +816,7 @@ uitgevoerd; \texttt{mvn clean install} groen, geen regressie. Zie
 
 \textbf{Validatie (herscan).} De CodeQL-herscan op \texttt{main} (run
 \texttt{27471405779}, commit \texttt{b5627faa} via PR~\#96, 2026-06-13) zet
-\texttt{java/xss} alert~\#1 op \texttt{state: fixed} --- net als bij B-005 is de
+\texttt{java/xss} alert~\#1 op \texttt{state: fixed}; net als bij B-005 is de
 detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus daarmee kwantitatief en
 reproduceerbaar afgesloten.
 
