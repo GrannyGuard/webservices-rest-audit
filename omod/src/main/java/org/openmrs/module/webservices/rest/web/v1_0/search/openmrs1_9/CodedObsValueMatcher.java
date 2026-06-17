@@ -19,6 +19,9 @@ public class CodedObsValueMatcher implements ObsValueMatcher {
 
 	@Override
 	public boolean matches(Obs obs, String[] values) {
+		if (obs.getValueCoded() == null) {
+			return false;
+		}
 		return OpenmrsUtil.isStringInArray(obs.getValueCoded().getUuid(), values);
 	}
 }

@@ -134,7 +134,7 @@
         \begin{tabular}{@{}ll}
             \textbf{Datum}   & \today \\[4pt]
             \textbf{Versie}  & 1.0 \\[4pt]
-            \textbf{Status}  & Concept \\[4pt]
+            \textbf{Status}  & Definitief \\[4pt]
         \end{tabular}
 
     \end{minipage}
@@ -393,7 +393,7 @@ De audit richt zich op de volgende zeven controls:
     A.8.9  & Configuratiebeheer \\
     A.8.15 & Logging \\
     A.8.25 & Veilige ontwikkelcyclus \\
-    A.8.29 & Beveiligingstests \\
+    A.8.24 & Cryptografie \\
     \bottomrule
 \end{tabular}
 
@@ -1156,7 +1156,7 @@ directe actie; \emph{Deze sprint} = score 9--12, mitigatie binnen 1~maand;
 \rood{Nu} &
     Rate limiting: max.~10 pogingen/min per bron-IP, HTTP~429,
     log \texttt{ACCESS\_BLOCKED} &
-    B-001 & A.8.5 \\
+    B-003 & A.8.5 \\
 \rood{Nu} &
     Sessie-ID regenereren na login (\texttt{session.invalidate()} + nieuwe sessie) &
     B-002 & A.8.5 \\
@@ -1164,9 +1164,9 @@ directe actie; \emph{Deze sprint} = score 9--12, mitigatie binnen 1~maand;
     Uniform gedrag voor bestaande/niet-bestaande accounts (identieke timing +
     foutmelding); \texttt{/user}-API inperken voor niet-admin sessies &
     B-003 & A.8.5 \\
-\rood{Nu} &
+\groen{Gemitigeerd} &
     Globale \texttt{@ExceptionHandler}: stack traces intern loggen, generiek
-    bericht + referentie-ID naar client sturen &
+    bericht + referentie-ID naar client sturen (commit \texttt{831dafb}) &
     B-005 & A.8.15 \\
 \rood{Nu} &
     Quick-win patches: \texttt{snakeyaml} $\to$ 2.0, \texttt{spring-web} $\to$ 5.3.34 &

@@ -18,21 +18,24 @@ public class NumericObsValueMatcher implements ObsValueMatcher {
 
 	@Override
 	public boolean matches(Obs obs, String[] values) {
-		return isNumberInArray(obs.getValueNumeric(), values);
+		Double numericValue = obs.getValueNumeric();
+		if (numericValue == null) {
+			return false;
+		}
+		return isNumberInArray(numericValue, values);
 	}
 
 	private boolean isNumberInArray(double numberToCheck, String[] values) {
-		try {
-			for (String value : values) {
+		for (String value : values) {
+			try {
 				if (Double.parseDouble(value) == numberToCheck) {
 					return true;
 				}
 			}
+			catch (NumberFormatException e) {
+				throw new IllegalArgumentException("obsValues contains a non-numeric value: " + value, e);
+			}
 		}
-		catch (Exception e) {
-			throw new IllegalArgumentException();
-		}
-
 		return false;
 	}
 }
