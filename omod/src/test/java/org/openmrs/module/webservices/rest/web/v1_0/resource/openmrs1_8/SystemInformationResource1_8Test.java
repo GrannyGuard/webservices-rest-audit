@@ -70,12 +70,15 @@ public class SystemInformationResource1_8Test extends BaseModuleWebContextSensit
 		// Check dataBaseInformation
 		Map<String, String> dataBaseInformation = systemInfo.get("SystemInfo.title.dataBaseInformation");
 		Assert.assertTrue(systemInfo.containsKey("SystemInfo.title.dataBaseInformation"));
-		// Check dataBaseInformation Property
+		// Check dataBaseInformation Property — non-sensitive fields must still be present
 		Assert.assertTrue(dataBaseInformation.containsKey("SystemInfo.Database.name"));
-		Assert.assertTrue(dataBaseInformation.containsKey("SystemInfo.Database.connectionURL"));
-		Assert.assertTrue(dataBaseInformation.containsKey("SystemInfo.Database.userName"));
 		Assert.assertTrue(dataBaseInformation.containsKey("SystemInfo.Database.driver"));
 		Assert.assertTrue(dataBaseInformation.containsKey("SystemInfo.Database.dialect"));
+		// CWE-200 / NEN-7510 A.8.3: connection URL and DB username must be redacted
+		Assert.assertFalse("connectionURL must be redacted",
+		    dataBaseInformation.containsKey("SystemInfo.Database.connectionURL"));
+		Assert.assertFalse("userName must be redacted",
+		    dataBaseInformation.containsKey("SystemInfo.Database.userName"));
 		
 		// Check moduleInformation
 		Map<String, String> moduleInformation = systemInfo.get("SystemInfo.title.moduleInformation");

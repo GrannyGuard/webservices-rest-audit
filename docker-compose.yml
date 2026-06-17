@@ -46,6 +46,8 @@ services:
       OMRS_CONFIG_CONNECTION_PASSWORD: ${DB_PASSWORD:-openmrs}
     volumes:
       - openmrs-data:/openmrs/data
+      # CWE-1275 / NEN-7510 A.8.5: enforce SameSite=Strict on all cookies (incl. JSESSIONID).
+      - ./docker/tomcat/context.xml:/usr/local/tomcat/conf/context.xml:ro
     networks: [openmrs]
 
 volumes:

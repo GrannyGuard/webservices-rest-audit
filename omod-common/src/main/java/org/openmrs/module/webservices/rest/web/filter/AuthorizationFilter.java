@@ -11,6 +11,7 @@ package org.openmrs.module.webservices.rest.web.filter;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -21,6 +22,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +43,49 @@ import org.slf4j.LoggerFactory;
 public class AuthorizationFilter implements Filter {
 	
 	private static final Logger log = LoggerFactory.getLogger(AuthorizationFilter.class);
-	
+
+	// NEN-7510 A.8.15 / CWE-307: in-memory IP-based rate limiter
+	// long[] = { failedAttemptCount, windowStartEpochMs }
+	static final int  RATE_LIMIT_MAX_ATTEMPTS = 10;
+	static final long RATE_LIMIT_WINDOW_MS    = 60_000L;
+	static final int  RATE_LIMIT_MAP_MAX_SIZE = 10_000;
+	private static final ConcurrentHashMap<String, long[]> failedAttempts = new ConcurrentHashMap<>();
+
+	private static boolean isRateLimited(String ip) {
+		long[] state = failedAttempts.get(ip);
+		if (state == null) {
+			return false;
+		}
+		if (System.currentTimeMillis() - state[1] >= RATE_LIMIT_WINDOW_MS) {
+			return false;
+		}
+		return state[0] >= RATE_LIMIT_MAX_ATTEMPTS;
+	}
+
+	private static void recordFailedAttempt(String ip) {
+		// Safety valve: discard oldest entries when the map grows too large
+		if (failedAttempts.size() >= RATE_LIMIT_MAP_MAX_SIZE) {
+			failedAttempts.clear();
+		}
+		long now = System.currentTimeMillis();
+		failedAttempts.compute(ip, (k, v) -> {
+			if (v == null || now - v[1] >= RATE_LIMIT_WINDOW_MS) {
+				return new long[]{ 1L, now };
+			}
+			v[0]++;
+			return v;
+		});
+	}
+
+	private static void clearFailedAttempts(String ip) {
+		failedAttempts.remove(ip);
+	}
+
+	/** Resets all rate-limit state. For test use only. */
+	static void resetRateLimitState() {
+		failedAttempts.clear();
+	}
+
 	/**
 	 * @see javax.servlet.Filter#init(javax.servlet.FilterConfig)
 	 */
@@ -102,6 +146,14 @@ public class AuthorizationFilter implements Filter {
 				if (basicAuth != null) {
 					// check that header is in format "Basic ${base64encode(username + ":" + password)}"
 					if (basicAuth.startsWith("Basic")) {
+						// CWE-307 / NEN-7510 A.8.15: block IPs that exceed the failed-auth threshold
+						String remoteIp = httpRequest.getRemoteAddr();
+						if (isRateLimited(remoteIp)) {
+							log.warn("ACCESS_BLOCKED rate_limited=true ip=[{}] uri=[{}]",
+							    remoteIp, RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
+							((HttpServletResponse) response).sendError(429, "Too many failed authentication attempts");
+							return;
+						}
 						String attemptedUser = null;
 						try {
 							// remove the leading "Basic "
@@ -122,18 +174,31 @@ public class AuthorizationFilter implements Filter {
 							String[] userAndPass = decoded.split(":");
 							attemptedUser = userAndPass[0];
 							Context.authenticate(userAndPass[0], userAndPass[1]);
+							clearFailedAttempts(remoteIp);
+							// CWE-384 / NEN-7510 A.8.5: invalidate any pre-existing session and
+							// issue a fresh one so an attacker who injected a known JSESSIONID
+							// before login cannot reuse it after authentication succeeds.
+							HttpSession existingSession = httpRequest.getSession(false);
+							if (existingSession != null) {
+								existingSession.invalidate();
+							}
+							httpRequest.getSession(true);
 							// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (username + URI are user-controlled)
 							log.info("AUTH_SUCCESS user=[{}] ip=[{}] uri=[{}]",
 							    RestUtil.sanitizeForLog(attemptedUser), httpRequest.getRemoteAddr(),
 							    RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
 						}
 						catch (Exception ex) {
+							recordFailedAttempt(remoteIp);
 							// This filter never stops execution. If the user failed to
 							// authenticate, that will be caught later.
-							// GrannyGuard patch — sanitizeForLog neutralises CWE-117 (username, URI, exception msg are user-controlled)
-							log.warn("AUTH_FAILURE user=[{}] ip=[{}] uri=[{}] reason=[{}]",
+							// CWE-204 / NEN-7510 A.8.15: reason omitted — including ex.getMessage() creates a lockout
+							// side-channel (existing accounts log "Invalid number of connection attempts" after
+							// lockout; non-existing accounts always log "Invalid username and/or password").
+							// Uniform log entry prevents user-enumeration via log observation.
+							log.warn("AUTH_FAILURE user=[{}] ip=[{}] uri=[{}]",
 							    RestUtil.sanitizeForLog(attemptedUser), httpRequest.getRemoteAddr(),
-							    RestUtil.sanitizeForLog(httpRequest.getRequestURI()), RestUtil.sanitizeForLog(ex.getMessage()));
+							    RestUtil.sanitizeForLog(httpRequest.getRequestURI()));
 						}
 					}
 				}

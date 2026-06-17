@@ -17,17 +17,44 @@ import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.annotation.Resource;
 import org.openmrs.module.webservices.rest.web.resource.api.Listable;
 import org.openmrs.module.webservices.rest.web.response.ResponseException;
+import org.openmrs.util.PrivilegeConstants;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Resource(name = RestConstants.VERSION_1 + "/systeminformation", supportedClass = AdministrationServiceImpl.class, supportedOpenmrsVersions = {
        "1.8.* - 9.*" })
 public class SystemInformationResource1_8 implements Listable {
-	
+
+	// Keys removed from the database section to prevent credential/connection disclosure.
+	private static final String DB_SECTION = "SystemInfo.title.dataBaseInformation";
+
+	private static final String DB_CONNECTION_URL = "SystemInfo.Database.connectionURL";
+
+	private static final String DB_USERNAME = "SystemInfo.Database.userName";
+
 	@Override
 	public SimpleObject getAll(RequestContext context) throws ResponseException {
+		// CWE-200 / NEN-7510 A.8.3: only users with Get Global Properties privilege may
+		// retrieve system information. Throws ContextAuthenticationException → HTTP 403
+		// via BaseRestController.handleException() if the privilege is absent.
+		Context.requirePrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
+
+		Map<String, Map<String, String>> sysInfo = Context.getAdministrationService().getSystemInformation();
+
+		// Redact database credentials and connection URL from the response so that
+		// even a privileged user cannot retrieve them via the REST API.
+		Map<String, String> dbSection = sysInfo.get(DB_SECTION);
+		if (dbSection != null) {
+			Map<String, String> redacted = new LinkedHashMap<String, String>(dbSection);
+			redacted.remove(DB_CONNECTION_URL);
+			redacted.remove(DB_USERNAME);
+			sysInfo.put(DB_SECTION, redacted);
+		}
+
 		SimpleObject rest = new SimpleObject();
-		rest.put("systemInfo", Context.getAdministrationService().getSystemInformation());
+		rest.put("systemInfo", sysInfo);
 		return rest;
-		
 	}
 	
 	@Override

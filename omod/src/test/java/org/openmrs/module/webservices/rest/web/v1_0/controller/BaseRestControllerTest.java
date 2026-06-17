@@ -13,6 +13,8 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.any;
 
 import java.lang.reflect.Field;
 
@@ -102,35 +104,48 @@ public class BaseRestControllerTest extends BaseModuleWebContextSensitiveTest {
 	
 	@Test
 	public void handleException_shouldLogUnannotatedAsErrors() throws Exception {
-		
 		String message = "ErrorMessage";
 		Exception ex = new Exception(message);
 		controller.handleException(ex, request, response);
-
-		verify(spyOnLog).error(message, ex);
-
+		// CWE-209 fix: 5xx errors now log with ref-ID prefix, not the raw exception message
+		verify(spyOnLog).error(anyString(), any(Throwable.class));
 	}
-	
+
 	@Test
 	public void handleException_shouldLog500AndAboveAsErrors() throws Exception {
 		String message = "ErrorMessage";
 		Exception ex = new GenericRestException(message);
-		
 		controller.handleException(ex, request, response);
-
-		verify(spyOnLog).error(message, ex);
-
+		// CWE-209 fix: 5xx errors now log with ref-ID prefix, not the raw exception message
+		verify(spyOnLog).error(anyString(), any(Throwable.class));
 	}
-	
+
 	@Test
 	public void handleException_shouldLogBelow500AsInfo() throws Exception {
-		
 		String message = "ErrorMessage";
 		Exception ex = new IllegalPropertyException(message);
-		
 		controller.handleException(ex, request, response);
-
 		verify(spyOnLog).info(message, ex);
+	}
+
+	// ── CWE-209 / NEN-7510 A.8.15 — stack trace suppression ─────────────────
+
+	@Test
+	public void handleException_internalError_shouldReturnGenericMessageWithoutStackTrace() throws Exception {
+		SimpleObject result = controller.handleException(new Exception("internal detail"), request, response);
+		Assert.assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, response.getStatus());
+		SimpleObject error = (SimpleObject) result.get("error");
+		Assert.assertEquals("An internal server error occurred", error.get("message"));
+		Assert.assertEquals("", error.get("detail"));
+	}
+
+	@Test
+	public void handleException_contextAuthenticationException_shouldReturnForbiddenNotInternalError() throws Exception {
+		// CWE-209 / NEN-7510 A.8.5: privilege exceptions must return 403, not 500 + stack trace
+		org.openmrs.api.context.ContextAuthenticationException ex =
+		    new org.openmrs.api.context.ContextAuthenticationException("Privileges required: Get Users");
+		controller.handleException(ex, request, response);
+		Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
 	}
 	
 	@Test

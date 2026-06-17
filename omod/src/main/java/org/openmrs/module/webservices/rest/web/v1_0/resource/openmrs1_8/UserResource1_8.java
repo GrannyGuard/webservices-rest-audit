@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.util.ReflectionUtil;
 import org.openmrs.module.webservices.rest.web.RequestContext;
@@ -243,7 +244,9 @@ public class UserResource1_8 extends MetadataDelegatingCrudResource<UserAndPassw
 	 */
 	@Override
 	protected NeedsPaging<UserAndPassword1_8> doSearch(RequestContext context) {
-		// determine roles 
+		// CWE-204 / NEN-7510 A.8.5: only users with Get Users privilege may search accounts
+		Context.requirePrivilege(PrivilegeConstants.GET_USERS);
+		// determine roles
 		List<Role> foundRoles = null;
 		final String requestedRolesParameter = context.getParameter(PARAMETER_ROLES);
 		if (requestedRolesParameter != null) {
@@ -415,6 +418,8 @@ public class UserResource1_8 extends MetadataDelegatingCrudResource<UserAndPassw
 	 */
 	@Override
 	protected NeedsPaging<UserAndPassword1_8> doGetAll(RequestContext context) {
+		// CWE-204 / NEN-7510 A.8.5: only users with Get Users privilege may list all accounts
+		Context.requirePrivilege(PrivilegeConstants.GET_USERS);
 		List<UserAndPassword1_8> users = new ArrayList<UserAndPassword1_8>();
 		for (User user : Context.getUserService().getAllUsers()) {
 			users.add(new UserAndPassword1_8(user));

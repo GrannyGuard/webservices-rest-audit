@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CWE-1275 / NEN-7510 A.8.5 — SameSite cookie attribute.
+
+  Tomcat's built-in CookieProcessor is configured here to append
+  SameSite=Strict to every Set-Cookie header, including the
+  container-managed JSESSIONID session cookie that falls outside the
+  reach of the application-level SameSiteCookieFilter.
+
+  The Rfc6265CookieProcessor (default since Tomcat 8.5.29) is the only
+  processor that supports the sameSiteCookies attribute. Setting it to
+  "strict" means every cookie receives "; SameSite=Strict" automatically.
+
+  Mounted read-only into the container via docker-compose.yml:
+    ./docker/tomcat/context.xml:/usr/local/tomcat/conf/context.xml:ro
+-->
+<Context>
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+    <WatchedResource>WEB-INF/tomcat-web.xml</WatchedResource>
+    <WatchedResource>${catalina.base}/conf/web.xml</WatchedResource>
+
+    <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                     sameSiteCookies="strict" />
+</Context>

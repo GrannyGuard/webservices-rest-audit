@@ -618,7 +618,7 @@ en de pentestbevindingen in Bijlage~\ref{app:pentest}.
 \addlinespace
 \textbf{AT4} & Gecompromitteerde derde-partij-integratie        & \amber{12}$^\triangle$ & \amber{Midden} & KJ1, KJ2, KJ3 \\
 \addlinespace
-\textbf{PT2} & Gebruikersenumeratie via API en lockout side-channel & \amber{12}$^\triangle$ & \amber{Midden} & KJ3 \\
+\textbf{PT2} & Gebruikersenumeratie via `/user` API & \amber{12}$^\triangle$ & \amber{Midden} & KJ3 \\
 \addlinespace
 \textbf{PT3} & Stack trace disclosure in foutrespons            & \amber{12}$^\triangle$ & \amber{Midden} & KJ6 $\to$ KJ1, KJ2 \\
 \end{longtable}
@@ -735,7 +735,7 @@ De penetratietest heeft sessie-fixatie empirisch bevestigd: het
 \texttt{JSESSIONID}-cookie was identiek vóór en ná authenticatie
 (zie Bijlage~\ref{app:pentest}, F-03).
 
-\subsection{B-003 --- Gebruikersenumeratie via API en lockout side-channel (PT2 / F-02)}
+\subsection{B-003 --- Gebruikersenumeratie via `/user` API (PT2 / F-02)}
 \label{sec:b003}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
@@ -746,36 +746,37 @@ De penetratietest heeft sessie-fixatie empirisch bevestigd: het
 \textbf{Status}      & \rood{Open --- directe actie (Nu)} \\
 \end{tabular}
 
-\textbf{Beschrijving.} Twee onafhankelijke methoden maken gebruikersenumeratie
-mogelijk. \textbf{Methode A:} het endpoint
-\texttt{GET /openmrs/ws/rest/v1/user} retourneert bij geauthenticeerde toegang een
-volledige lijst van alle gebruikersaccounts in het systeem, inclusief
-gebruikersnamen. \textbf{Methode B:} bestaande accounts worden geblokkeerd na
-circa~7 mislukte inlogpogingen, terwijl niet-bestaande accounts nooit geblokkeerd
-worden. Dit gedragsverschil --- lockout vs.\ geen lockout --- lekt welke
-gebruikersnamen geldig zijn zonder ooit in te loggen.
+\textbf{Beschrijving.} Het endpoint \texttt{GET /openmrs/ws/rest/v1/user}
+retourneert bij geauthenticeerde toegang een volledige lijst van alle
+gebruikersaccounts in het systeem, inclusief gebruikersnamen en persoonlijke
+details. Er is geen fijnmazige autorisatiecontrole: zelfs gebruikers met minimale
+privileges (bv.\ laboratorium-technicus) kunnen alle systeembeheerdersaccounts
+enumereren.
 
-\textbf{Bewijs.} Pentest F-02 (11--12 juni 2026); beide methoden bevestigd:
+\textbf{Bewijs.} Pentest F-02 (11--12 juni 2026):
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true, frame=single]
-# Methode A — directe API-enumeratie (met auth)
-GET /openmrs/ws/rest/v1/user  -> lijst alle accounts incl. "admin"
+GET /openmrs/ws/rest/v1/user
+Authorization: Basic <laag-geprivilegieerde-creds>
 
-# Methode B — lockout side-channel (zonder auth)
-doctor  -> geen lockout (gebruiker bestaat niet)
-admin   -> lockout actief na 7 pogingen (gebruiker bestaat)
+→ Retourneert alle gebruikers:
+{
+  "results": [
+    { "display": "admin", "username": "admin", ... },
+    { "display": "doctor", "username": "doctor", ... },
+    ...
+  ]
+}
 \end{lstlisting}
 
 \textbf{Impact.} Een aanvaller verkrijgt een complete lijst van geldige
-gebruikersnamen. Dit maakt gerichte brute-force aanvallen (B-001, F-01)
+gebruikersnamen en systeemdetails. Dit maakt gerichte brute-force aanvallen (B-001, F-01)
 significant efficiënter: in plaats van willekeurige namen te proberen kan een
 aanvaller direct de verkregen accounts targeten. In combinatie zijn B-001 en B-003
 een complete credential-compromis-keten.
 
-\textbf{Aanbeveling.} Uniform gedrag voor bestaande en niet-bestaande accounts
-(identieke responstiming en foutmelding); vertraging toepassen bij herhaalde
-mislukte pogingen ook voor niet-bestaande gebruikersnamen; de
-\texttt{/user}-API beperken zodat een volledige gebruikerslijst niet opvraagbaar
-is voor reguliere sessies.
+\textbf{Aanbeveling.} Beperk de \texttt{/user}-API tot expliciete beheerdersrollen;
+controleer fijnmazige autorisatie per resource; retourneer geen gevoelige
+accountdetails aan lager-geprivilegieerde gebruikers.
 
 \subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2): gemitigeerd}
 \label{sec:b004}
@@ -1572,7 +1573,7 @@ Score $=$ Kans $\times$ Impact.
 \textbf{AT3}  & Credential-aanvallen via wachtwoordherstel          & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ3, KJ1, KJ2 \\
 \textbf{AT4}  & Gecompromitteerde derde-partij-integratie           & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ1, KJ2, KJ3 \\
 \textbf{PT1}  & Geen rate-limiting op authenticatie-endpoints       & 4 & 5 & \rood{20}             & \rood{Hoog}       & KJ3, KJ1, KJ2 \\
-\textbf{PT2}  & Gebruikersenumeratie via API en lockout side-channel & 4 & 3 & \amber{12}$^\triangle$ & \amber{Midden}   & KJ3 \\
+\textbf{PT2}  & Gebruikersenumeratie via `/user` API & 4 & 3 & \amber{12}$^\triangle$ & \amber{Midden}   & KJ3 \\
 \textbf{PT3}  & Stack trace disclosure in foutrespons               & 4 & 3 & \amber{12}$^\triangle$ & \amber{Midden}   & KJ6, KJ1, KJ2 \\
 \end{longtable}
 }
@@ -2042,7 +2043,7 @@ netwerkaanvallen, social engineering.
 
 F-01 & Geen rate limiting op authenticatie &
     CWE-307 & \rood{Kritiek} & A.8.5 & \rood{Open} \\
-F-02 & Gebruikersenumeratie via API en lockout-gedrag &
+F-02 & Gebruikersenumeratie via `/user` API &
     CWE-204 & \amber{Hoog} & A.8.5 & \rood{Open} \\
 F-03 & Session fixation --- JSESSIONID niet geroteerd na login &
     CWE-384 & \amber{Hoog} & A.8.3 & \rood{Open} \\

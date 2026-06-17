@@ -24,6 +24,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 /**
  * Tests for the {@link RestUtil} class.
@@ -173,18 +174,21 @@ public class RestUtilTest extends BaseModuleWebContextSensitiveTest {
 	}
 	
 	/**
+	 * CWE-209 / NEN-7510 A.8.15: code and detail must always be empty — never expose
+	 * class names, line numbers, or stack traces in API responses.
+	 *
 	 * @see RestUtil#wrapErrorResponse(Exception,String)
-	 * @verifies set stack trace code if available
 	 */
 	@Test
-	public void wrapErrorResponse_shouldSetStackTraceCodeAndDetailIfAvailable() throws Exception {
+	public void wrapErrorResponse_shouldNeverExposeClassNameOrLineNumberInCode() throws Exception {
 		Exception apiException = new APIException("exceptionmessage");
 		apiException.setStackTrace(new StackTraceElement[] { new StackTraceElement("org.mypackage.myclassname", "methodName", "fileName", 149) });
 
 		SimpleObject returnObject = RestUtil.wrapErrorResponse(apiException, "wraperrorresponsemessage");
 
 		LinkedHashMap errorResponseMap = (LinkedHashMap) returnObject.get("error");
-		Assert.assertEquals("org.mypackage.myclassname:149", errorResponseMap.get("code"));
+		Assert.assertEquals("", errorResponseMap.get("code"));
+		Assert.assertEquals("", errorResponseMap.get("detail"));
 	}
 	
 	/**
@@ -203,14 +207,16 @@ public class RestUtilTest extends BaseModuleWebContextSensitiveTest {
 		Assert.assertEquals("", errorResponseMap.get("detail"));
 	}
 	@Test
-	public void wrapErrorResponse_shouldSetStackTraceDetailsIfGlobalPropEnabled() throws Exception {
+	public void wrapErrorResponse_shouldNeverExposeStackTraceEvenWhenGlobalPropEnabled() throws Exception {
+		// CWE-209 / NEN-7510 A.8.15: enableStackTraceDetails global property is intentionally
+		// ignored — stack traces must never appear in API responses regardless of configuration
 		Context.getAdministrationService().saveGlobalProperty(
-				new GlobalProperty(RestConstants.ENABLE_STACK_TRACE_DETAILS_GLOBAL_PROPERTY_NAME, "true"));
+		    new GlobalProperty(RestConstants.ENABLE_STACK_TRACE_DETAILS_GLOBAL_PROPERTY_NAME, "true"));
 		Exception ex = new Exception("exceptionmessage");
 		SimpleObject returnObject = RestUtil.wrapErrorResponse(ex, "wraperrorresponsemessage");
 
 		LinkedHashMap errorResponseMap = (LinkedHashMap) returnObject.get("error");
-		Assert.assertNotEquals("", errorResponseMap.get("detail"));
+		Assert.assertEquals("", errorResponseMap.get("detail"));
 	}
 	@Test
 	public void wrapErrorResponse_shouldSetNoStackTraceDetailsIfGlobalPropDisabled() throws Exception {
@@ -221,6 +227,33 @@ public class RestUtilTest extends BaseModuleWebContextSensitiveTest {
 
 		LinkedHashMap errorResponseMap = (LinkedHashMap) returnObject.get("error");
 		Assert.assertEquals("", errorResponseMap.get("detail"));
+	}
+
+	// ── CWE-190 / NEN-7510 A.8.26 — integer overflow in pagination params ──────────
+
+	@Test(expected = IllegalArgumentException.class)
+	public void getRequestContext_limitOverflowsInt_shouldThrowIllegalArgumentException() throws Exception {
+		// CWE-190: 2147483648 (Integer.MAX_VALUE + 1) must be rejected rather than
+		// silently falling back to default and returning HTTP 200 with 50 results
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addParameter("limit", "2147483648");
+		RestUtil.getRequestContext(request, new MockHttpServletResponse());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void getRequestContext_startIndexOverflowsInt_shouldThrowIllegalArgumentException() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addParameter("startIndex", "9999999999");
+		RestUtil.getRequestContext(request, new MockHttpServletResponse());
+	}
+
+	@Test
+	public void getRequestContext_limitAtMaxAbsolute_shouldNotThrow() throws Exception {
+		// boundary: limit=100 (== MAX_RESULTS_ABSOLUTE) must be accepted
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addParameter("limit", "100");
+		RequestContext ctx = RestUtil.getRequestContext(request, new MockHttpServletResponse());
+		Assert.assertEquals(Integer.valueOf(100), ctx.getLimit());
 	}
 
 	@Test

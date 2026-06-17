@@ -12,9 +12,11 @@ package org.openmrs.module.webservices.rest.web.v1_0.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.util.UUID;
 import org.apache.commons.lang.StringUtils;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.context.ContextAuthenticationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -113,15 +115,27 @@ public class BaseRestController {
 			if (StringUtils.isNotEmpty(ann.reason())) {
 				errorDetail = ann.reason();
 			}
-			
+		} else if (RestUtil.hasCause(ex, ContextAuthenticationException.class)) {
+			// CWE-209 / NEN-7510 A.8.5: ContextAuthenticationException (privilege check) must
+			// return 403/401 — not 500 + stack trace — because it does not extend APIAuthenticationException
+			return apiAuthenticationExceptionHandler(ex, request, response);
 		} else if (RestUtil.hasCause(ex, APIAuthenticationException.class)) {
 			return apiAuthenticationExceptionHandler(ex, request, response);
 		} else if (ex.getClass() == HttpRequestMethodNotSupportedException.class) {
 			errorCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 		}
 		if (errorCode >= 500) {
-			// if it's a server error, we log it at a high level of importance
-			log.error(ex.getMessage(), ex);
+			// CWE-209 / NEN-7510 A.8.15: never expose stack traces in the response;
+			// log with a correlation ref-ID so ops can trace without leaking internals to the client
+			String refId = UUID.randomUUID().toString();
+			log.error("INTERNAL_ERROR ref=[" + refId + "] uri=["
+			    + RestUtil.sanitizeForLog(request.getRequestURI()) + "]", ex);
+			response.setStatus(errorCode);
+			SimpleObject error = new SimpleObject();
+			error.put("message", "An internal server error occurred");
+			error.put("code", refId);
+			error.put("detail", "");
+			return new SimpleObject().add("error", error);
 		} else {
 			// 4xx client errors are logged at a lower level of importance
 			log.info(ex.getMessage(), ex);

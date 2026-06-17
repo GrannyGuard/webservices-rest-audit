@@ -16,6 +16,7 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RequestContext;
@@ -178,7 +179,7 @@ public class UserResource2_0Test extends BaseDelegatingResourceTest<UserResource
 	
 	/**
 	 * Test searching users by a combination of user name and role.
-	 * 
+	 *
 	 * @see {@link https://issues.openmrs.org/browse/RESTWS-490}
 	 * @throws Exception
 	 */
@@ -186,13 +187,32 @@ public class UserResource2_0Test extends BaseDelegatingResourceTest<UserResource
 	public void testSearchingByUserAndRole() {
 		// valid combination
 		assertSearch("admin", Arrays.asList("System Developer"), 1);
-		
+
 		// only name matches
 		assertSearch("admin", Arrays.asList("Provider"), 0);
 		assertSearch("admin", Arrays.asList("DoesNotExist"), 0);
-		
+
 		// only role matches
 		assertSearch("doesNotExist", Arrays.asList("System Developer"), 0);
 	}
-	
+
+	// ── CWE-204 / NEN-7510 A.8.5 — privilege checks on user listing ─────────
+
+	@Test(expected = ContextAuthenticationException.class)
+	public void getAll_withoutGetUsersPrivilege_shouldThrowContextAuthenticationException() throws Exception {
+		Context.logout();
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		RequestContext context = RestUtil.getRequestContext(request, new MockHttpServletResponse());
+		getResource().getAll(context);
+	}
+
+	@Test(expected = ContextAuthenticationException.class)
+	public void search_withoutGetUsersPrivilege_shouldThrowContextAuthenticationException() throws Exception {
+		Context.logout();
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addParameter("q", "admin");
+		RequestContext context = RestUtil.getRequestContext(request, new MockHttpServletResponse());
+		getResource().search(context);
+	}
+
 }
