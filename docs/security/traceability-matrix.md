@@ -1,6 +1,6 @@
 # Traceability Matrix
 
-Rubric: *"Verbeteronderzoek security"* — Sprint 4 vereiste (≥3 NEN-7510:2024-2
+Rubric: *"Verbeteronderzoek security"*, Sprint 4-vereiste (≥3 NEN-7510:2024-2
 controls, elk met een traceerbaar bewijsartefact).
 
 Elke rij volgt de keten **maatregel → NEN-7510-control → bewijsartefact** en is, waar
@@ -9,8 +9,8 @@ van toepassing, gekoppeld aan het risico/de bevinding die de maatregel adresseer
 [`01-security-audit/01.md §4`](01-security-audit/01.md#4-risico-evaluatie)). Het
 bewijsartefact is bedoeld om reproduceerbaar te zijn (commit-SHA, CI-run, `gh api`-
 output of bronbestand). De matrix dekt momenteel **12 controls**; dit overstijgt de
-minimumeis van 3 ruim. Bewust niet opgenomen: controls waarvoor (nog) geen hard
-bewijsartefact bestaat — zie *Restpunten*.
+minimumeis van 3 ruim. Bewust niet opgenomen: controls waarvoor nog geen hard
+bewijsartefact bestaat (zie *Restpunten*).
 
 ---
 
@@ -37,19 +37,19 @@ bewijsartefact bestaat — zie *Restpunten*.
 
 - [ ] **Screenshots toevoegen** als visueel bewijs naast de `gh api`-output voor
   A.8.3 (Environments-instellingen) en A.8.5 (org 2FA-policy in Settings →
-  Authentication security) — zie ook de TODO's in
+  Authentication security); zie ook de TODO's in
   [02.md §8](02-secure-pipelines/02.md#8-nen-7510-compliance-overzicht).
-- [x] **A.8.8 — patches uitgevoerd**: `netty-handler` → 4.1.119.Final en
+- [x] **A.8.8, patches uitgevoerd:** `netty-handler` → 4.1.119.Final en
   `log4j-core`/`log4j-api` → 2.24.3 doorgevoerd via `<dependencyManagement>` (PR #105),
   testsuite groen; zie [06-mitigatie §6](06-mitigatie-en-validatie/06.md#6-cve-mitigatie--transitieve-dependency-pins-a88).
 - [ ] **A.8.8 verder uitbreiden**: de resterende "quick win" patches uit
   [03.md §7](03-sbom-en-cve-advies/03.md#7-kostenraming-indicatief)
   (`snakeyaml` → 2.0, `spring-web` → 5.3.34) nog doorvoeren; `c3p0`/`h2` blijven
   geblokkeerd (Java 8 resp. test-DB-breuk) tot het platform-upgradetraject.
-- [x] **Pentest-control toegevoegd** (A.8.29 — beveiligingstests, hierboven) na
+- [x] **Pentest-control toegevoegd** (A.8.29, beveiligingstests, hierboven) na
   afronding van [05-penetration-tests](05-penetration-tests/PentestReport-OpenMRS.md)
   (F1–F9).
-- [ ] **A.8.24** (gap-analyse TM-I4 — HTTP Basic Auth zonder gegarandeerde TLS)
+- [ ] **A.8.24** (gap-analyse TM-I4: HTTP Basic Auth zonder gegarandeerde TLS)
   staat nog open. Zodra gemitigeerd op deployment-niveau: rij toevoegen met bewijsartefact.
 - [ ] **SQ8 (XSS, A.8.28)**: code-fix bewust niet doorgevoerd (niet valideerbaar
   via pentest). Productie-blootstelling afgedekt door configuratie-gating.
