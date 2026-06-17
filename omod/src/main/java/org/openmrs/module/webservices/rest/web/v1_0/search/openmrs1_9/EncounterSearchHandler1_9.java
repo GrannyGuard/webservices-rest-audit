@@ -29,7 +29,6 @@ import org.openmrs.module.webservices.rest.web.response.ObjectNotFoundException;
 import org.openmrs.module.webservices.rest.web.response.ResponseException;
 import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.ConceptResource1_8;
 import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.PatientResource1_8;
-import org.openmrs.util.OpenmrsUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -80,96 +79,63 @@ public class EncounterSearchHandler1_9 implements SearchHandler {
 		String patientUuid = context.getRequest().getParameter(REQUEST_PARAM_PATIENT);
 		String conceptUuid = context.getRequest().getParameter(REQUEST_PARAM_CONCEPT);
 		String values = context.getRequest().getParameter(REQUEST_PARAM_VALUES);
-		
-		if (StringUtils.isNotBlank(patientUuid) && StringUtils.isNotBlank(conceptUuid)) {
-			Patient patient = ((PatientResource1_8) Context.getService(RestService.class).getResourceBySupportedClass(
-			    Patient.class)).getByUniqueId(patientUuid);
-			
-			// get all encounters matching patient and concept
-			if (patient != null) {
-				Concept concept = ((ConceptResource1_8) Context.getService(RestService.class)
-				        .getResourceBySupportedClass(Concept.class)).getByUniqueId(conceptUuid);
-				if (concept != null) {
-					List<Obs> obs = Context.getObsService().getObservationsByPersonAndConcept(patient, concept);
-					List<Obs> filteredObs = new ArrayList<Obs>();
-					Iterator<Obs> obsIterator = obs.iterator();
-					
-					// return all encounters matching obs and values, if values are provided
-					// filter out all non-matching obs
-					if (StringUtils.isNotBlank(values)) {
-						if (!StringUtils.strip(values, ",").trim().equalsIgnoreCase("")) {
-							Obs currentObs;
-							String[] valueArray = values.split(",");
-							ConceptDatatype datatype = concept.getDatatype();
-							
-							if (datatype.isNumeric()) {
-								while (obsIterator.hasNext()) {
-									currentObs = obsIterator.next();
-									if (this.isNumberInArray(currentObs.getValueNumeric(), valueArray)) {
-										filteredObs.add(currentObs);
-									}
-								}
-							} else if (datatype.isText()) {
-								while (obsIterator.hasNext()) {
-									currentObs = obsIterator.next();
-									if (OpenmrsUtil.isStringInArray(currentObs.getValueText(), valueArray)) {
-										filteredObs.add(currentObs);
-									}
-								}
-							} else if (datatype.isCoded()) {
-								while (obsIterator.hasNext()) {
-									currentObs = obsIterator.next();
-									if (OpenmrsUtil.isStringInArray(currentObs.getValueCoded().getUuid(), valueArray)) {
-										filteredObs.add(currentObs);
-									}
-								}
-							}
-							
-							// return encounters for filtered obs
-							if (!filteredObs.isEmpty()) {
-								List<Encounter> encounters = this.getEncountersForObs(filteredObs.iterator());
-								
-								return new NeedsPaging<Encounter>(encounters, context);
-							}
-						}
-					}
-					else {
-						// return all encounters with obs matching concept
-						List<Encounter> encounters = this.getEncountersForObs(obsIterator);
-						
-						return new NeedsPaging<Encounter>(encounters, context);
-					}
-				} else {
-					throw new ObjectNotFoundException();
-				}
-			} else {
-				throw new ObjectNotFoundException();
-			}
-			
+
+		if (StringUtils.isBlank(patientUuid) || StringUtils.isBlank(conceptUuid)) {
+			return new EmptySearchResult();
 		}
-		
-		return new EmptySearchResult();
+
+		Patient patient = resolvePatient(patientUuid);
+		Concept concept = resolveConcept(conceptUuid);
+		List<Obs> obs = Context.getObsService().getObservationsByPersonAndConcept(patient, concept);
+
+		if (StringUtils.isBlank(values)) {
+			return toPagedEncounters(obs, context);
+		}
+		if (StringUtils.strip(values, ",").trim().isEmpty()) {
+			return new EmptySearchResult();
+		}
+
+		List<Obs> filteredObs = filterObsByValues(obs, concept.getDatatype(), values.split(","));
+		return filteredObs.isEmpty() ? new EmptySearchResult() : toPagedEncounters(filteredObs, context);
 	}
-	
-	private boolean isNumberInArray(double numberToCheck, String[] values) {
-		boolean found = false;
-		
-		// first convert string to double array
-		try {
-			for (int i = 0; i < values.length; i++) {
-				if (Double.parseDouble(values[i]) == numberToCheck) {
-					found = true;
-					break;
-				}
+
+	private Patient resolvePatient(String patientUuid) {
+		Patient patient = ((PatientResource1_8) Context.getService(RestService.class).getResourceBySupportedClass(
+		    Patient.class)).getByUniqueId(patientUuid);
+		if (patient == null) {
+			throw new ObjectNotFoundException();
+		}
+		return patient;
+	}
+
+	private Concept resolveConcept(String conceptUuid) {
+		Concept concept = ((ConceptResource1_8) Context.getService(RestService.class)
+		        .getResourceBySupportedClass(Concept.class)).getByUniqueId(conceptUuid);
+		if (concept == null) {
+			throw new ObjectNotFoundException();
+		}
+		return concept;
+	}
+
+	private List<Obs> filterObsByValues(List<Obs> obs, ConceptDatatype datatype, String[] valueArray) {
+		ObsValueMatcher matcher = ObsValueMatcherFactory.forDatatype(datatype);
+		List<Obs> filteredObs = new ArrayList<Obs>();
+		if (matcher == null) {
+			return filteredObs;
+		}
+		for (Obs currentObs : obs) {
+			if (matcher.matches(currentObs, valueArray)) {
+				filteredObs.add(currentObs);
 			}
 		}
-		catch (Exception e) {
-			throw new IllegalArgumentException();
-		}
-		
-		return found;
+		return filteredObs;
 	}
-	
+
+	private PageableResult toPagedEncounters(List<Obs> obs, RequestContext context) {
+		List<Encounter> encounters = getEncountersForObs(obs.iterator());
+		return new NeedsPaging<Encounter>(encounters, context);
+	}
+
 	private List<Encounter> getEncountersForObs(Iterator<Obs> obsIterator) {
 		List<Encounter> encounters = new ArrayList<Encounter>();
 		Encounter currEncounter;

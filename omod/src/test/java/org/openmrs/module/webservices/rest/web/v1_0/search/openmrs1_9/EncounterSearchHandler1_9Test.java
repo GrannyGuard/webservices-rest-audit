@@ -11,7 +11,11 @@ package org.openmrs.module.webservices.rest.web.v1_0.search.openmrs1_9;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.openmrs.Concept;
+import org.openmrs.ConceptName;
 import org.openmrs.Encounter;
+import org.openmrs.api.ConceptService;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestTestConstants1_8;
@@ -22,6 +26,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.List;
+import java.util.Locale;
 
 public class EncounterSearchHandler1_9Test extends RestControllerTestUtils {
 	
@@ -163,7 +168,89 @@ public class EncounterSearchHandler1_9Test extends RestControllerTestUtils {
 		// CD4 count concept
 		req.addParameter("obsConcept", RestTestConstants1_8.CONCEPT_NUMERIC_UUID);
 		req.addParameter("obsValues", "abc,175");
-		
+
 		handle(req);
+	}
+
+	/**
+	 * Basis-path TC1 (02-testopzet-en-testresultaten): patient en/of obsConcept ontbreken.
+	 *
+	 * @verifies return an empty search result when patient or obsConcept is missing
+	 * @see EncounterSearchHandler1_9#search(RequestContext)
+	 */
+	@Test
+	public void shouldReturnEmptySearchResultWhenPatientOrConceptParameterIsMissing() throws Exception {
+		MockHttpServletRequest req = request(RequestMethod.GET, getURI());
+		req.addParameter("s", "byObs");
+		// noch patient noch obsConcept opgegeven
+
+		SimpleObject result = deserialize(handle(req));
+		List<Encounter> encounters = result.get("results");
+		Assert.assertEquals(0, encounters.size());
+	}
+
+	/**
+	 * Basis-path TC2 (02-testopzet-en-testresultaten): patient-uuid resolveert niet.
+	 *
+	 * @verifies throw ObjectNotFoundException when the patient cannot be found
+	 * @see EncounterSearchHandler1_9#search(RequestContext)
+	 */
+	@Test(expected = ObjectNotFoundException.class)
+	public void shouldThrowExceptionForInvalidPatient() throws Exception {
+		MockHttpServletRequest req = request(RequestMethod.GET, getURI());
+		req.addParameter("s", "byObs");
+		req.addParameter("patient", "ffffffff-ffff-ffff-ffff-ffffffffffff");
+		// CD4 count concept
+		req.addParameter("obsConcept", RestTestConstants1_8.CONCEPT_NUMERIC_UUID);
+
+		handle(req);
+	}
+
+	/**
+	 * Basis-path TC5 (02-testopzet-en-testresultaten): obsValues bevat uitsluitend komma's.
+	 *
+	 * @verifies return an empty search result when obsValues contains only commas
+	 * @see EncounterSearchHandler1_9#search(RequestContext)
+	 */
+	@Test
+	public void shouldReturnEmptySearchResultWhenObsValuesContainsOnlyCommas() throws Exception {
+		MockHttpServletRequest req = request(RequestMethod.GET, getURI());
+		req.addParameter("s", "byObs");
+		req.addParameter("patient", RestTestConstants1_9.PATIENT_WITH_OBS_UUID);
+		// CD4 count concept
+		req.addParameter("obsConcept", RestTestConstants1_8.CONCEPT_NUMERIC_UUID);
+		req.addParameter("obsValues", ",");
+
+		SimpleObject result = deserialize(handle(req));
+		List<Encounter> encounters = result.get("results");
+		Assert.assertEquals(0, encounters.size());
+	}
+
+	/**
+	 * Basis-path TC10 (02-testopzet-en-testresultaten): concept-datatype is geen numeric/text/coded
+	 * (hier: Date) — geen van de filtertakken is van toepassing.
+	 *
+	 * @verifies return an empty search result when the obs concept's datatype is not numeric, text or coded
+	 * @see EncounterSearchHandler1_9#search(RequestContext)
+	 */
+	@Test
+	public void shouldReturnEmptySearchResultForUnsupportedDatatype() throws Exception {
+		ConceptService conceptService = Context.getConceptService();
+
+		Concept dateConcept = new Concept();
+		dateConcept.addName(new ConceptName("TC10 date concept", Locale.ENGLISH));
+		dateConcept.setDatatype(conceptService.getConceptDatatypeByName("Date"));
+		dateConcept.setConceptClass(conceptService.getConceptClass(1));
+		dateConcept = conceptService.saveConcept(dateConcept);
+
+		MockHttpServletRequest req = request(RequestMethod.GET, getURI());
+		req.addParameter("s", "byObs");
+		req.addParameter("patient", RestTestConstants1_9.PATIENT_WITH_OBS_UUID);
+		req.addParameter("obsConcept", dateConcept.getUuid());
+		req.addParameter("obsValues", "2020-01-01");
+
+		SimpleObject result = deserialize(handle(req));
+		List<Encounter> encounters = result.get("results");
+		Assert.assertEquals(0, encounters.size());
 	}
 }
