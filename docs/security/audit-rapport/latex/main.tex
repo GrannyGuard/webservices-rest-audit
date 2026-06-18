@@ -53,9 +53,7 @@
 \newcommand{\geel}[1]{\textcolor{ragYellow}{\textbf{#1}}}
 \newcommand{\groen}[1]{\textcolor{ragGreen}{\textbf{#1}}}
 
-% Toon een afbeelding als die bestaat, anders een zichtbare placeholder-box,
-% zodat het document blijft compileren terwijl screenshots nog ontbreken.
-% Gebruik: \auditfig{pad/naar/bestand.png}{breedtefactor}  (bv. 0.85)
+% \auditfig{pad}{breedtefactor}: toont de afbeelding, of een nette box als het pad ontbreekt.
 \newcommand{\auditfig}[2]{%
     \IfFileExists{#1}%
         {\includegraphics[width=#2\linewidth]{#1}}%
@@ -165,9 +163,6 @@
 % ════════════════════════════════════════════════════════════════════════════
 \chapter{Executive Summary}
 \label{ch:executive-summary}
-
-% Wordt als laatste geschreven maar staat als eerste in het rapport.
-% Max. 1 pagina. Beantwoord: overall status, top risico's, geprioriteerde roadmap.
 
 \section{Overall Status}
 \label{sec:overall-status}
@@ -1330,15 +1325,6 @@ bevindingen B-001 t/m B-006 zijn afgerond en staan hier dus \emph{niet} tussen.
 
 \chapter{CodeQL SARIF-output}
 \label{app:codeql}
-
-% ── BENODIGDE AFBEELDINGEN ───────────────────────────────────────────────────
-% Plaats de volgende bestanden in een submap  images/  naast main.tex:
-%   images/codeql-run.png            -> screenshot Actions-run "Analyze Java (java)"
-%   images/codeql-alerts-open.png    -> Security-tab, OPEN code-scanning alerts
-%                                       (bron: docs/security/04-code-review/Images/bijlage-codeql-alerts-open.png)
-%   images/codeql-alerts-closed.png  -> Security-tab, GESLOTEN/FIXED alerts (9 log-injection)
-%                                       (bron: docs/security/04-code-review/Images/bijlage-codeql-alerts-closed.png)
-% ─────────────────────────────────────────────────────────────────────────────
 
 \textbf{SARIF} (\emph{Static Analysis Results Interchange Format}) is het
 machine-leesbare JSON-formaat waarin CodeQL zijn bevindingen rapporteert. De

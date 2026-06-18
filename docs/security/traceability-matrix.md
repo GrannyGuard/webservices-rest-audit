@@ -40,7 +40,7 @@ Bewust niet opgenomen: controls waarvoor nog geen hard bewijsartefact bestaat
 
 - [ ] **Screenshots toevoegen** als visueel bewijs naast de `gh api`-output voor
   A.8.3 (Environments-instellingen) en A.8.5 (org 2FA-policy in Settings →
-  Authentication security); zie ook de TODO's in
+  Authentication security); zie ook het compliance-overzicht in
   [02.md §8](02-secure-pipelines/02.md#8-nen-7510-compliance-overzicht).
 - [x] **A.8.8, patches uitgevoerd:** `netty-handler` → 4.1.119.Final en
   `log4j-core`/`log4j-api` → 2.24.3 doorgevoerd via `<dependencyManagement>` (PR #105),
