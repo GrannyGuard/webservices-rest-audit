@@ -173,101 +173,110 @@
 \label{sec:overall-status}
 
 De OpenMRS REST Webservices Module (v3.2.0) is beoordeeld tegen
-NEN-7510:2024-2 Deel 2, met als kern de zeven controls uit het Normenkader
-(\S\ref{sec:normenkader}: A.8.3, A.8.5, A.8.8, A.8.9, A.8.15, A.8.24, A.8.25)
-plus zeven aanvullende controls die tijdens de audit zelf zijn
-geïmplementeerd en getest (Bijlage~\ref{app:traceability}, 14 controls
-totaal, elk met een traceerbaar bewijsartefact). De audit combineert
-gap-analyse, CIA/BIV- en risicoanalyse, STRIDE-threatmodelling, SAST
-(CodeQL) en SCA (Dependabot/OSV-Scanner/Snyk) met een penetratietest
-(F1--F9, Bijlage~\ref{app:traceability} A.8.29).
+NEN-7510:2024-2, het normenkader voor informatiebeveiliging in de zorg. De
+module ontsluit medische gegevens en patiëntdossiers via een
+programmeerkoppeling; de eisen aan de beveiliging zijn daarom hoog. De audit
+combineerde een normgerichte controle, een risico- en dreigingsanalyse,
+geautomatiseerde scans van zowel de eigen code als de meegeleverde externe
+componenten, en een afsluitende, gerichte aanval (penetratietest) op een
+afgeschermde testomgeving.
 
-Van de vijf uitgewerkte bevindingen (B-001 t/m B-005, \S\ref{sec:bevindingen})
-zijn er \textbf{twee volledig gemitigeerd en geverifieerd} (B-004: reflected XSS; B-005: log injection) en is \textbf{één deels gemitigeerd}
-(B-002: de CWE-302 fall-through in \texttt{AuthorizationFilter} is gefixt, de
-onderliggende sessie-fixatie CWE-384 staat nog open). De twee resterende
-bevindingen zijn \textbf{nog open}: B-001 (ongeauthenticeerde uitlezing van alle
-systeemconfiguratie, risicoscore 20, hoogste van de analyse) en B-003 (geen
-brute-force-bescherming op authenticatie) en
-vormen de hoogste prioriteit.
+Dit leverde zes uitgewerkte bevindingen op (B-001 t/m B-006). \textbf{Alle zes
+zijn tijdens de audit hersteld en opnieuw getest.} Het ging onder meer om het
+onbeperkt kunnen raden van wachtwoorden, het kunnen overnemen van de sessie
+van een ingelogde medewerker, het ongewenst kunnen uitlezen van interne
+systeem- en accountgegevens, en het kunnen vervalsen van logregels die
+forensisch onderzoek moeten ondersteunen. Voor elke herstelmaatregel is bewijs
+vastgelegd: een aanpassing in de broncode, een geautomatiseerde test en een
+herhaalde aanval die nu wordt geblokkeerd. Ook de eerder gevonden mogelijkheid
+om zónder in te loggen de volledige systeemconfiguratie op te vragen --- het
+zwaarst beoordeelde risico --- is inmiddels afgeschermd.
 
-\textbf{Eindoordeel per control:} A.8.5 (Authenticatie) en A.8.9
-(Configuratiebeheer) zijn \rood{onvoldoende}; A.8.3 (Toegangsbeveiliging) en
-A.8.24 (Cryptografie) zijn \amber{gedeeltelijk}; A.8.15 (Logging) is
-\amber{gedeeltelijk gemitigeerd} (auth-logging is op orde, resource-level
-audit trail ontbreekt nog); A.8.8 (Kwetsbaarhedenbeheer) en A.8.25 (Veilige
-ontwikkelcyclus) zijn \groen{geïmplementeerd}, evenals de zeven in Sprint 3
-toegevoegde controls (least-privilege database, Host-validatie,
-supply-chain-signing, secure coding en OTAP-scheiding).
+\textbf{Overall status: \amber{AMBER (gedeeltelijk)}.} De code van de module
+zelf is op de geauditeerde punten op orde, maar volledige naleving is nog niet
+bereikt: in de meegeleverde externe softwarecomponenten staan nog bekende
+kwetsbaarheden open die om updates vragen, en het afdwingen van versleuteld
+dataverkeer ligt op het niveau van de serveromgeving en valt buiten de module.
+De directe code-risico's zijn daarmee verholpen; de keten- en
+omgevingsmaatregelen vragen nog aandacht.
 
 \section{Top Risico's}
 \label{sec:top-risicos}
+
+Onderstaande tabel toont de zes uitgewerkte bevindingen in managementtaal, met
+de oorspronkelijke ernst en de actuele status. De ernst is de \emph{inherente}
+score vóór mitigatie; alle zes zijn inmiddels hersteld en hertest. De nummering
+volgt Hoofdstuk~\ref{ch:bevindingen}.
 
 {\small
 \begin{tabularx}{\textwidth}{@{}l X l l@{}}
     \toprule
     \textbf{ID} & \textbf{Omschrijving (managementtaal)} & \textbf{Ernst} & \textbf{Status} \\
     \midrule
-    B-001 & Iedereen kan --- zonder in te loggen --- alle systeeminstellingen
-            opvragen, mogelijk inclusief opgeslagen wachtwoorden en de
-            beveiligingsconfiguratie zelf. & \rood{20 --- Hoog} &
-            \rood{Open --- prio 1} \\
+    B-001 & Inlogpogingen werden niet beperkt: wachtwoorden raden was onbeperkt
+            mogelijk, waardoor een geldig account binnen seconden te kraken was. &
+            \rood{20 --- Hoog} & \groen{Gemitigeerd \& hertest} \\
     \addlinespace
-    B-002 & Een aanvaller die een sessie-ID ``plant'' kan na een succesvolle
-            login van een slachtoffer die sessie overnemen (sessie-fixatie). &
-            \rood{15 --- Hoog} & \amber{Deels gemitigeerd} \\
+    B-002 & Een aanvaller kon na de login van een medewerker diens
+            gebruikerssessie overnemen (sessie-fixatie). &
+            \rood{15 --- Hoog} & \groen{Gemitigeerd \& hertest} \\
     \addlinespace
-    B-003 & Inlogpogingen worden niet beperkt: wachtwoorden raden
-            (brute force/credential stuffing) is onbeperkt mogelijk. &
-            \rood{Hoog} & \rood{Open --- prio 3} \\
+    B-003 & Elke ingelogde medewerker, ook met minimale rechten, kon de volledige
+            lijst van alle gebruikersaccounts uitlezen. &
+            \amber{12 --- Midden} & \groen{Gemitigeerd \& hertest} \\
     \addlinespace
     B-004 & Een gemanipuleerde link kon kwaadaardige code laten uitvoeren in de
             browser van een ingelogde beheerder (XSS). & \amber{12 --- Midden} &
             \groen{Gemitigeerd} \\
     \addlinespace
-    B-005 & Logregels konden door een aanvaller worden vervalst
+    B-005 & Interne foutmeldingen toonden technische systeemdetails aan de
+            buitenwereld, wat vervolgaanvallen vergemakkelijkt. &
+            \amber{12 --- Midden} & \groen{Gemitigeerd \& hertest} \\
+    \addlinespace
+    B-006 & Logregels konden door een aanvaller worden vervalst
             (log-injectie), wat forensisch onderzoek kan misleiden. &
             \amber{12 --- Midden} & \groen{Gemitigeerd \& geverifieerd} \\
     \bottomrule
 \end{tabularx}
 }
 
+\vspace{0.4em}
+\noindent Daarnaast is de los daarvan gevonden mogelijkheid om \emph{zonder
+inloggen} de volledige systeemconfiguratie uit te lezen (het zwaarst beoordeelde
+risico, score 20) afgeschermd. Geen van de uitgewerkte bevindingen staat nog
+open. De resterende aandachtspunten liggen niet in de modulecode maar in de
+toeleveringsketen en de serveromgeving (zie de roadmap hieronder).
+
 \section{Geprioriteerde Roadmap}
 \label{sec:roadmap}
+
+De uitgewerkte bevindingen B-001 t/m B-006 zijn afgerond en daarom niet meer in
+de roadmap opgenomen. De onderstaande acties betreffen de resterende
+keten- en omgevingsmaatregelen.
 
 {\small
 \begin{tabularx}{\textwidth}{@{}l X l@{}}
     \toprule
     \textbf{Prioriteit} & \textbf{Actie} & \textbf{Termijn} \\
     \midrule
-    \textbf{Nu} & B-001: \texttt{settings.form/search} achter de
-                  \texttt{AuthorizationFilter}-keten plaatsen en een
-                  privilege-check afdwingen (of verwijderen indien zonder
-                  productiefunctie). & Direct \\
+    \textbf{Nu} & Bekende kwetsbaarheden in meegeleverde componenten met een
+                  veilige update verhelpen: de twee niet-brekende
+                  ``quick-win''-updates (\texttt{snakeyaml} naar 2.x,
+                  \texttt{spring-web} naar 5.3.34) doorvoeren. & Direct \\
     \addlinespace
-    \textbf{Nu} & B-003: rate-limiting/account-lockout invoeren op de
-                  authenticatie-keten, met \texttt{ACCESS\_BLOCKED}-logging
-                  bij overschrijding. & Direct \\
+    \textbf{Deze sprint} & Versleuteld dataverkeer (TLS) op het niveau van de
+                  serveromgeving afdwingen en documenteren (reverse
+                  proxy/servlet-container); dekt control A.8.24. & 1 sprint \\
     \addlinespace
-    \textbf{Deze sprint} & B-002: sessie-ID regenereren na login
-                  (\texttt{session.invalidate()} + nieuwe sessie); daarna
-                  pentest-hervalidatie van de B-002/B-004-keten. & 1 sprint \\
+    \textbf{Later} & Grote, ingrijpende upgrades van verouderde componenten
+                  (Spring~6, Tomcat~9+, vervanging van de verouderde
+                  JSON-bibliotheek) gefaseerd inplannen. & Roadmap \\
     \addlinespace
-    \textbf{Deze sprint} & SBOM-quickwins doorvoeren: \texttt{snakeyaml}
-                  convergeren naar 2.x, \texttt{spring-web} naar 5.3.34
-                  (03.md \S7). & 1 sprint \\
+    \textbf{Later} & Het toegangsfilter vervangen door een standaard,
+                  declaratief autorisatiekader (Spring Security). & Roadmap \\
     \addlinespace
-    \textbf{Later} & A.8.24: TLS-afdwinging op deployment-niveau documenteren
-                  en verifiëren (reverse proxy/servlet-container). & Roadmap \\
-    \addlinespace
-    \textbf{Later} & Declaratieve autorisatie (Spring Security) ter vervanging
-                  van het best-effort \texttt{AuthorizationFilter}. & Roadmap \\
-    \addlinespace
-    \textbf{Later} & A.8.2/A.8.3: prod-runtime-switch naar het DML-only
-                  database-account container-verifiëren. & Roadmap \\
-    \addlinespace
-    \textbf{Later} & Majeure SCA-patches (Spring~6, \texttt{jackson-databind}
-                  2.x) gefaseerd inplannen (03.md \S6). & Roadmap \\
+    \textbf{Later} & De productieschakeling naar het database-account met
+                  minimale rechten in een draaiende omgeving verifiëren. & Roadmap \\
     \bottomrule
 \end{tabularx}
 }
@@ -641,11 +650,15 @@ top-event.
 \section{Bevindingen}
 \label{sec:bevindingen}
 
-Hieronder zijn vijf bevindingen uitgewerkt, geselecteerd op risicoscore en op
-spreiding over de geauditeerde controls. Twee staan nog volledig open (B-001,
-B-003), B-002 is deels gemitigeerd (de CWE-302 fall-through is gefixt, de
-sessie-fixatie CWE-384 staat nog open), en B-004 en B-005 zijn gemitigeerd; B-005 toont een volledig afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus.
-Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
+Hieronder zijn zes bevindingen uitgewerkt, geselecteerd op risicoscore en op
+spreiding over de geauditeerde controls. \textbf{Alle zes zijn tijdens de audit
+gemitigeerd en hertest}; elke bevinding sluit met een mitigatie- en
+validatie-paragraaf met een traceerbare commit-referentie. B-006 (log injection)
+toont daarnaast een volledig afgesloten detect-\,$\to$\,mitigeer-\,$\to$\,%
+verifieer-cyclus via een CodeQL-herscan. Elke bevinding is handmatig
+geverifieerd tegen de broncode (bestand + regel) en, voor de pentestbevindingen,
+opnieuw aangevallen op de testomgeving (Kali, 2026-06-16/17;
+Bijlage~\ref{app:pentest} \S I.4).
 
 \subsection{B-001 --- Ontbrekende rate-limiting op authenticatie (PT1 / F-01)}
 \label{sec:b001}
@@ -655,7 +668,7 @@ Elke bevinding is handmatig geverifieerd tegen de broncode (bestand + regel).
 \textbf{NEN-7510}    & A.8.5 Authenticatie \\
 \textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
 \textbf{OWASP}       & A07:2021 Identification \& Authentication Failures (CWE-307) \\
-\textbf{Status}      & \rood{Open --- directe actie (Nu)} \\
+\textbf{Status}      & \groen{Gemitigeerd en hertest --- commit \texttt{59bf421}} \\
 \end{tabular}
 
 \textbf{Beschrijving.} De \texttt{AuthorizationFilter} stuurt elke binnenkomende
@@ -686,6 +699,22 @@ max.~10~pogingen per minuut per bron-IP, retourneer HTTP~429 bij overschrijding,
 gecombineerd met exponentiële back-off. Log overschrijdingen als
 \texttt{ACCESS\_BLOCKED} (NEN-7510 A.8.15).
 
+\textbf{Mitigatie.} Een in-memory IP-rate-limiter is toegevoegd aan
+\texttt{AuthorizationFilter}: een begrensde \texttt{ConcurrentHashMap} houdt per
+bron-IP het aantal mislukte pogingen binnen een venster van 60~seconden bij. Bij
+meer dan 10 mislukte pogingen retourneert het filter \texttt{HTTP 429} mét een
+\texttt{return} vóór \texttt{Context.authenticate()}, en logt het
+\texttt{ACCESS\_BLOCKED rate\_limited=true} op WARN; de teller reset bij een
+succesvolle authenticatie. Geen extra dependency (Java 8-compatibel). Commit
+\texttt{59bf421}.
+
+\textbf{Validatie.} Pentest-hertest op Kali (2026-06-16): de 11e opeenvolgende
+mislukte Basic-Auth-poging gaf \texttt{HTTP 429} (vóór de fix: nooit geblokkeerd),
+met de bijbehorende \texttt{ACCESS\_BLOCKED}-logregel. Zes nieuwe unit tests
+(\texttt{AuthorizationFilterRateLimitTest}) en de twaalf bestaande
+filtertests slagen; \texttt{mvn clean install} groen. Zie
+\texttt{06-mitigatie-en-validatie/06.md} \S6 en Bijlage~\ref{app:pentest} \S I.4.
+
 \subsection{B-002 --- Sessie-fixatie en best-effort toegangsfilter (SQ1 / F-03)}
 \label{sec:b002}
 
@@ -694,43 +723,46 @@ gecombineerd met exponentiële back-off. Log overschrijdingen als
 \textbf{NEN-7510}    & A.8.5 Authenticatie (tevens A.8.3 Toegangsbeveiliging) \\
 \textbf{Kroonjuwelen}& KJ3 --- via overname KJ1, KJ2 \\
 \textbf{OWASP}       & A07:2021 Identification \& Authentication Failures (CWE-384/302) \\
-\textbf{Status}      & \amber{Deels gemitigeerd} --- CWE-302 gefixt, CWE-384 (sessie-fixatie) nog open; prio.\ 2; bow-tie in \texttt{01.md} \S4.3 \\
+\textbf{Status}      & \groen{Gemitigeerd en hertest} --- CWE-384 (sessie-rotatie) commit \texttt{9c2fb64}, CWE-302 (fall-through) commit \texttt{e3f3c7d} \\
 \end{tabular}
 
-\textbf{Beschrijving.} De \texttt{AuthorizationFilter} ververst het sessie-ID
-\emph{niet} na een succesvolle login: een door een aanvaller vooraf ``geplant''
-sessie-ID blijft na authenticatie geldig (session fixation, CWE-384). De filter is
-bovendien \emph{by design} best-effort --- het klassecommentaar stelt dat het filter
-\emph{``never stops execution''} en op de service-laag vertrouwt om alsnog te falen.
+\textbf{Beschrijving (vóór fix).} De \texttt{AuthorizationFilter} ververste het
+sessie-ID \emph{niet} na een succesvolle login: een door een aanvaller vooraf
+``geplant'' sessie-ID bleef na authenticatie geldig (session fixation, CWE-384).
+De filter is bovendien \emph{by design} best-effort --- het klassecommentaar stelt
+dat het filter \emph{``never stops execution''} en op de service-laag vertrouwt om
+alsnog te falen.
 
-\textbf{Bewijs.} \texttt{AuthorizationFilter.java:82}:
-\texttt{getRequestedSessionId()} geeft het client-aangeleverde sessie-ID terug
-zonder server-side validatie; \texttt{:119}: na \texttt{Context.authenticate()}
-wordt de sessie niet geïnvalideerd (CWE-384, nog open). De afzonderlijke CWE-302
-fall-through (de ontbrekende \texttt{return} na de \texttt{sendError(401)} bij een
-verlopen sessie, waardoor de keten dóórliep naar \texttt{chain.doFilter()}) is
-inmiddels \groen{gefixt} (er staat nu een \texttt{return} op \texttt{:92}). De
-CodeQL-melding \texttt{java/user-controlled-bypass} op de optionele
-Basic-Auth-tak (oorspronkelijk alert \#908, na de \texttt{return}-fix verschoven
-naar \#913 op \texttt{:119}) is na onderzoek als geaccepteerd risico (false positive)
-geclassificeerd; zie \texttt{06-mitigatie-en-validatie/06.md} \S3b.
+\textbf{Bewijs (vóór fix).} \texttt{AuthorizationFilter.java:82}:
+\texttt{getRequestedSessionId()} gaf het client-aangeleverde sessie-ID terug
+zonder server-side validatie; na \texttt{Context.authenticate()} werd de sessie
+niet geïnvalideerd (CWE-384). Daarnaast liep een afzonderlijke CWE-302
+fall-through: de ontbrekende \texttt{return} na de \texttt{sendError(401)} bij een
+verlopen sessie liet de keten dóórlopen naar \texttt{chain.doFilter()}.
 
 \textbf{Impact.} Sessie-overname geeft een aanvaller volledige toegang tot
 patiëntdossiers (KJ1, KJ2) met de rechten van het slachtoffer; dit is een meldplichtig
 datalek (AVG Art.~33). In combinatie met B-004 (XSS) ontstaat een complete keten:
 XSS steelt de sessiecookie, waarna de niet-verversde sessie wordt overgenomen.
 
-\textbf{Gedeeltelijke mitigatie.} De fall-through na sessietime-out
-(\texttt{return} ontbrak na \texttt{sendError(401)}, CWE-302) is hersteld
-in commit; 12 geautomatiseerde filtertests slagen.
-De sessie-fixatie (CWE-384) staat nog open.
+\textbf{Mitigatie.} Twee maatregelen, beide in \texttt{AuthorizationFilter}:
+(1)~na een succesvolle \texttt{Context.authenticate()} wordt de bestaande sessie
+geïnvalideerd en een nieuwe aangemaakt (\texttt{getSession(false)} $\to$
+\texttt{invalidate()} $\to$ \texttt{getSession(true)}), zodat Tomcat een nieuw
+\texttt{JSESSIONID} uitgeeft (CWE-384, commit \texttt{9c2fb64}); (2)~een
+\texttt{return} is toegevoegd direct na de \texttt{sendError(401)} bij sessie-time-out,
+zodat de keten daadwerkelijk stopt (CWE-302, commit \texttt{e3f3c7d}). De
+CodeQL-melding \texttt{java/user-controlled-bypass} op de optionele
+Basic-Auth-tak (alert \#908/\#913) staat na de wijziging op \texttt{state: fixed}
+(geaccepteerd risico / false positive; analyse in
+\texttt{06-mitigatie-en-validatie/06.md} \S3b).
 
-\textbf{Aanbeveling.} Sessie-ID regenereren na login (\texttt{session.invalidate()}
-+ nieuwe sessie); op termijn declaratieve autorisatie (Spring Security)
-ter vervanging van het best-effort filter.
-De penetratietest heeft sessie-fixatie empirisch bevestigd: het
-\texttt{JSESSIONID}-cookie was identiek vóór en ná authenticatie
-(zie Bijlage~\ref{app:pentest}, F-03).
+\textbf{Validatie.} Pentest-hertest op Kali (2026-06-17): het \texttt{JSESSIONID}
+verschilde nu vóór en ná de login (vóór de fix: identiek). Vijf nieuwe tests
+(\texttt{AuthorizationFilterSessionFixationTest}) en de bestaande twaalf
+filtertests slagen; \texttt{mvn clean install} groen. Op termijn blijft
+declaratieve autorisatie (Spring Security) ter vervanging van het best-effort
+filter aanbevolen (roadmap). Zie \texttt{06.md} \S13 en Bijlage~\ref{app:pentest} \S I.4.
 
 \subsection{B-003 --- Gebruikersenumeratie via `/user` API (PT2 / F-02)}
 \label{sec:b003}
@@ -740,7 +772,7 @@ De penetratietest heeft sessie-fixatie empirisch bevestigd: het
 \textbf{NEN-7510}    & A.8.5 Authenticatie \\
 \textbf{Kroonjuwelen}& KJ3 --- via misbruik indirect KJ1, KJ2 \\
 \textbf{OWASP}       & A07:2021 Identification \& Authentication Failures (CWE-204) \\
-\textbf{Status}      & \rood{Open --- directe actie (Nu)} \\
+\textbf{Status}      & \groen{Gemitigeerd en hertest --- commit \texttt{ed6f3da}} \\
 \end{tabular}
 
 \textbf{Beschrijving.} Het endpoint \texttt{GET /openmrs/ws/rest/v1/user}
@@ -774,6 +806,21 @@ een complete credential-compromis-keten.
 \textbf{Aanbeveling.} Beperk de \texttt{/user}-API tot expliciete beheerdersrollen;
 controleer fijnmazige autorisatie per resource; retourneer geen gevoelige
 accountdetails aan lager-geprivilegieerde gebruikers.
+
+\textbf{Mitigatie.} Twee maatregelen: (A)~\texttt{Context.requirePrivilege(%
+PrivilegeConstants.GET\_USERS)} als eerste instructie van \texttt{doGetAll()} en
+\texttt{doSearch()} in \texttt{UserResource1\_8}, zodat zowel het lijsten als het
+zoeken op \texttt{/user} nu het OpenMRS-privilege \emph{Get Users} vereist; (B)~de
+\texttt{AUTH\_FAILURE}-logregel in \texttt{AuthorizationFilter} logt uniform,
+zonder onderscheid meer tussen fout wachtwoord en account-lockout (sluit een
+side-channel). Commit \texttt{ed6f3da}.
+
+\textbf{Validatie.} Pentest-hertest op Kali (2026-06-16): \texttt{GET /user} en
+\texttt{GET /user?q=...} als laag-geprivilegieerde gebruiker worden nu geweigerd
+(\emph{``Privileges required: Get Users''}) i.p.v.\ de volledige lijst te
+retourneren; de auth-logregels zijn identiek ongeacht of het account bestaat. Drie
+nieuwe unit tests slagen; \texttt{mvn clean install} groen. Zie
+\texttt{06.md} \S7 en Bijlage~\ref{app:pentest} \S I.4.
 
 \subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2): gemitigeerd}
 \label{sec:b004}
@@ -828,7 +875,7 @@ reproduceerbaar afgesloten.
 \textbf{NEN-7510}    & A.8.15 Logging (tevens A.8.8 Kwetsbaarheden) \\
 \textbf{Kroonjuwelen}& KJ6 --- indirect KJ1, KJ2 (reconnaissance-enabler) \\
 \textbf{OWASP}       & A09:2025 Security Logging and Alerting Failures (CWE-209) \\
-\textbf{Status}      & \rood{Open --- directe actie (Nu)} \\
+\textbf{Status}      & \groen{Gemitigeerd en hertest --- commit \texttt{9c30cdd}} \\
 \end{tabular}
 
 \textbf{Beschrijving.} Bij unauthenticated toegang en interne fouten retourneert
@@ -860,6 +907,24 @@ zonder credentials.
 interne details vervangt door een generiek foutbericht met een referentie-ID.
 Log de volledige stack trace uitsluitend intern (NEN-7510 A.8.15); stuur
 nooit interne details naar de HTTP-client.
+
+\textbf{Mitigatie.} Twee maatregelen: (A)~in \texttt{RestUtil.wrapErrorResponse()}
+zijn het \texttt{code}-veld (voorheen \texttt{className:lineNumber}) en het
+\texttt{detail}-veld (voorheen de volledige stack trace) nu altijd leeg; de global
+property \texttt{webservices.rest.enableStackTraceDetails} wordt bewust genegeerd.
+(B)~In \texttt{BaseRestController} wordt \texttt{ContextAuthenticationException}
+nu vóór \texttt{APIAuthenticationException} herkend en als \texttt{HTTP 403/401}
+afgehandeld; overige 5xx-fouten krijgen een UUID-correlatie-ID dat intern wordt
+gelogd en als \texttt{code} wordt teruggegeven, met een leeg \texttt{detail}-veld.
+Commit \texttt{9c30cdd}.
+
+\textbf{Validatie.} Pentest-hertest op Kali (2026-06-16): \texttt{GET /user} als
+laag-geprivilegieerde gebruiker gaf een leeg \texttt{detail}-veld en \texttt{HTTP
+403} (vóór de fix: \texttt{className:lineNumber} + $\sim$60 regels stack trace +
+\texttt{HTTP 500}); met \texttt{enableStackTraceDetails=true} blijft \texttt{detail}
+leeg. Bijgewerkte en nieuwe tests in \texttt{BaseRestControllerTest} en
+\texttt{RestUtilTest} slagen; \texttt{mvn clean install} groen. Zie
+\texttt{06.md} \S8 en Bijlage~\ref{app:pentest} \S I.4.
 
 \subsection{B-006 --- Log injection (CWE-117): gemitigeerd en geverifieerd (CQL1 / F-07)}
 \label{sec:b006}
@@ -896,14 +961,16 @@ gereviewd vóór commit.
 \textbf{9 $\to$ 0}. Daarmee is de detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus
 kwantitatief en reproduceerbaar afgesloten.
 
-\textbf{Restpunt.} Dezelfde herschrijving introduceerde 4 \emph{nieuwe}
-\texttt{java/log-injection}-alerts (\texttt{AuthorizationFilter.java:72/84/115/122}),
-aanvankelijk als \emph{``false positive''} gedismissed \emph{zonder} onderbouwing.
-Omdat die classificatie afhing van de (in deze module afwezige) log-appender-config
-en dus niet aantoonbaar was, zijn de user-controlled waarden (request-URI,
-\texttt{attemptedUser}, exception-message) alsnog via
-\texttt{RestUtil.sanitizeForLog()} gesanitized; de alerts sluiten op de
-eerstvolgende CodeQL-herscan (bewijsartefact nog toe te voegen).
+\textbf{Vervolg (gesloten).} Dezelfde herschrijving introduceerde 4 \emph{nieuwe}
+\texttt{java/log-injection}-alerts (\texttt{AuthorizationFilter.java:72/84/115/122},
+alert-nrs \#808--811), aanvankelijk als \emph{``false positive''} gedismissed
+\emph{zonder} onderbouwing. Omdat die classificatie afhing van de (in deze module
+afwezige) log-appender-config en dus niet aantoonbaar was, zijn de user-controlled
+waarden (request-URI, \texttt{attemptedUser}, exception-message) alsnog via
+\texttt{RestUtil.sanitizeForLog()} gesanitized (commit \texttt{07612ca}). De vier
+alerts staan na de CodeQL-scan van \texttt{f780f28} (2026-06-16) op
+\texttt{state: fixed}; daarmee zijn alle 13 \texttt{java/log-injection}-alerts
+(de oorspronkelijke 9 + deze 4) gesloten.
 
 \newpage
 
@@ -1102,18 +1169,21 @@ de relevante NEN-7510:2024-2 controls en aan de CRA-verplichtingen voor
 open-source componenten in de toeleveringsketen.
 
 \textbf{NEN-7510:2024-2.} Van de zeven controls uit het Normenkader
-(\S\ref{sec:normenkader}) voldoet de module aan twee (A.8.8, A.8.25), is er
-bij drie sprake van gedeeltelijke compliance (A.8.3, A.8.15, A.8.24) en
-schiet de module bij twee tekort (A.8.5, A.8.9) --- zie
+(\S\ref{sec:normenkader}) voldoet de module na de tijdens deze audit
+doorgevoerde mitigaties aan vijf (A.8.5, A.8.8, A.8.9, A.8.15, A.8.25) en is
+er bij twee sprake van gedeeltelijke compliance (A.8.3 en A.8.24) --- zie
 \S\ref{sec:overall-status} voor het overzicht en
-Bijlage~\ref{app:traceability} voor de onderliggende bewijsvoering. De twee
-tekortkomingen zijn direct gekoppeld aan de twee nog openstaande bevindingen
-B-001 (risicoscore 20, hoogste van de analyse) en B-003. Daarnaast zijn
-tijdens deze audit zeven \emph{aanvullende} controls geïmplementeerd en
-getest (least-privilege database, Swagger/Host-validatie,
-supply-chain-signing, secure coding, OTAP-scheiding en beveiligingstests) die
-niet in het oorspronkelijke Normenkader stonden maar wel uit de
-risicoanalyse volgden.
+Bijlage~\ref{app:traceability} voor de onderliggende bewijsvoering. A.8.5
+(authenticatie) en A.8.9 (configuratiebeheer) zijn van \emph{tekort} naar
+\emph{geïmplementeerd} gebracht doordat de onderliggende bevindingen B-001
+(rate-limiting, score 20), B-002 (sessie-fixatie) en de ongeauthenticeerde
+configuratie-uitlezing (settings.form, score 20) zijn gemitigeerd en hertest.
+A.8.24 (cryptografie/TLS) blijft gedeeltelijk: TLS-afdwinging hoort op
+deployment-niveau en valt buiten de module-grens. Daarnaast zijn tijdens deze
+audit zeven \emph{aanvullende} controls geïmplementeerd en getest
+(least-privilege database, Swagger/Host-validatie, supply-chain-signing,
+secure coding, OTAP-scheiding en beveiligingstests) die niet in het
+oorspronkelijke Normenkader stonden maar wel uit de risicoanalyse volgden.
 
 \textbf{CRA.} De CycloneDX-SBOM (238 componenten, Bijlage~\ref{app:sbom}) en
 de gekruisvalideerde SCA-keten (Dependabot + OSV-Scanner + Snyk, 75 unieke
@@ -1127,13 +1197,18 @@ Bijlage~\ref{app:traceability} A.5.23/A.8.32) levert daarnaast verifieerbare
 build-provenance, wat de CRA-conforme transparantie van de supply chain
 verder versterkt.
 
-\textbf{Samenvattend:} de module is op dit moment \rood{niet volledig
-compliant} met NEN-7510:2024-2, primair door B-001 (configuratiebeheer,
-A.8.9, score 20) en de authenticatie-gaps (A.8.5: B-002 deels open, B-003
-volledig open). De CRA-gerelateerde eisen aan supply-chain-transparantie
-worden grotendeels ondersteund door de SBOM/SCA/signing-keten die tijdens
-deze audit is opgezet en geverifieerd. Met de in
-\S\ref{sec:roadmap} geprioriteerde roadmap is volledige compliance op de
+\textbf{Samenvattend:} de module is na deze audit \amber{grotendeels, maar nog
+niet volledig compliant} met NEN-7510:2024-2. Alle zes uitgewerkte
+code-bevindingen (B-001 t/m B-006) plus de ongeauthenticeerde
+configuratie-uitlezing zijn gemitigeerd en hertest, waarmee de eerdere
+tekortkomingen op A.8.5 en A.8.9 zijn weggewerkt. De resterende afstand zit
+niet in de modulecode maar in (i)~de toeleveringsketen --- twee
+non-breaking quick-win-updates (\texttt{snakeyaml}, \texttt{spring-web}) en
+enkele geplande EOL-migraties staan nog open --- en (ii)~A.8.24, de
+TLS-afdwinging op deployment-niveau. De CRA-gerelateerde eisen aan
+supply-chain-transparantie worden grotendeels ondersteund door de
+SBOM/SCA/signing-keten die tijdens deze audit is opgezet en geverifieerd. Met
+de in \S\ref{sec:roadmap} geprioriteerde roadmap is volledige compliance op de
 geauditeerde controls binnen 1--2 sprints realistisch.
 
 \section{Geprioriteerde Aanbevelingen}
@@ -1150,31 +1225,37 @@ directe actie; \emph{Deze sprint} = score 9--12, mitigatie binnen 1~maand;
 \toprule
 \textbf{Tijdlijn} & \textbf{Actie} & \textbf{Bev.} & \textbf{Control} \\
 \midrule
-\rood{Nu} &
-    Rate limiting: max.~10 pogingen/min per bron-IP, HTTP~429,
-    log \texttt{ACCESS\_BLOCKED} &
-    B-003 & A.8.5 \\
-\rood{Nu} &
-    Sessie-ID regenereren na login (\texttt{session.invalidate()} + nieuwe sessie) &
+\groen{Gemitigeerd} &
+    Rate limiting in \texttt{AuthorizationFilter}: max.~10 mislukte
+    pogingen/min per bron-IP, HTTP~429, \texttt{ACCESS\_BLOCKED}-logging
+    (commit \texttt{59bf421}) &
+    B-001 & A.8.5 \\
+\groen{Gemitigeerd} &
+    Sessie-ID geregenereerd na login (\texttt{invalidate()} + nieuwe sessie)
+    en \texttt{return} na 401 bij time-out (commits \texttt{9c2fb64},
+    \texttt{e3f3c7d}) &
     B-002 & A.8.5 \\
-\rood{Nu} &
-    Uniform gedrag voor bestaande/niet-bestaande accounts (identieke timing +
-    foutmelding); \texttt{/user}-API inperken voor niet-admin sessies &
+\groen{Gemitigeerd} &
+    \texttt{/user}-API achter \emph{Get Users}-privilege + uniforme
+    \texttt{AUTH\_FAILURE}-logging (commit \texttt{ed6f3da}) &
     B-003 & A.8.5 \\
 \groen{Gemitigeerd} &
-    Globale \texttt{@ExceptionHandler}: stack traces intern loggen, generiek
-    bericht + referentie-ID naar client sturen (commit \texttt{831dafb}) &
+    Stack traces intern gelogd, generiek bericht + referentie-ID naar de
+    client; \texttt{ContextAuthenticationException} $\to$ HTTP 403
+    (commit \texttt{9c30cdd}) &
     B-005 & A.8.15 \\
+\groen{Gemitigeerd} &
+    Ongeauthenticeerde \texttt{settings.form/search} afgeschermd met
+    authenticatie + \emph{Manage RESTWS}-privilege (commit \texttt{07612ca}) &
+    --- & A.8.9 \\
 \rood{Nu} &
-    Quick-win patches: \texttt{snakeyaml} $\to$ 2.0, \texttt{spring-web} $\to$ 5.3.34 &
+    Quick-win component-updates: \texttt{snakeyaml} $\to$ 2.x,
+    \texttt{spring-web} $\to$ 5.3.34 &
     SBOM & A.8.8 \\
 \amber{Deze sprint} &
-    XSS-fix valideren via CodeQL-herscan; alert~\#1 op \texttt{state: fixed} &
-    B-004 & A.8.28 \\
-\amber{Deze sprint} &
-    Non-breaking patches: \texttt{netty-handler}~4.1.119+, \texttt{c3p0}~0.10.x,
-    \texttt{log4j-core} latest &
-    SBOM & A.8.8 \\
+    TLS-afdwinging op deployment-niveau (reverse proxy/servlet-container)
+    documenteren en verifiëren &
+    --- & A.8.24 \\
 \geel{Later} &
     Declaratieve autorisatie (Spring Security) ter vervanging van
     het best-effort \texttt{AuthorizationFilter} &
@@ -1186,6 +1267,56 @@ directe actie; \emph{Deze sprint} = score 9--12, mitigatie binnen 1~maand;
 \bottomrule
 \end{tabularx}
 }
+
+\section{Bewust Niet-gerealiseerde Items}
+\label{sec:niet-gerealiseerd}
+
+Conform de Sprint-4-vereiste legt deze sectie vast welke onderdelen
+\emph{bewust niet} (of nog niet) zijn gemitigeerd, met per item de reden, het
+restrisico en de aanbeveling voor de opvolgende sprint. De lijst bevat alléén
+punten die na de verificatie van dit rapport nog open staan; de zes uitgewerkte
+bevindingen B-001 t/m B-006 zijn afgerond en staan hier dus \emph{niet} tussen.
+
+\begin{itemize}
+    \item \textbf{Quick-win component-updates (\texttt{snakeyaml} $\to$ 2.x,
+          \texttt{spring-web} $\to$ 5.3.34) --- A.8.8.}
+          \emph{Reden:} non-breaking, maar binnen de sprinttijd niet meer
+          doorgevoerd en hertest (de patches voor \texttt{netty-handler} en
+          \texttt{log4j} zijn wél gerealiseerd, PR~\#105).
+          \emph{Restrisico:} bekende kwetsbaarheden (o.a.\ deserialisatie van de
+          RCE-klasse) blijven in het productie-artefact.
+          \emph{Aanbeveling:} doorvoeren via \texttt{<dependencyManagement>} en
+          een SCA-herscan als bewijsartefact toevoegen.
+    \item \textbf{\texttt{c3p0} $\to$ 0.10.x en \texttt{h2} $\to$ 2.x --- A.8.8.}
+          \emph{Reden:} bewust teruggedraaid --- \texttt{c3p0} 0.10.x vereist
+          Java~9+ (de module bouwt op Java~8) en \texttt{h2} 2.x breekt de
+          OpenMRS test-context; \texttt{h2} draait bovendien alleen in
+          \texttt{test}-scope.
+          \emph{Restrisico:} beperkt (geen productie-impact voor \texttt{h2}).
+          \emph{Aanbeveling:} meenemen in het Java~17-/Spring~6-platformtraject.
+    \item \textbf{TLS-afdwinging op deployment-niveau (TM-I4) --- A.8.24.}
+          \emph{Reden:} de module dwingt zelf geen TLS af; afdwinging hoort op
+          reverse proxy / servlet-container, buiten de module-grens.
+          \emph{Restrisico:} HTTP Basic-Auth-credentials reizen als plaintext
+          zonder gegarandeerde TLS.
+          \emph{Aanbeveling:} TLS afdwingen en documenteren op de
+          deployment-laag; daarna de A.8.24-rij naar \emph{geïmplementeerd}.
+    \item \textbf{Restrisico's buiten de module-scope.}
+          \emph{Reden:} log-injectie in OpenMRS Core
+          (\texttt{HibernateContextDAO}) en versie-disclosure van Tomcat via
+          \texttt{robots.txt}/\texttt{sitemap.xml} liggen in upstream-code resp.\
+          de serverconfiguratie, niet in deze module.
+          \emph{Restrisico:} laag tot midden (reconnaissance-enabler).
+          \emph{Aanbeveling:} upstream-issue indienen resp.\ serverconfiguratie
+          aanpassen bij de deployende organisatie.
+    \item \textbf{Productieschakeling naar het DML-only database-account ---
+          A.8.2/A.8.3.}
+          \emph{Reden:} het mechanisme is aanwezig en lokaal geverifieerd, maar
+          de runtime-switch kon in deze auditomgeving niet
+          container-geverifieerd worden (geen Docker-daemon beschikbaar).
+          \emph{Restrisico:} laag.
+          \emph{Aanbeveling:} verifiëren in een omgeving met Docker-daemon.
+\end{itemize}
 
 \newpage
 
@@ -1775,16 +1906,17 @@ Basic-Auth in de \texttt{AuthorizationFilter}, niet via DIGEST --- de exploitvoo
 \chapter{Traceability Matrix}
 \label{app:traceability}
 
-Deze bijlage koppelt \textbf{veertien} NEN-7510:2024-2 controls aan een
+Deze bijlage koppelt \textbf{vijftien} NEN-7510:2024-2 controls aan een
 traceerbaar bewijsartefact (repository-instelling, CI-workflow, commit of
-scan-output), conform de Sprint-4-vereiste van minimaal drie controls. De
-eerste zes rijen dekken de controls uit het Normenkader
-(\S\ref{sec:normenkader}) die als \emph{geïmplementeerd} zijn getraceerd;
-\textbf{A.8.9} en \textbf{A.8.24} --- de resterende twee controls uit het
-Normenkader --- zijn daar als \emph{gap} getraceerd (nog niet geïmplementeerd,
-zie B-001 resp.\ de gap-analyse \S3.4 in \texttt{01.md}). De overige rijen
-(A.8.29 en de Sprint-3-hardeningmaatregelen) zijn aanvullende controls die
-buiten het oorspronkelijke Normenkader om zijn geïmplementeerd en getest. De
+scan-output), conform de Sprint-4-vereiste van minimaal drie controls. De rijen
+voor het Normenkader (\S\ref{sec:normenkader}) zijn na de tijdens deze audit
+doorgevoerde mitigaties als \emph{geïmplementeerd} getraceerd --- inclusief
+\textbf{A.8.5} (rate-limiting/sessie-rotatie, code-niveau) en \textbf{A.8.9}
+(settings.form-autorisatie, commit \texttt{07612ca}). Alleen \textbf{A.8.24}
+blijft als \emph{gap} getraceerd: TLS-afdwinging hoort op deployment-niveau en
+valt buiten de module-grens. De overige rijen (A.8.29 en de
+Sprint-3-hardeningmaatregelen) zijn aanvullende controls die buiten het
+oorspronkelijke Normenkader om zijn geïmplementeerd en getest. De
 onderhouden bronversie van deze matrix staat in de repository:
 \texttt{docs/security/traceability-matrix.md}. Sectieverwijzingen
 (\S) verwijzen naar de onderliggende documentatie in \texttt{docs/security/}.
@@ -1822,13 +1954,26 @@ prod}), naast een protected-branch-policy. &
 Geïmplementeerd \\
 \addlinespace
 
-\textbf{A.8.5} Authenticatie &
+\textbf{A.8.5} Authenticatie (CI/CD) &
 Org-brede 2FA-verplichting voor alle leden; secret scanning met push
 protection op de repository. &
 \texttt{gh api orgs/GrannyGuard} toont
 \texttt{two\_factor\_requirement\_enabled: true} (geverifieerd 2026-06-10);
 0 open secret-scanning-alerts; \texttt{02.md} \S4.2--4.3. &
 Geïmplementeerd \\
+\addlinespace
+
+\textbf{A.8.5} Authenticatie (code) &
+Brute-force-bescherming en sessiehardening in \texttt{AuthorizationFilter}:
+in-memory IP-rate-limiter (max 10 mislukte pogingen/60s $\to$ HTTP 429),
+sessie-rotatie na \texttt{Context.authenticate()} tegen session fixation, en
+privilege-check + uniforme \texttt{AUTH\_FAILURE}-logging tegen
+gebruikersenumeratie. &
+Commits \texttt{59bf421} (rate-limiter), \texttt{9c2fb64} (sessie-rotatie),
+\texttt{ed6f3da} (enumeratie); tests \texttt{AuthorizationFilterRateLimitTest}
+(6) + \texttt{AuthorizationFilterSessionFixationTest} (5); pentest-hervalidatie
+\texttt{05-penetration-tests} \S18. &
+Geïmplementeerd + hertest \\
 \addlinespace
 
 \textbf{A.8.8} Beheer van technische kwetsbaarheden &
@@ -1878,13 +2023,15 @@ GitHub Ruleset \emph{main protection}
 Geïmplementeerd \\
 \addlinespace
 
-\textbf{A.8.9} Configuratiebeheer --- \emph{gap} &
-\texttt{settings.form/search} retourneert alle global properties (incl.\
-\texttt{REST\_ALLOWED\_IPS}) zonder authenticatie --- B-001/SQ7, risicoscore
-20, hoogste van de analyse. Nog niet gemitigeerd. &
-\texttt{01-security-audit/01.md} \S3.5 (gap-analyse); B-001
-(\S\ref{sec:b001}); \texttt{SettingsFormController.java:50--63}. &
-\rood{Open --- prio.\ 1} \\
+\textbf{A.8.9} Configuratiebeheer &
+\texttt{settings.form/search} retourneerde alle global properties (incl.\
+\texttt{REST\_ALLOWED\_IPS}) zonder authenticatie --- SQ7, risicoscore 20,
+hoogste van de analyse. Nu afgeschermd met \texttt{Context.isAuthenticated()}
++ \emph{Manage RESTWS}-privilege vóór uitlezing. &
+Commit \texttt{07612ca}; test \texttt{SettingsFormControllerTest} (unauth
+geweigerd / geautoriseerde admin toegestaan);
+\texttt{01-security-audit/01.md} \S3.5. &
+Geïmplementeerd + getest \\
 \addlinespace
 
 \textbf{A.8.24} Cryptografie --- \emph{gap} &
@@ -1900,10 +2047,12 @@ zijn wel beschermd (secret scanning, zie A.8.5). &
 Pentest op VirtualBox-testomgeving (Kali Linux 2024, OpenMRS~2.8.7, OWASP WSTG v4.2):
 ZAP-scan + handmatige tests; 9 bevindingen (F-01 t/m F-09), 1~kritisch (geen
 rate limiting, credentials achterhaald in 6~pogingen), 4~hoog, 2~medium, 2~laag;
-gekoppeld aan SQ*/TM-*-risico's en B-001 t/m B-005. Hervalidatie deels in uitvoering. &
-Bijlage~\ref{app:pentest}; \texttt{05-penetration-tests/PentestReport-OpenMRS.md} (F1--F9);
-\texttt{zap-report.html}. &
-\amber{Gedeeltelijk geverifieerd} \\
+gekoppeld aan SQ*/TM-*-risico's en B-001 t/m B-006. \textbf{Hervalidatie
+(post-mitigatie) afgerond} (Kali 2026-06-16/17): F-01 t/m F-09 hertest,
+mitigaties bevestigd. &
+Bijlage~\ref{app:pentest}; \texttt{05-penetration-tests/PentestReport-OpenMRS.md}
+(F1--F9 + \S18 Hervalidatie); \texttt{zap-report.html}. &
+Geïmplementeerd en geverifieerd \\
 \addlinespace
 
 \textbf{A.8.2 / A.8.3} Least-privilege database &
@@ -1938,10 +2087,13 @@ Geïmplementeerd (workflow) \\
 
 \textbf{A.8.28} Veilig coderen &
 Server-side validatie i.p.v.\ client-side: Swagger Host-allow-list +
-scheme-sanitisatie (SQ9) en centrale CWE-117 log-injectie-neutralisatie
+scheme-sanitisatie (SQ9), reflected-XSS output-encoding
+(\texttt{HtmlUtils.htmlEscape()} in \texttt{SwaggerDocController.debug()}, SQ8)
+en centrale CWE-117 log-injectie-neutralisatie
 (\texttt{RestUtil.sanitizeForLog()}, CQL1). &
-\texttt{RestUtil.java}; tests \texttt{SwaggerHardeningRestUtilTest} (8/8) +
-\texttt{RestUtilTest}; CWE-117-fix commit \texttt{831dafb}. &
+\texttt{RestUtil.java}, \texttt{SwaggerDocController.java}; tests
+\texttt{SwaggerHardeningRestUtilTest} (8/8) + \texttt{RestUtilTest}; CWE-79-fix
+commit \texttt{e3f3c7d}, CWE-117-fix commit \texttt{831dafb}. &
 Geïmplementeerd en getest \\
 \addlinespace
 
@@ -1968,19 +2120,16 @@ beschikbaar).
           naast de \texttt{gh api}-output
           (GitHub Environment-instellingen en org-2FA-policy).
     \item A.8.8 aanvullen met PR en hernieuwde scanresultaten zodra de twee
-          quick-win-patches (\texttt{snakeyaml} naar 2.0,
-          \texttt{spring-web} naar 5.3.34) zijn doorgevoerd.
-    \item A.8.9 / A.8.24 (\emph{gap}-rijen) bijwerken naar
-          ``Geïmplementeerd'' zodra B-001 (settings.form-autorisatie) resp.\
-          de TLS-afdwinging zijn gerealiseerd.
-    \item Voor A.8.20/A.8.26 (SQ9): de open SQ8-restpunt (CodeQL-herscan
-          alert \#1 op \texttt{state: fixed}) als bewijsartefact toevoegen
-          zodra de eerstvolgende CodeQL-run op \texttt{main} is afgerond.
+          quick-win-patches (\texttt{snakeyaml} naar 2.x,
+          \texttt{spring-web} naar 5.3.34) zijn doorgevoerd (de
+          \texttt{netty-handler}- en \texttt{log4j}-pins zijn reeds gerealiseerd,
+          PR~\#105).
+    \item A.8.24 (\emph{gap}-rij) bijwerken naar ``Geïmplementeerd'' zodra de
+          TLS-afdwinging op deployment-niveau is gerealiseerd. \emph{(A.8.9 is
+          inmiddels gemitigeerd, commit \texttt{07612ca}.)}
     \item Voor A.8.2/A.8.3 (least-privilege database): de prod-runtime-switch
           ($^\ast$) container-verifiëren zodra een omgeving met
           Docker-daemon beschikbaar is.
-    \item Voor A.8.29: hervalidatie-pentest na mitigaties toevoegen als
-          aanvullend bewijsartefact zodra de hertest is uitgevoerd.
 \end{itemize}
 
 \chapter{Penetratietest Samenvatting}
@@ -2039,23 +2188,23 @@ netwerkaanvallen, social engineering.
 \bottomrule\endlastfoot
 
 F-01 & Geen rate limiting op authenticatie &
-    CWE-307 & \rood{Kritiek} & A.8.5 & \rood{Open} \\
+    CWE-307 & \rood{Kritiek} & A.8.5 & \groen{Gemitigeerd} \\
 F-02 & Gebruikersenumeratie via `/user` API &
-    CWE-204 & \amber{Hoog} & A.8.5 & \rood{Open} \\
+    CWE-204 & \amber{Hoog} & A.8.5 & \groen{Gemitigeerd} \\
 F-03 & Session fixation --- JSESSIONID niet geroteerd na login &
-    CWE-384 & \amber{Hoog} & A.8.3 & \rood{Open} \\
+    CWE-384 & \amber{Hoog} & A.8.3 & \groen{Gemitigeerd} \\
 F-04 & Stack trace disclosure in foutrespons &
-    CWE-209 & \amber{Hoog} & A.8.15 & \rood{Open} \\
+    CWE-209 & \amber{Hoog} & A.8.15 & \groen{Gemitigeerd} \\
 F-05 & Versie-informatie via \texttt{/systeminformation} &
-    CWE-200 & \amber{Hoog} & A.8.15 & \rood{Open} \\
+    CWE-200 & \amber{Hoog} & A.8.15 & \groen{Gemitigeerd} \\
 F-06 & Integer overflow in pagineringsparameter &
-    CWE-190 & \geel{Middel} & A.8.28 & \rood{Open} \\
+    CWE-190 & \geel{Middel} & A.8.28 & \groen{Gemitigeerd} \\
 F-07 & Log injection via Basic Auth-gebruikersnaam &
     CWE-117 & \geel{Middel} & A.8.15 & \groen{Gemitigeerd} \\
 F-08 & Ontbrekende security headers &
-    CWE-693 & Laag & A.8.23 & \rood{Open} \\
+    CWE-693 & Laag & A.8.23 & \groen{Gemitigeerd} \\
 F-09 & Cookie zonder SameSite-attribuut &
-    CWE-1275 & Laag & A.8.23 & \rood{Open} \\
+    CWE-1275 & Laag & A.8.23 & \groen{Gemitigeerd} \\
 
 \end{longtable}
 }
@@ -2078,11 +2227,33 @@ vertraging bij herhaalde fouten, en alerting op brute force-patronen.
 
 \section*{I.4\quad Mitigatiestatus}
 
-Van de 9 bevindingen is F-07 (log injection) gemitigeerd via commit \texttt{831dafb}
-(CodeQL 9 \textrightarrow{} 0 alerts, zie Bijlage~\ref{app:codeql} en
-bevinding B-006 in Hoofdstuk~\ref{ch:bevindingen}). De overige 8 bevindingen zijn open. De meest urgent aan te
-pakken zijn F-01 (kritiek, B-001), F-03 (sessie-fixatie, B-002) en F-04
-(stack traces, B-005), conform de geprioriteerde aanbevelingen in
-Hoofdstuk~\ref{ch:conclusie}.
+Alle 9 bevindingen (F-01 t/m F-09) zijn gemitigeerd en op de testomgeving
+(Kali, 2026-06-16/17) hertest. Per finding de fix-commit:
+
+{\small
+\begin{tabular}{@{}l l l@{}}
+\toprule
+\textbf{Finding} & \textbf{Commit} & \textbf{Hertest (Kali)} \\
+\midrule
+F-01 (rate limiting, B-001)      & \texttt{59bf421} & HTTP 429 op 11e poging \\
+F-02 (gebruikersenumeratie, B-003) & \texttt{ed6f3da} & privilege-blokkade + uniforme logs \\
+F-03 (session fixation, B-002)   & \texttt{9c2fb64} & JSESSIONID geroteerd na login \\
+F-04 (stack trace, B-005)        & \texttt{9c30cdd} & leeg \texttt{detail}-veld + HTTP 403 \\
+F-05 (versie-informatie)         & \texttt{ef30066} & DB-credentials afwezig, 401 ongeauth. \\
+F-06 (integer overflow)          & \texttt{d185b31} & HTTP 500 i.p.v.\ 200 bij overflow \\
+F-07 (log injection, B-006)      & \texttt{831dafb} & newlines gestript (CodeQL 9 \textrightarrow{} 0) \\
+F-08 (security headers)          & \texttt{077d2b1} & alle 6 headers aanwezig \\
+F-09 (cookie SameSite)           & \texttt{2d496a6} & \texttt{SameSite=Strict} op JSESSIONID \\
+\bottomrule
+\end{tabular}
+}
+
+\vspace{0.4em}
+\noindent Twee restrisico's blijven \emph{buiten de module-scope} bestaan en zijn
+als zodanig gedocumenteerd (zie \S\ref{sec:niet-gerealiseerd}): log-injectie in
+OpenMRS Core (\texttt{HibernateContextDAO}) en versie-disclosure van Tomcat via
+\texttt{robots.txt}/\texttt{sitemap.xml}. Voor F-07 is de mitigatie binnen de
+module (de \texttt{AuthorizationFilter}) dus volledig; het OpenMRS-Core-deel
+vereist een upstream-fix.
 
 \end{document}
