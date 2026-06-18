@@ -104,7 +104,7 @@ voortkomen. **Geen van deze endpoints loopt door `AuthorizationFilter`.**
 
 | Endpoint | Methode | Auth? | Bevinding | Risicoscore |
 |---|---|:---:|---|:---:|
-| `GET /module/webservices/rest/apiDocs/debug?tag=` | GET | ❌ Geen | **SQ8** — reflected XSS, `tag`-parameter ongesanitized in HTML; bewust niet gemitigeerd op code-niveau (endpoint retourneert 404 bij uitgeschakelde Swagger) | 🟠 **12** |
+| `GET /module/webservices/rest/apiDocs/debug?tag=` | GET | ❌ Geen | **SQ8** — reflected XSS, `tag`-parameter; gemitigeerd in Sprint 4 via `HtmlUtils.htmlEscape()` (commit `e3f3c7d`, CodeQL #1 `fixed`), met configuratie-gating als defense-in-depth | 🟠 **12** |
 | `GET /module/webservices/rest/apiDocs` | GET | ❌ Geen | Swagger-UI HTML-pagina; bevestigt dat de hele `/apiDocs`-boom buiten TB1 valt; uitschakelbaar via `enableSwaggerDocs` | — |
 | `GET /module/webservices/rest/swagger.json` | GET | ❌ Geen | **SQ9** — Host-/Scheme-headers ongevalideerd in gepubliceerde OpenAPI-spec | 🟠 **9** |
 
@@ -112,7 +112,8 @@ voortkomen. **Geen van deze endpoints loopt door `AuthorizationFilter`.**
 > (`/apiDocs[/debug]`, `/swagger.json`) zijn nu uitschakelbaar via
 > `webservices.rest.enableSwaggerDocs` (hardening checklist §1) en **SQ9** (Host-/Scheme-
 > reflectie) is gemitigeerd met een Host-allow-list + scheme-sanitisatie (§10).
-> **SQ8** (XSS) blijft open op code-niveau, bewust niet gemitigeerd; zie §3.7.4.
+> **SQ8** (XSS) is in Sprint 4 op code-niveau gemitigeerd via output-encoding
+> (`HtmlUtils.htmlEscape()`, commit `e3f3c7d`); zie §3.7.4.
 
 **Implicit trust (categorie C):** de aanwezigheid van `AuthorizationFilter` op
 `/ws/rest/*` wekt de indruk dat *"alle REST-endpoints van deze module"*
@@ -177,7 +178,7 @@ door modules van derden worden geregistreerd). Dit betekent:
 | Ingang | Categorie | Risico | Vervolgactie (§5.1 in hoofddocument) |
 |---|---|---|---|
 | `GET /ws/rest/v1/session/diag` | B | 🔴 15 (gap A.8.3) | Prioriteit 3 — beveiligen of verwijderen |
-| `GET /module/webservices/rest/apiDocs/debug` | C | 🟠 12 (SQ8) | ❌ Open — bewust niet gemitigeerd op code-niveau; endpoint uitschakelbaar via configuratie (§1 checklist) |
+| `GET /module/webservices/rest/apiDocs/debug` | C | 🟠 12 (SQ8) | ✅ Gemitigeerd — output-encoding `HtmlUtils.htmlEscape()` (commit `e3f3c7d`); endpoint bovendien uitschakelbaar via configuratie (§1 checklist) |
 | `GET /module/webservices/rest/swagger.json` | C | 🟠 9 (SQ9) | ✅ Gemitigeerd — Host-allow-list + scheme-sanitisatie (§10 checklist) |
 | `/ws/rest/v1/cleardbcache`, `/searchindexupdate`, `/loggedinusers`, `/implementationid`, `/hl7` (POST) | B | 🟠 Midden (TM-E3) | Onderdeel van prioriteit 10 — declaratieve access control |
 
@@ -228,5 +229,6 @@ gekoppeld aan de [OWASP Top 10:2021](https://owasp.org/Top10/) (`Ax:2021`).
 geraakte cluster is **API8/API9** (Security Misconfiguration + Improper Inventory
 Management): precies de categorie C-endpoints buiten `AuthorizationFilter` (TB6). De
 mitigaties (Swagger-gating + Host-header-allow-list) verlagen API9 van "open" naar
-"gemitigeerd". API8 (SQ8, XSS) blijft open op code-niveau; de productie-blootstelling
-is afgedekt door configuratie-gating (Swagger uitgeschakeld).
+"gemitigeerd". API8 (SQ8, XSS) is in Sprint 4 op code-niveau gemitigeerd via
+output-encoding (`HtmlUtils.htmlEscape()`); de configuratie-gating (Swagger
+uitschakelbaar) blijft als defense-in-depth bestaan.

@@ -222,7 +222,7 @@ volgt Hoofdstuk~\ref{ch:bevindingen}.
     \addlinespace
     B-004 & Een gemanipuleerde link kon kwaadaardige code laten uitvoeren in de
             browser van een ingelogde beheerder (XSS). & \amber{12 --- Midden} &
-            \groen{Gemitigeerd} \\
+            \groen{Gemitigeerd \& getest} \\
     \addlinespace
     B-005 & Interne foutmeldingen toonden technische systeemdetails aan de
             buitenwereld, wat vervolgaanvallen vergemakkelijkt. &
@@ -444,7 +444,7 @@ risicobeoordelingsaanpak van ISO/IEC 27005:
     \item \textbf{Threat modelling}: de module is beschreven in C4-diagrammen (context,
           container en component). Op basis daarvan is een STRIDE-analyse uitgevoerd en
           zijn trust boundaries vastgesteld. Gevonden threats zijn gemapt op de
-          OWASP API Security Top 10:2025.
+          OWASP API Security Top 10:2023.
     \item \textbf{Verificatie}: bevindingen zijn geverifieerd via SAST (CodeQL),
           SCA (Dependabot, OSV-Scanner, Snyk), logging-tests en een attack surface mapping.
           Gemitigeerde kwetsbaarheden zijn herbeoordeeld met dezelfde tooling.
@@ -494,7 +494,7 @@ geweest tot een productiesysteem met echte patiëntdata.
     Methodiek & STRIDE &
         Systematische dreigingsanalyse per C4-component; 15 threats
         geïdentificeerd. \\
-    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2025 &
+    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2023 &
         Referentiekader voor controls, dreigingsclassificatie en
         auditcriteria. \\
     \midrule
@@ -526,7 +526,7 @@ kroonjuwelen en de STRIDE-dreigingsanalyse samen tot één gescoorde risicomatri
 control, de C4-diagrammen, de STRIDE-tabel met vijftien threats en de twintig
 daaruit gescoorde risico's) is vastgelegd in
 \texttt{docs/security/01-security-audit/01.md}; dit rapport vult die matrix aan
-met drie empirisch bevestigde pentest-risico's tot drieëntwintig
+met drie empirisch bevestigde pentest-risico's tot tweeëntwintig
 (\S\ref{sec:risicomatrix}).
 
 \section{Risicomatrix}
@@ -817,7 +817,7 @@ retourneren; de auth-logregels zijn identiek ongeacht of het account bestaat. Dr
 nieuwe unit tests slagen; \texttt{mvn clean install} groen. Zie
 \texttt{06.md} \S7 en Bijlage~\ref{app:pentest} \S I.4.
 
-\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2): gemitigeerd}
+\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8): gemitigeerd}
 \label{sec:b004}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
@@ -851,16 +851,22 @@ Als defense-in-depth is de hele \texttt{/apiDocs}-boom bovendien uitschakelbaar
 via de global property \texttt{webservices.rest.enableSwaggerDocs}: in productie
 (\texttt{false}) geeft het endpoint HTTP 404 en is de vector volledig weg.
 
-\textbf{Validatie (voor/na).} Payload \texttt{?tag=<script>alert(1)</script>}
-wordt nu gerenderd als platte tekst (\texttt{\&lt;script\&gt;...}) i.p.v.
-uitgevoerd; \texttt{mvn clean install} groen, geen regressie. Zie
-\texttt{06-mitigatie-en-validatie/06.md} \S2 voor het volledige voor/na-overzicht.
-
-\textbf{Validatie (herscan).} De CodeQL-herscan op \texttt{main} (run
-\texttt{27471405779}, commit \texttt{b5627faa} via PR~\#96, 2026-06-13) zet
-\texttt{java/xss} alert~\#1 op \texttt{state: fixed}; net als bij B-005 is de
-detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus daarmee kwantitatief en
-reproduceerbaar afgesloten.
+\textbf{Validatie (statisch + unit test).} SQ8 is --- anders dan de
+pentestbevindingen B-001--B-003/B-005 --- \emph{niet via een dynamische pentest}
+gevalideerd: het \texttt{/apiDocs/debug}-endpoint staat in de testomgeving uit
+(\texttt{enableSwaggerDocs=false}) en geeft HTTP~404, waardoor een live
+curl-/browser-hertest niet mogelijk is. De validatie steunt op twee statische,
+reproduceerbare bronnen. \emph{(1)}~De automatische CodeQL-herscan op \texttt{main}
+(run \texttt{27471405779}, commit \texttt{b5627faa} via PR~\#96, 2026-06-13) zet
+\texttt{java/xss} alert~\#1 op \texttt{state: fixed}, omdat \texttt{HtmlUtils.htmlEscape}
+de door CodeQL herkende taint-barrier is. \emph{(2)}~Een dedicated unit test
+\texttt{SwaggerDocControllerTest} roept \texttt{debug()} rechtstreeks aan (zonder
+HTTP-laag, dus onafhankelijk van de endpoint-404) en bewijst deterministisch dat
+\texttt{<script>alert(1)</script>} als \texttt{\&lt;script\&gt;} wordt geëncodeerd én dat
+de gating bij uitgeschakelde docs HTTP~404 zonder body geeft --- \textbf{2 tests groen}
+(\texttt{Tests run: 2, Failures: 0, Errors: 0}). \texttt{mvn clean install} groen, geen
+regressie. Resterende beperking: geen dynamische pentest-hertest (endpoint 404 in de
+testomgeving).
 
 \subsection{B-005 --- Stack trace disclosure in foutrespons (PT3 / F-04)}
 \label{sec:b005}
@@ -869,7 +875,7 @@ reproduceerbaar afgesloten.
 \textbf{Risicoscore} & \amber{12 --- Midden}$^\triangle$ (Kans 4 $\times$ Impact 3) --- onacceptabel (enabler voor CVE-targeting) \\
 \textbf{NEN-7510}    & A.8.15 Logging (tevens A.8.8 Kwetsbaarheden) \\
 \textbf{Kroonjuwelen}& KJ6 --- indirect KJ1, KJ2 (reconnaissance-enabler) \\
-\textbf{OWASP}       & A09:2025 Security Logging and Alerting Failures (CWE-209) \\
+\textbf{OWASP}       & A09:2021 Security Logging and Monitoring Failures (CWE-209) \\
 \textbf{Status}      & \groen{Gemitigeerd en hertest --- commit \texttt{9c30cdd}} \\
 \end{tabular}
 
@@ -1628,14 +1634,14 @@ bijbehorende review-commentaren en status checks --- is in te zien op:
 \label{app:risicomatrix}
 
 Deze bijlage bevat de \emph{volledige} risico-evaluatie waarvan Hoofdstuk~\ref{ch:bevindingen}
-alleen de top (score $\geq 12$) toonde: alle drieëntwintig gescoorde risico's
+alleen de top (score $\geq 12$) toonde: alle tweeëntwintig gescoorde risico's
 (\S\ref{app:matrix-full}) plus de twee bow-tie-analyses voor de best exploiteerbare
 aanvalsketens SQ1 en CD1 (\S\ref{app:bowtie-sq1}--\ref{app:bowtie-cd1}). De
 score-grid en de classificatiedrempels (Kans $\times$ Impact, 1--5) staan in
 \S\ref{sec:risicomatrix}. Bronversie: \texttt{01-security-audit/01.md} \S4.2--4.3
 en \texttt{02-secure-pipelines/02.md} \S7.2.
 
-\section*{E.1\quad Volledige risicomatrix (23 risico's)}
+\section*{E.1\quad Volledige risicomatrix (22 risico's)}
 \label{app:matrix-full}
 
 De risico's komen uit vijf bronnen: \textbf{SQ} (SonarQube), \textbf{CD} (CI/CD),
