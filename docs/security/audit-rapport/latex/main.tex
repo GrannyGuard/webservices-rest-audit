@@ -524,10 +524,10 @@ De risicoanalyse brengt de gevonden gaps, de CIA/BIV-classificatie van de
 kroonjuwelen en de STRIDE-dreigingsanalyse samen tot één gescoorde risicomatrix
 (\S\ref{sec:risicomatrix}). Daaruit volgen de zes uitgewerkte bevindingen
 (\S\ref{sec:bevindingen}). De volledige analyse (de zeven gap-tabellen per
-control, de C4-diagrammen, de STRIDE-tabel met vijftien threats en de twintig
+control, de C4-diagrammen, de STRIDE-tabel met achttien threats en de twintig
 daaruit gescoorde risico's) is vastgelegd in
 \texttt{docs/security/01-security-audit/01.md}; dit rapport vult die matrix aan
-met drie empirisch bevestigde pentest-risico's tot tweeëntwintig
+met drie empirisch bevestigde pentest-risico's tot drieëntwintig
 (\S\ref{sec:risicomatrix}).
 
 \section{Risicomatrix}
@@ -569,13 +569,14 @@ Grenswaarden: $\geq 9$ niet acceptabel
 \end{minipage}
 
 \vspace{1em}
-De analyse leverde \textbf{tweeëntwintig gescoorde risico's} op uit vijf bronnen:
+De analyse leverde \textbf{drieëntwintig gescoorde risico's} op uit vijf bronnen:
 SonarQube (SQ), CI/CD (CD), CodeQL (CQL), het threat model (AT) en de
-penetratietest (PT). Twintig daarvan vallen in Midden of hoger; dertien zijn
-\emph{onacceptabel} (zes maal \rood{Hoog} plus zeven Midden-risico's die
+penetratietest (PT). Eenentwintig daarvan vallen in Midden of hoger; veertien zijn
+\emph{onacceptabel} (zeven maal \rood{Hoog} plus zeven Midden-risico's die
 KJ1/KJ2/KJ3 met score $\geq 10$ raken). De volgende tabel toont de top van de
-matrix (score $\geq 12$); de volledige tweeëntwintig staan in \texttt{01.md} \S4.2
-en de pentestbevindingen in Bijlage~\ref{app:pentest}.
+matrix (score $\geq 12$); de volledige drieëntwintig staan in
+Bijlage~\ref{app:risicomatrix} (de twintig niet-pentest-risico's ook in
+\texttt{01.md} \S4.2; de pentestbevindingen in Bijlage~\ref{app:pentest}).
 
 {\small
 \begin{longtable}{@{}
@@ -600,6 +601,8 @@ en de pentestbevindingen in Bijlage~\ref{app:pentest}.
 \bottomrule
 \endlastfoot
 \textbf{PT1} & Geen rate-limiting op authenticatie-endpoints   & \rood{20} & \rood{Hoog} & KJ3 $\to$ KJ1, KJ2 \\
+\addlinespace
+\textbf{SQ7} & Ongeauth.\ uitlezing global properties (\texttt{/settings.form/search}) & \rood{20} & \rood{Hoog} & KJ7, KJ4 \\
 \addlinespace
 \textbf{SQ2} & Onvolledige switch-statements (zoeklogica)      & \rood{16} & \rood{Hoog} & KJ2 \\
 \addlinespace
@@ -634,8 +637,10 @@ geclassificeerd als \emph{onacceptabel}.\normalsize
 \vspace{0.6em}
 Voor twee aanvalsketens is een \textbf{bow-tie-analyse} uitgewerkt
 (Bijlage~\ref{app:risicomatrix}): \texttt{SQ1} (sessie-overname, score~15)
-en \texttt{CD1} (supply chain, score~15). Eén risico scoort hoger dan de bow-tie-onderwerpen:
-\texttt{PT1} (geen rate-limiting, score~20), empirisch bevestigd door de penetratietest
+en \texttt{CD1} (supply chain, score~15). Twee risico's scoren hoger dan de bow-tie-onderwerpen:
+\texttt{SQ7} (ongeauthenticeerde uitlezing van alle global properties, score~20; gemitigeerd via
+auth + \texttt{Manage RESTWS}-privilege, commit \texttt{07612ca}) en \texttt{PT1} (geen
+rate-limiting, score~20), empirisch bevestigd door de penetratietest
 en uitgewerkt als bevinding B-001; de bijbehorende barrière (rate-limiting) maakt bovendien
 deel uit van de \texttt{SQ1}-bow-tie, omdat ze zowel sessie-ID- als credential-brute-force
 tegenhoudt. De bow-ties \texttt{SQ1} en \texttt{CD1} zijn gekozen als de twee best
@@ -1635,14 +1640,14 @@ bijbehorende review-commentaren en status checks --- is in te zien op:
 \label{app:risicomatrix}
 
 Deze bijlage bevat de \emph{volledige} risico-evaluatie waarvan Hoofdstuk~\ref{ch:bevindingen}
-alleen de top (score $\geq 12$) toonde: alle tweeëntwintig gescoorde risico's
+alleen de top (score $\geq 12$) toonde: alle drieëntwintig gescoorde risico's
 (\S\ref{app:matrix-full}) plus de twee bow-tie-analyses voor de best exploiteerbare
 aanvalsketens SQ1 en CD1 (\S\ref{app:bowtie-sq1}--\ref{app:bowtie-cd1}). De
 score-grid en de classificatiedrempels (Kans $\times$ Impact, 1--5) staan in
 \S\ref{sec:risicomatrix}. Bronversie: \texttt{01-security-audit/01.md} \S4.2--4.3
 en \texttt{02-secure-pipelines/02.md} \S7.2.
 
-\section*{E.1\quad Volledige risicomatrix (22 risico's)}
+\section*{E.1\quad Volledige risicomatrix (23 risico's)}
 \label{app:matrix-full}
 
 De risico's komen uit vijf bronnen: \textbf{SQ} (SonarQube), \textbf{CD} (CI/CD),
@@ -1680,6 +1685,7 @@ Score $=$ Kans $\times$ Impact.
 \textbf{SQ4}  & Niet-serializeerbaar validatie-veld                 & 3 & 3 & \amber{9}             & \amber{Midden}     & KJ5 \\
 \textbf{SQ5}  & Extreem hoge cognitieve complexiteit                & 5 & 2 & \amber{10}            & \amber{Midden}     & KJ5 \\
 \textbf{SQ6}  & Lege methoden zonder verklaring                     & 4 & 2 & \geel{8}              & \geel{Laag-Mid.}   & --- \\
+\textbf{SQ7}  & Ongeauth.\ uitlezing global properties (\texttt{/settings.form/search}) & 4 & 5 & \rood{20} & \rood{Hoog} & KJ7, KJ4 \\
 \textbf{SQ8}  & Reflected XSS in Swagger debug-endpoint             & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ3 \\
 \textbf{SQ9}  & Host-header injectie in Swagger-spec                & 3 & 3 & \amber{9}             & \amber{Midden}     & KJ3 \\
 \textbf{CD1}  & Supply chain attack (dependency)                    & 3 & 5 & \rood{15}             & \rood{Hoog}        & KJ7, KJ1, KJ2 \\
@@ -1702,9 +1708,9 @@ Score $=$ Kans $\times$ Impact.
 \noindent\small $^\triangle$ Midden-score (9--12) die de vertrouwelijkheid of
 integriteit van KJ1/KJ2/KJ3 raakt met score $\geq 10$ $\to$ conform de
 risicobereidheid (\S\ref{sec:risicomatrix}) geclassificeerd als \emph{onacceptabel}.
-PT1 overschrijdt die drempel al op eigen score (20). Van de tweeëntwintig
-risico's vallen er twintig in Midden of hoger; dertien zijn onacceptabel
-(zes \rood{Hoog} plus zeven $^\triangle$-gemarkeerde Midden-risico's).\normalsize
+PT1 en SQ7 overschrijden die drempel al op eigen score (20). Van de drieëntwintig
+risico's vallen er eenentwintig in Midden of hoger; veertien zijn onacceptabel
+(zeven \rood{Hoog} plus zeven $^\triangle$-gemarkeerde Midden-risico's).\normalsize
 
 % ── Herbruikbare opmaak voor de bow-tie-tabellen ─────────────────────────────
 \newcommand{\topevent}[1]{%
