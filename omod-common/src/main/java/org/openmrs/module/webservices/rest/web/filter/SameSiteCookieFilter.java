@@ -34,12 +34,16 @@ import java.io.IOException;
  */
 public class SameSiteCookieFilter implements Filter {
 
+	private static final String SET_COOKIE = "Set-Cookie";
+
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
+		// Stateless filter: no configuration or resources to initialise.
 	}
 
 	@Override
 	public void destroy() {
+		// Stateless filter: no resources to release.
 	}
 
 	@Override
@@ -57,19 +61,19 @@ public class SameSiteCookieFilter implements Filter {
 
 		@Override
 		public void addHeader(String name, String value) {
-			super.addHeader(name, "Set-Cookie".equalsIgnoreCase(name) ? withSameSite(value) : value);
+			super.addHeader(name, SET_COOKIE.equalsIgnoreCase(name) ? withSameSite(value) : value);
 		}
 
 		@Override
 		public void setHeader(String name, String value) {
-			super.setHeader(name, "Set-Cookie".equalsIgnoreCase(name) ? withSameSite(value) : value);
+			super.setHeader(name, SET_COOKIE.equalsIgnoreCase(name) ? withSameSite(value) : value);
 		}
 
 		@Override
 		public void addCookie(Cookie cookie) {
 			// Cookie API in Servlet 3.1 has no SameSite attribute — emit a raw Set-Cookie
 			// header instead so SameSite=Strict and Secure are included in the response.
-			super.addHeader("Set-Cookie", buildCookieHeader(cookie));
+			super.addHeader(SET_COOKIE, buildCookieHeader(cookie));
 		}
 
 		static String withSameSite(String setCookieValue) {
