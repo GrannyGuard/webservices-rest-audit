@@ -20,6 +20,7 @@
 \usepackage{array}
 \usepackage{multirow}
 \usepackage{tabularx}
+\usepackage[htt]{hyphenat}  % sta woordafbreking toe in \texttt{} (lange klasse-namen in traceability matrix)
 
 % ── Kleur & code ─────────────────────────────────────────────────────────────
 \usepackage{xcolor}
@@ -1915,9 +1916,9 @@ onderhouden bronversie van deze matrix staat in de repository:
 
 {\small
 \begin{longtable}{@{}
-    >{\raggedright\arraybackslash}p{2.3cm}
-    >{\raggedright\arraybackslash}p{4.9cm}
-    >{\raggedright\arraybackslash}p{5.4cm}
+    >{\raggedright\arraybackslash}p{2.0cm}
+    >{\raggedright\arraybackslash}p{4.3cm}
+    >{\raggedright\arraybackslash}p{6.2cm}
     >{\raggedright\arraybackslash}p{2.0cm}@{}}
 \toprule
 \textbf{Control} & \textbf{Maatregel en implementatie} &
@@ -2042,7 +2043,7 @@ rate limiting, credentials achterhaald in 6~pogingen), 4~hoog, 2~medium, 2~laag;
 gekoppeld aan SQ*/TM-*-risico's en B-001 t/m B-006. \textbf{Hervalidatie
 (post-mitigatie) afgerond} (Kali 2026-06-16/17): F-01 t/m F-09 hertest,
 mitigaties bevestigd. &
-Bijlage~\ref{app:pentest}; \texttt{05-penetration-tests/PentestReport-OpenMRS.md}
+Bijlage~\ref{app:pentest}; \texttt{05-penetration-tests/\allowbreak PentestReport-OpenMRS.md}
 (F1--F9 + \S18 Hervalidatie); \texttt{zap-report.html}. &
 Geïmplementeerd en geverifieerd \\
 \addlinespace
@@ -2051,8 +2052,8 @@ Geïmplementeerd en geverifieerd \\
 Twee-account-DB-model: privileged migratie-account (Liquibase/DDL)
 gescheiden van een DML-only runtime-account
 (\texttt{SELECT/INSERT/UPDATE/DELETE}, kan nooit \texttt{DROP}). &
-\texttt{docker/db-init/10-runtime-least-privilege.sh},
-\texttt{docker-compose.yml}, \texttt{docker/prod/docker-compose.yml};
+\texttt{docker/\allowbreak db-init/\allowbreak 10-runtime-least-privilege.sh},
+\texttt{docker-compose.yml}, \texttt{docker/\allowbreak prod/\allowbreak docker-compose.yml};
 hardening checklist \S2. &
 Mechanisme (PoC)$^\ast$ \\
 \addlinespace
@@ -2061,7 +2062,8 @@ Mechanisme (PoC)$^\ast$ \\
 OpenAPI-spec reflecteert \texttt{Host}/\texttt{X-Forwarded-Proto} niet langer
 ongevalideerd: Host-allow-list + scheme-sanitisatie (SQ9); Swagger-endpoints
 uitschakelbaar via \texttt{enableSwaggerDocs}. &
-\texttt{RestUtil.resolveSwaggerHost()}/\texttt{sanitizeScheme()}/
+\texttt{RestUtil.\allowbreak resolveSwaggerHost()}/\allowbreak
+\texttt{sanitizeScheme()}/\allowbreak
 \texttt{isSwaggerDocsEnabled()}; unit tests
 \texttt{SwaggerHardeningRestUtilTest} (8/8 groen); hardening checklist
 \S1, \S10. &
@@ -2072,7 +2074,7 @@ Geïmplementeerd en getest \\
 Reproduceerbare, verifieerbare releases: keyless cosign-signing + SLSA
 build-provenance + CycloneDX-SBOM naast de \texttt{.omod}; alle CI-actions
 SHA-pinned (was 1/9). &
-\texttt{.github/workflows/release-sign.yml}; SHA-pins in alle workflows;
+\texttt{.github/\allowbreak workflows/\allowbreak release-sign.yml}; SHA-pins in alle workflows;
 hardening checklist \S8, \S9. &
 Geïmplementeerd (workflow) \\
 \addlinespace
@@ -2093,8 +2095,8 @@ Geïmplementeerd en getest \\
 Aparte compose-overrides per omgeving + GitHub Environments
 (dev/test/prod) met gescheiden secrets; prod publiceert de DB niet en faalt
 fast (\texttt{:?}) op ontbrekende secrets. &
-\texttt{docker/\{dev,test,prod\}/docker-compose.yml},
-\texttt{docker/README.md}; \texttt{02.md} \S2. &
+\texttt{docker/\allowbreak\{dev,test,prod\}/\allowbreak docker-compose.yml},
+\texttt{docker/\allowbreak README.md}; \texttt{02.md} \S2. &
 Geïmplementeerd \\
 
 \end{longtable}
