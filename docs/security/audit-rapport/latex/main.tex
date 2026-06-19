@@ -881,7 +881,7 @@ testomgeving).
 \textbf{Risicoscore} & \amber{12 --- Midden}$^\triangle$ (Kans 4 $\times$ Impact 3) --- onacceptabel (enabler voor CVE-targeting) \\
 \textbf{NEN-7510}    & A.8.15 Logging (tevens A.8.8 Kwetsbaarheden) \\
 \textbf{Kroonjuwelen}& KJ6 --- indirect KJ1, KJ2 (reconnaissance-enabler) \\
-\textbf{OWASP}       & A09:2025 Security Logging and Alerting Failures (CWE-209) \\
+\textbf{OWASP}       & A09:2021 Security Logging and Monitoring Failures (CWE-209) \\
 \textbf{Status}      & \groen{Gemitigeerd en hertest --- commit \texttt{9c30cdd}} \\
 \end{tabular}
 
@@ -1613,9 +1613,10 @@ Onderstaande PR-tijdlijn toont beide lagen in één beeld:
 \begin{itemize}
     \item \textbf{Automatisch} --- de bots \texttt{github-advanced-security}
           (CodeQL code scanning) en \texttt{sonarqubecloud} plaatsen hun
-          analyseresultaat rechtstreeks als PR-commentaar; de
-          SonarCloud-\emph{quality gate} (\emph{``Quality Gate passed''}) en de
-          vier geslaagde status checks zijn een harde merge-voorwaarde.
+          analyseresultaat rechtstreeks als PR-commentaar. De verplichte status
+          checks --- met de CodeQL-scan als mergeblokkerende gate --- en de
+          review vormen de harde merge-voorwaarde; de SonarCloud-quality
+          gate-uitslag wordt daarbij als afwegingsmoment meegewogen.
     \item \textbf{Handmatig} --- een tweede teamlid wordt als reviewer
           aangewezen, beoordeelt de diff en geeft expliciet akkoord
           (\emph{``approved these changes''}) vóór de merge. De onderliggende
@@ -1811,20 +1812,28 @@ bow-ties samen dekken de twee hoogst scorende aanvalsroutes van het systeem.
 \label{app:screenshots}
 
 Naast CodeQL (Bijlage~\ref{app:codeql}) draait \textbf{SonarCloud} als tweede
-SAST-tool. Het is ingericht als verplichte \emph{quality gate}: een pull request
-waarvan de gate faalt, kan niet worden gemerged zonder een expliciet
-gedocumenteerde afweging (zie \texttt{04-code-review/04.md} \S1). Onderstaand
-dashboard toont de stand op de \texttt{main}-branch.
+SAST-tool. Het draait op elke pull request en publiceert de \emph{quality
+gate}-uitslag als check; het team behandelt een falende gate als expliciet te
+documenteren afwegingsmoment (zie \texttt{04-code-review/04.md} \S1). De
+mergeblokkerende, verplichte status check is op dit moment de CodeQL-scan; de
+SonarCloud-gate is (nog) niet als required check ingesteld, omdat hij op
+\texttt{main} nog faalt op de reliability-rating. Onderstaand dashboard toont de
+uitgangsmeting bij aanvang van de mitigatiefase; de eindstand (hotspots naar 0,
+Security Rating naar C) staat in de module-validatie van
+\texttt{06-mitigatie-en-validatie/06.md}.
 
 \begin{figure}[h]
     \centering
     \auditfig{../../04-code-review/Images/bijlage-sonarcloud-security.png}{0.95}
-    \caption{SonarCloud-dashboard van de module: de quality gate staat op
-             \emph{Failed} (3 condities niet gehaald), met een
-             \emph{Security Rating E} en twee openstaande security-issues
-             (50\,\% Blocker, 50\,\% High). Dit dashboard onderbouwt de
-             SonarQube-bevindingen (de SQ-reeks) uit de risicomatrix
-             (\S\ref{sec:risicomatrix}).}
+    \caption{SonarCloud-dashboard van de module bij de audit-uitgangsmeting: de
+             quality gate staat op \emph{Failed} (3 condities), met \emph{Security
+             Rating E} en twee security-issues (50\,\% Blocker, 50\,\% High). Dit
+             beeld onderbouwt de SQ-reeks uit de risicomatrix
+             (\S\ref{sec:risicomatrix}). Na de mitigaties is de stand verbeterd:
+             Security Hotspots naar 0 (Security Review Rating A), Security Rating
+             naar C en testdekking naar 66\,\%; de gate faalt op \texttt{main} nu
+             nog op één conditie --- de reliability-rating (D) --- en niet langer
+             op security (zie de module-validatie in \texttt{06.md}).}
     \label{fig:sonarcloud}
 \end{figure}
 
@@ -2006,7 +2015,7 @@ IP-blokkering (\texttt{ACCESS\_BLOCKED}), sessie-timeout
 het diagnose-endpoint (\texttt{DIAG\_ACCESS}) worden nu gelogd.
 Wachtwoorden, sessie-ID's en rollen worden expliciet \emph{niet}
 gelogd. &
-Commit \texttt{8521cdc}; 16 geautomatiseerde tests in
+Commit \texttt{8521cdc}; 19 geautomatiseerde tests (12 + 7) in
 \texttt{AuthorizationFilterLoggingTest} en
 \texttt{SessionController1\_9LoggingTest} slagen (\texttt{mvn test -pl
 omod-common,omod}); zie \texttt{01-security-audit/01.md} \S3.3. &
