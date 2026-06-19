@@ -32,9 +32,10 @@ behouden; in productie op `false` te zetten). Bij `false` retourneren zowel
   `SwaggerHardeningRestUtilTest`.
 - **NEN-7510:** A.8.3 (Toegangsbeveiliging), least functionality.
 - **Koppeling:** vermindert de productie-blootstelling van SQ8/SQ9 (TM-T2, TM-S4).
-  SQ8 (XSS output-encoding) is bewust **niet** gemitigeerd op code-niveau. Het endpoint
-  retourneert 404 zodra Swagger uitstaat en is daarmee niet functioneel valideerbaar
-  via pentest. De configuratie-gating via deze vlag is de gekozen productie-maatregel.
+  SQ8 (XSS) is gemitigeerd op code-niveau via output-encoding (`HtmlUtils.htmlEscape()`,
+  commit `e3f3c7d`; CodeQL `java/xss` #1 → fixed). Het endpoint retourneert bovendien 404
+  zodra Swagger uitstaat; de configuratie-gating via deze vlag is een aanvullende
+  defense-in-depth-maatregel.
 
 ---
 

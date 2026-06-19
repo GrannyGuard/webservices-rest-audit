@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.openmrs.RelationshipType;
 import org.openmrs.api.context.Context;
@@ -75,8 +76,9 @@ public class RelationshipTypeResource1_8Test extends BaseDelegatingResourceTest<
 		        .add("displayBIsToA", "Sibling another")
 		        .add("weight", 1);
 		
-		// This line should not throw exception.
-		getResource().create(relationshipTypeSimpleObject, new RequestContext());
+		// Creation must succeed and return the created resource, ignoring the relationship-specific fields.
+		Object created = getResource().create(relationshipTypeSimpleObject, new RequestContext());
+		Assert.assertNotNull(created);
 	}
 	
 }

@@ -250,8 +250,12 @@ public class SwaggerSpecificationCreatorTest extends BaseModuleWebContextSensiti
 		// make the paths method accessible
 		Method addPaths = ssc.getClass().getDeclaredMethod("addPaths");
 		addPaths.setAccessible(true);
-		
+
 		addPaths.invoke(ssc);
+
+		// addPaths must populate the swagger document with operation paths for the core models.
+		Swagger result = (Swagger) swagger.get(ssc);
+		assertFalse(result.getPaths().isEmpty());
 	}
 	
 	/**

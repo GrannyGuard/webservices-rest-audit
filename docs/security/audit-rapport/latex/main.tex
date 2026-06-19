@@ -20,6 +20,7 @@
 \usepackage{array}
 \usepackage{multirow}
 \usepackage{tabularx}
+\usepackage[htt]{hyphenat}  % sta woordafbreking toe in \texttt{} (lange klasse-namen in traceability matrix)
 
 % ── Kleur & code ─────────────────────────────────────────────────────────────
 \usepackage{xcolor}
@@ -53,9 +54,7 @@
 \newcommand{\geel}[1]{\textcolor{ragYellow}{\textbf{#1}}}
 \newcommand{\groen}[1]{\textcolor{ragGreen}{\textbf{#1}}}
 
-% Toon een afbeelding als die bestaat, anders een zichtbare placeholder-box,
-% zodat het document blijft compileren terwijl screenshots nog ontbreken.
-% Gebruik: \auditfig{pad/naar/bestand.png}{breedtefactor}  (bv. 0.85)
+% \auditfig{pad}{breedtefactor}: toont de afbeelding, of een nette box als het pad ontbreekt.
 \newcommand{\auditfig}[2]{%
     \IfFileExists{#1}%
         {\includegraphics[width=#2\linewidth]{#1}}%
@@ -166,9 +165,6 @@
 \chapter{Executive Summary}
 \label{ch:executive-summary}
 
-% Wordt als laatste geschreven maar staat als eerste in het rapport.
-% Max. 1 pagina. Beantwoord: overall status, top risico's, geprioriteerde roadmap.
-
 \section{Overall Status}
 \label{sec:overall-status}
 
@@ -227,7 +223,7 @@ volgt Hoofdstuk~\ref{ch:bevindingen}.
     \addlinespace
     B-004 & Een gemanipuleerde link kon kwaadaardige code laten uitvoeren in de
             browser van een ingelogde beheerder (XSS). & \amber{12 --- Midden} &
-            \groen{Gemitigeerd} \\
+            \groen{Gemitigeerd \& getest} \\
     \addlinespace
     B-005 & Interne foutmeldingen toonden technische systeemdetails aan de
             buitenwereld, wat vervolgaanvallen vergemakkelijkt. &
@@ -449,7 +445,7 @@ risicobeoordelingsaanpak van ISO/IEC 27005:
     \item \textbf{Threat modelling}: de module is beschreven in C4-diagrammen (context,
           container en component). Op basis daarvan is een STRIDE-analyse uitgevoerd en
           zijn trust boundaries vastgesteld. Gevonden threats zijn gemapt op de
-          OWASP API Security Top 10:2025.
+          OWASP API Security Top 10:2023.
     \item \textbf{Verificatie}: bevindingen zijn geverifieerd via SAST (CodeQL),
           SCA (Dependabot, OSV-Scanner, Snyk), logging-tests en een attack surface mapping.
           Gemitigeerde kwetsbaarheden zijn herbeoordeeld met dezelfde tooling.
@@ -497,9 +493,9 @@ geweest tot een productiesysteem met echte patiëntdata.
     Threat modelling & diagrams.net (\texttt{.drawio}) &
         C4-diagrammen op context-, container- en componentniveau. \\
     Methodiek & STRIDE &
-        Systematische dreigingsanalyse per C4-component; 15 threats
+        Systematische dreigingsanalyse per C4-component; 18 threats
         geïdentificeerd. \\
-    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2025 &
+    Normatief kader & NEN-7510:2024-2, OWASP API Top 10:2023 &
         Referentiekader voor controls, dreigingsclassificatie en
         auditcriteria. \\
     \midrule
@@ -528,7 +524,7 @@ De risicoanalyse brengt de gevonden gaps, de CIA/BIV-classificatie van de
 kroonjuwelen en de STRIDE-dreigingsanalyse samen tot één gescoorde risicomatrix
 (\S\ref{sec:risicomatrix}). Daaruit volgen de zes uitgewerkte bevindingen
 (\S\ref{sec:bevindingen}). De volledige analyse (de zeven gap-tabellen per
-control, de C4-diagrammen, de STRIDE-tabel met vijftien threats en de twintig
+control, de C4-diagrammen, de STRIDE-tabel met achttien threats en de twintig
 daaruit gescoorde risico's) is vastgelegd in
 \texttt{docs/security/01-security-audit/01.md}; dit rapport vult die matrix aan
 met drie empirisch bevestigde pentest-risico's tot drieëntwintig
@@ -573,13 +569,14 @@ Grenswaarden: $\geq 9$ niet acceptabel
 \end{minipage}
 
 \vspace{1em}
-De analyse leverde \textbf{tweeëntwintig gescoorde risico's} op uit vijf bronnen:
+De analyse leverde \textbf{drieëntwintig gescoorde risico's} op uit vijf bronnen:
 SonarQube (SQ), CI/CD (CD), CodeQL (CQL), het threat model (AT) en de
-penetratietest (PT). Twintig daarvan vallen in Midden of hoger; dertien zijn
-\emph{onacceptabel} (zes maal \rood{Hoog} plus zeven Midden-risico's die
+penetratietest (PT). Eenentwintig daarvan vallen in Midden of hoger; veertien zijn
+\emph{onacceptabel} (zeven maal \rood{Hoog} plus zeven Midden-risico's die
 KJ1/KJ2/KJ3 met score $\geq 10$ raken). De volgende tabel toont de top van de
-matrix (score $\geq 12$); de volledige tweeëntwintig staan in \texttt{01.md} \S4.2
-en de pentestbevindingen in Bijlage~\ref{app:pentest}.
+matrix (score $\geq 12$); de volledige drieëntwintig staan in
+Bijlage~\ref{app:risicomatrix} (de twintig niet-pentest-risico's ook in
+\texttt{01.md} \S4.2; de pentestbevindingen in Bijlage~\ref{app:pentest}).
 
 {\small
 \begin{longtable}{@{}
@@ -604,6 +601,8 @@ en de pentestbevindingen in Bijlage~\ref{app:pentest}.
 \bottomrule
 \endlastfoot
 \textbf{PT1} & Geen rate-limiting op authenticatie-endpoints   & \rood{20} & \rood{Hoog} & KJ3 $\to$ KJ1, KJ2 \\
+\addlinespace
+\textbf{SQ7} & Ongeauth.\ uitlezing global properties (\texttt{/settings.form/search}) & \rood{20} & \rood{Hoog} & KJ7, KJ4 \\
 \addlinespace
 \textbf{SQ2} & Onvolledige switch-statements (zoeklogica)      & \rood{16} & \rood{Hoog} & KJ2 \\
 \addlinespace
@@ -638,8 +637,10 @@ geclassificeerd als \emph{onacceptabel}.\normalsize
 \vspace{0.6em}
 Voor twee aanvalsketens is een \textbf{bow-tie-analyse} uitgewerkt
 (Bijlage~\ref{app:risicomatrix}): \texttt{SQ1} (sessie-overname, score~15)
-en \texttt{CD1} (supply chain, score~15). Eén risico scoort hoger dan de bow-tie-onderwerpen:
-\texttt{PT1} (geen rate-limiting, score~20), empirisch bevestigd door de penetratietest
+en \texttt{CD1} (supply chain, score~15). Twee risico's scoren hoger dan de bow-tie-onderwerpen:
+\texttt{SQ7} (ongeauthenticeerde uitlezing van alle global properties, score~20; gemitigeerd via
+auth + \texttt{Manage RESTWS}-privilege, commit \texttt{07612ca}) en \texttt{PT1} (geen
+rate-limiting, score~20), empirisch bevestigd door de penetratietest
 en uitgewerkt als bevinding B-001; de bijbehorende barrière (rate-limiting) maakt bovendien
 deel uit van de \texttt{SQ1}-bow-tie, omdat ze zowel sessie-ID- als credential-brute-force
 tegenhoudt. De bow-ties \texttt{SQ1} en \texttt{CD1} zijn gekozen als de twee best
@@ -787,7 +788,7 @@ enumereren.
 GET /openmrs/ws/rest/v1/user
 Authorization: Basic <laag-geprivilegieerde-creds>
 
-→ Retourneert alle gebruikers:
+--> Retourneert alle gebruikers:
 {
   "results": [
     { "display": "admin", "username": "admin", ... },
@@ -822,7 +823,7 @@ retourneren; de auth-logregels zijn identiek ongeacht of het account bestaat. Dr
 nieuwe unit tests slagen; \texttt{mvn clean install} groen. Zie
 \texttt{06.md} \S7 en Bijlage~\ref{app:pentest} \S I.4.
 
-\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8, F2): gemitigeerd}
+\subsection{B-004 --- Reflected XSS in het Swagger debug-endpoint (SQ8): gemitigeerd}
 \label{sec:b004}
 
 \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{11.4cm}@{}}
@@ -856,16 +857,22 @@ Als defense-in-depth is de hele \texttt{/apiDocs}-boom bovendien uitschakelbaar
 via de global property \texttt{webservices.rest.enableSwaggerDocs}: in productie
 (\texttt{false}) geeft het endpoint HTTP 404 en is de vector volledig weg.
 
-\textbf{Validatie (voor/na).} Payload \texttt{?tag=<script>alert(1)</script>}
-wordt nu gerenderd als platte tekst (\texttt{\&lt;script\&gt;...}) i.p.v.
-uitgevoerd; \texttt{mvn clean install} groen, geen regressie. Zie
-\texttt{06-mitigatie-en-validatie/06.md} \S2 voor het volledige voor/na-overzicht.
-
-\textbf{Validatie (herscan).} De CodeQL-herscan op \texttt{main} (run
-\texttt{27471405779}, commit \texttt{b5627faa} via PR~\#96, 2026-06-13) zet
-\texttt{java/xss} alert~\#1 op \texttt{state: fixed}; net als bij B-005 is de
-detect-\,$\to$\,mitigeer-\,$\to$\,verifieer-cyclus daarmee kwantitatief en
-reproduceerbaar afgesloten.
+\textbf{Validatie (statisch + unit test).} SQ8 is --- anders dan de
+pentestbevindingen B-001--B-003/B-005 --- \emph{niet via een dynamische pentest}
+gevalideerd: het \texttt{/apiDocs/debug}-endpoint staat in de testomgeving uit
+(\texttt{enableSwaggerDocs=false}) en geeft HTTP~404, waardoor een live
+curl-/browser-hertest niet mogelijk is. De validatie steunt op twee statische,
+reproduceerbare bronnen. \emph{(1)}~De automatische CodeQL-herscan op \texttt{main}
+(run \texttt{27471405779}, commit \texttt{b5627faa} via PR~\#96, 2026-06-13) zet
+\texttt{java/xss} alert~\#1 op \texttt{state: fixed}, omdat \texttt{HtmlUtils.htmlEscape}
+de door CodeQL herkende taint-barrier is. \emph{(2)}~Een dedicated unit test
+\texttt{SwaggerDocControllerTest} roept \texttt{debug()} rechtstreeks aan (zonder
+HTTP-laag, dus onafhankelijk van de endpoint-404) en bewijst deterministisch dat
+\texttt{<script>alert(1)</script>} als \texttt{\&lt;script\&gt;} wordt geëncodeerd én dat
+de gating bij uitgeschakelde docs HTTP~404 zonder body geeft --- \textbf{2 tests groen}
+(\texttt{Tests run: 2, Failures: 0, Errors: 0}). \texttt{mvn clean install} groen, geen
+regressie. Resterende beperking: geen dynamische pentest-hertest (endpoint 404 in de
+testomgeving).
 
 \subsection{B-005 --- Stack trace disclosure in foutrespons (PT3 / F-04)}
 \label{sec:b005}
@@ -1331,15 +1338,6 @@ bevindingen B-001 t/m B-006 zijn afgerond en staan hier dus \emph{niet} tussen.
 \chapter{CodeQL SARIF-output}
 \label{app:codeql}
 
-% ── BENODIGDE AFBEELDINGEN ───────────────────────────────────────────────────
-% Plaats de volgende bestanden in een submap  images/  naast main.tex:
-%   images/codeql-run.png            -> screenshot Actions-run "Analyze Java (java)"
-%   images/codeql-alerts-open.png    -> Security-tab, OPEN code-scanning alerts
-%                                       (bron: docs/security/04-code-review/Images/bijlage-codeql-alerts-open.png)
-%   images/codeql-alerts-closed.png  -> Security-tab, GESLOTEN/FIXED alerts (9 log-injection)
-%                                       (bron: docs/security/04-code-review/Images/bijlage-codeql-alerts-closed.png)
-% ─────────────────────────────────────────────────────────────────────────────
-
 \textbf{SARIF} (\emph{Static Analysis Results Interchange Format}) is het
 machine-leesbare JSON-formaat waarin CodeQL zijn bevindingen rapporteert. De
 workflow \texttt{.github/workflows/codeql.yml} draait de query-suite
@@ -1687,6 +1685,7 @@ Score $=$ Kans $\times$ Impact.
 \textbf{SQ4}  & Niet-serializeerbaar validatie-veld                 & 3 & 3 & \amber{9}             & \amber{Midden}     & KJ5 \\
 \textbf{SQ5}  & Extreem hoge cognitieve complexiteit                & 5 & 2 & \amber{10}            & \amber{Midden}     & KJ5 \\
 \textbf{SQ6}  & Lege methoden zonder verklaring                     & 4 & 2 & \geel{8}              & \geel{Laag-Mid.}   & --- \\
+\textbf{SQ7}  & Ongeauth.\ uitlezing global properties (\texttt{/settings.form/search}) & 4 & 5 & \rood{20} & \rood{Hoog} & KJ7, KJ4 \\
 \textbf{SQ8}  & Reflected XSS in Swagger debug-endpoint             & 3 & 4 & \amber{12}$^\triangle$ & \amber{Midden}    & KJ3 \\
 \textbf{SQ9}  & Host-header injectie in Swagger-spec                & 3 & 3 & \amber{9}             & \amber{Midden}     & KJ3 \\
 \textbf{CD1}  & Supply chain attack (dependency)                    & 3 & 5 & \rood{15}             & \rood{Hoog}        & KJ7, KJ1, KJ2 \\
@@ -1709,9 +1708,9 @@ Score $=$ Kans $\times$ Impact.
 \noindent\small $^\triangle$ Midden-score (9--12) die de vertrouwelijkheid of
 integriteit van KJ1/KJ2/KJ3 raakt met score $\geq 10$ $\to$ conform de
 risicobereidheid (\S\ref{sec:risicomatrix}) geclassificeerd als \emph{onacceptabel}.
-PT1 overschrijdt die drempel al op eigen score (20). Van de tweeëntwintig
-risico's vallen er twintig in Midden of hoger; dertien zijn onacceptabel
-(zes \rood{Hoog} plus zeven $^\triangle$-gemarkeerde Midden-risico's).\normalsize
+PT1 en SQ7 overschrijden die drempel al op eigen score (20). Van de drieëntwintig
+risico's vallen er eenentwintig in Midden of hoger; veertien zijn onacceptabel
+(zeven \rood{Hoog} plus zeven $^\triangle$-gemarkeerde Midden-risico's).\normalsize
 
 % ── Herbruikbare opmaak voor de bow-tie-tabellen ─────────────────────────────
 \newcommand{\topevent}[1]{%
@@ -1923,9 +1922,9 @@ onderhouden bronversie van deze matrix staat in de repository:
 
 {\small
 \begin{longtable}{@{}
-    >{\raggedright\arraybackslash}p{2.3cm}
-    >{\raggedright\arraybackslash}p{4.9cm}
-    >{\raggedright\arraybackslash}p{5.4cm}
+    >{\raggedright\arraybackslash}p{2.0cm}
+    >{\raggedright\arraybackslash}p{4.3cm}
+    >{\raggedright\arraybackslash}p{6.2cm}
     >{\raggedright\arraybackslash}p{2.0cm}@{}}
 \toprule
 \textbf{Control} & \textbf{Maatregel en implementatie} &
@@ -2050,7 +2049,7 @@ rate limiting, credentials achterhaald in 6~pogingen), 4~hoog, 2~medium, 2~laag;
 gekoppeld aan SQ*/TM-*-risico's en B-001 t/m B-006. \textbf{Hervalidatie
 (post-mitigatie) afgerond} (Kali 2026-06-16/17): F-01 t/m F-09 hertest,
 mitigaties bevestigd. &
-Bijlage~\ref{app:pentest}; \texttt{05-penetration-tests/PentestReport-OpenMRS.md}
+Bijlage~\ref{app:pentest}; \texttt{05-penetration-tests/\allowbreak PentestReport-OpenMRS.md}
 (F1--F9 + \S18 Hervalidatie); \texttt{zap-report.html}. &
 Geïmplementeerd en geverifieerd \\
 \addlinespace
@@ -2059,8 +2058,8 @@ Geïmplementeerd en geverifieerd \\
 Twee-account-DB-model: privileged migratie-account (Liquibase/DDL)
 gescheiden van een DML-only runtime-account
 (\texttt{SELECT/INSERT/UPDATE/DELETE}, kan nooit \texttt{DROP}). &
-\texttt{docker/db-init/10-runtime-least-privilege.sh},
-\texttt{docker-compose.yml}, \texttt{docker/prod/docker-compose.yml};
+\texttt{docker/\allowbreak db-init/\allowbreak 10-runtime-least-privilege.sh},
+\texttt{docker-compose.yml}, \texttt{docker/\allowbreak prod/\allowbreak docker-compose.yml};
 hardening checklist \S2. &
 Mechanisme (PoC)$^\ast$ \\
 \addlinespace
@@ -2069,7 +2068,8 @@ Mechanisme (PoC)$^\ast$ \\
 OpenAPI-spec reflecteert \texttt{Host}/\texttt{X-Forwarded-Proto} niet langer
 ongevalideerd: Host-allow-list + scheme-sanitisatie (SQ9); Swagger-endpoints
 uitschakelbaar via \texttt{enableSwaggerDocs}. &
-\texttt{RestUtil.resolveSwaggerHost()}/\texttt{sanitizeScheme()}/
+\texttt{RestUtil.\allowbreak resolveSwaggerHost()}/\allowbreak
+\texttt{sanitizeScheme()}/\allowbreak
 \texttt{isSwaggerDocsEnabled()}; unit tests
 \texttt{SwaggerHardeningRestUtilTest} (8/8 groen); hardening checklist
 \S1, \S10. &
@@ -2080,7 +2080,7 @@ Geïmplementeerd en getest \\
 Reproduceerbare, verifieerbare releases: keyless cosign-signing + SLSA
 build-provenance + CycloneDX-SBOM naast de \texttt{.omod}; alle CI-actions
 SHA-pinned (was 1/9). &
-\texttt{.github/workflows/release-sign.yml}; SHA-pins in alle workflows;
+\texttt{.github/\allowbreak workflows/\allowbreak release-sign.yml}; SHA-pins in alle workflows;
 hardening checklist \S8, \S9. &
 Geïmplementeerd (workflow) \\
 \addlinespace
@@ -2101,8 +2101,8 @@ Geïmplementeerd en getest \\
 Aparte compose-overrides per omgeving + GitHub Environments
 (dev/test/prod) met gescheiden secrets; prod publiceert de DB niet en faalt
 fast (\texttt{:?}) op ontbrekende secrets. &
-\texttt{docker/\{dev,test,prod\}/docker-compose.yml},
-\texttt{docker/README.md}; \texttt{02.md} \S2. &
+\texttt{docker/\allowbreak\{dev,test,prod\}/\allowbreak docker-compose.yml},
+\texttt{docker/\allowbreak README.md}; \texttt{02.md} \S2. &
 Geïmplementeerd \\
 
 \end{longtable}

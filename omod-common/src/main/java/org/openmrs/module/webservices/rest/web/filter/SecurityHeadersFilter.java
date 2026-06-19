@@ -39,10 +39,12 @@ public class SecurityHeadersFilter implements Filter {
 
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
+		// Stateless filter: no configuration or resources to initialise.
 	}
 
 	@Override
 	public void destroy() {
+		// Stateless filter: no resources to release.
 	}
 
 	@Override

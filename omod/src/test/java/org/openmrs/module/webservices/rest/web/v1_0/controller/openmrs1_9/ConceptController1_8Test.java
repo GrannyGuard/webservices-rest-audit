@@ -96,9 +96,12 @@ public class ConceptController1_8Test extends MainResourceControllerTest {
 		request.addHeader("Accept", "application/xml");
 		
 		MockHttpServletResponse result = handle(request);
-		
+
 		String xml = result.getContentAsString();
 		printXML(xml);
+
+		// The full XML representation must be for the requested concept.
+		Assert.assertEquals(getUuid(), evaluateXPath(xml, "//uuid"));
 	}
 	
 	@Test

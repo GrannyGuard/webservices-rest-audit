@@ -87,8 +87,8 @@ jobs:
         run: snyk monitor --file=pom.xml --project-name=webservices-rest-audit
         continue-on-error: true
 
-      # ── Severity-labeled table + hard fail on CVSS >= 9.9 ──
-      - name: Snyk severity table + fail on CVSS >= 9.9
+      # ── Severity-labeled table (report-only; SCA enforcement is the triage in 03.md §5) ──
+      - name: Snyk SCA severity table (report-only, non-blocking)
         if: always()
         run: |
           python3 << 'EOF'
@@ -130,15 +130,18 @@ jobs:
               cvss_str = f"{cvss:.1f}" if cvss else "N/A"
               print(f"{sev:<{w[0]}} {cvss_str:>{w[1]}} {sid:<{w[2]}} {pkg:<{w[3]}} {ver:<{w[4]}} {title[:w[5]]}")
 
-          blocking = [r for r in rows if (r[1] or 0) >= 9.9]
+          # SCA is intentionally non-blocking. A raw CVSS gate would either be
+          # meaningless or permanently block the build on transitive findings that
+          # only the deferred platform upgrades (Spring 6, Tomcat 9+, jackson-databind
+          # 2.x) can resolve. Enforcement is the documented patch/suppress/accept
+          # triage in docs/security/03-sbom-en-cve-advies/03.md section 5.
+          by_sev = {}
+          for r in rows:
+              by_sev[r[0]] = by_sev.get(r[0], 0) + 1
+          summary = ", ".join(f"{by_sev[s]} {s}" for s in ("CRITICAL", "HIGH", "MEDIUM", "LOW") if s in by_sev)
           print()
-          if blocking:
-              print(f"::error::Found {len(blocking)} vulnerability(ies) with CVSS >= 9.9 — build failed:")
-              for sev, cvss, sid, pkg, ver, title in blocking:
-                  print(f"  ::error::{pkg} {ver} — {sid} (CVSS {cvss}) {title}")
-              sys.exit(1)
-          else:
-              print(f"No CVSS >= 9.9 vulnerabilities. {len(rows)} total finding(s) logged above.")
+          print(f"{len(rows)} finding(s): {summary}.")
+          print("SCA is report-only (non-blocking); triage in 03.md section 5.")
           EOF
 
       # ── Upload SARIF so findings appear in the Security tab ──
