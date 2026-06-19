@@ -183,7 +183,9 @@ public class DelegatingCrudResourceTest extends BaseModuleWebContextSensitiveTes
 		so.add("dateCreated", "2018-04-18T14:15:16.000+0000");
 		so.add("creator", "1");
 		DelegatingCrudResource<Location> resource = new LocationResource1_8();
-		resource.convert(so);
+		Location location = resource.convert(so);
+		// Creatable audit fields are accepted, so conversion must succeed and still map the name.
+		Assert.assertEquals("Location name", location.getName());
 	}
 
 	@Test
@@ -193,7 +195,9 @@ public class DelegatingCrudResourceTest extends BaseModuleWebContextSensitiveTes
 		so.add("dateChanged", "2018-04-18T14:15:16.000+0000");
 		so.add("changedBy", "1");
 		DelegatingCrudResource<Location> resource = new LocationResource1_8();
-		resource.convert(so);
+		Location location = resource.convert(so);
+		// Changeable audit fields are accepted, so conversion must succeed and still map the name.
+		Assert.assertEquals("Location name", location.getName());
 	}
 
 	@Test
@@ -205,7 +209,10 @@ public class DelegatingCrudResourceTest extends BaseModuleWebContextSensitiveTes
 		so.add("retiredBy", "1");
 		so.add("retireReason", "test");
 		DelegatingCrudResource<Location> resource = new LocationResource1_8();
-		resource.convert(so);
+		Location location = resource.convert(so);
+		// Retire metadata is accepted for a retireable type, so the flag and reason must be set.
+		Assert.assertTrue(location.getRetired());
+		Assert.assertEquals("test", location.getRetireReason());
 	}
 
 	@Test
@@ -231,7 +238,9 @@ public class DelegatingCrudResourceTest extends BaseModuleWebContextSensitiveTes
 		so.add("voidedBy", "1");
 		so.add("voidReason", "test");
 		DelegatingCrudResource<Encounter> resource = new EncounterResource1_8();
-		resource.convert(so);
+		Encounter encounter = resource.convert(so);
+		// Void metadata is accepted for a voidable type, so the flag must be set.
+		Assert.assertTrue(encounter.getVoided());
 	}
 
 	@Test

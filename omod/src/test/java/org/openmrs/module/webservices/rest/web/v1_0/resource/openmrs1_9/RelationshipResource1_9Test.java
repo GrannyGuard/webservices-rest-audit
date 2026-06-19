@@ -23,6 +23,7 @@ import org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResou
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Contains tests for the
@@ -108,7 +109,7 @@ public class RelationshipResource1_9Test extends BaseDelegatingResourceTest<Rela
 		        .add("relationshipType", relationshipTypeSimpleObject)
 		        .add("personB", people.get(1).getUuid());
 		
-		getResource().create(relationship, new RequestContext());
-		
+		Object created = getResource().create(relationship, new RequestContext());
+		assertNotNull("Relationship should be created despite the extra display properties", created);
 	}
 }
